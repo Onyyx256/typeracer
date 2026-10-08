@@ -1,26 +1,106 @@
 @import "tailwindcss";
 
+/* The theme is resolved before first paint by the inline script in layout.tsx. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #fdfdf8;
+  --foreground: #2e1f33;
+  --surface: #f7f7e3;
+  --muted: #5b5563;
+  --line: #454d6633;
+  /* #309975 darkened slightly so white button text stays readable. */
+  --primary: #288363;
+  --on-primary: #fdfdf8;
+  --primary-text: #237457;
+  --accent: #8b2e74;
+  --on-accent: #fdf3fa;
+  --accent-text: #8b2e74;
+  --danger: #a3262f;
+  --panel: #309975;
+  --on-panel: #fdfdf8;
+  --on-panel-muted: #d9f0e6;
+  --stem: #dad873;
+  --petal: #f3d3e2;
+  --petal-line: #8b2e74;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #1f2330;
+  --foreground: #f3f2dc;
+  --surface: #2b3144;
+  --muted: #a9adbd;
+  --line: #efeeb42e;
+  --primary: #58b368;
+  --on-primary: #141821;
+  --primary-text: #7ccf8b;
+  --accent: #8b2e74;
+  --on-accent: #fdf3fa;
+  --accent-text: #e09ccd;
+  --danger: #ff9c9c;
+  --panel: #2b3144;
+  --on-panel: #f3f2dc;
+  --on-panel-muted: #a9adbd;
+  --stem: #58b368;
+  --petal: #f3d3e2;
+  --petal-line: #8b2e74;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-text: var(--primary-text);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-text: var(--accent-text);
+  --color-danger: var(--danger);
+  --color-panel: var(--panel);
+  --color-on-panel: var(--on-panel);
+  --color-on-panel-muted: var(--on-panel-muted);
+  --color-stem: var(--stem);
+  --color-petal: var(--petal);
+  --color-petal-line: var(--petal-line);
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Leaf-shaped corners shared by buttons and fields. */
+@utility rounded-leaf {
+  border-radius: 1rem 0.375rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
