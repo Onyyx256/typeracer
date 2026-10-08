@@ -1,23 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { DiscordIcon, GitHubIcon } from "@/app/components/brand-icons";
 import { GrowingStem } from "@/app/components/growing-stem";
 import { TextField } from "@/app/components/text-field";
+import {
+  PASSWORD_MIN,
+  USERNAME_MAX,
+  USERNAME_MIN,
+  signupSchema,
+  toFieldErrors,
+  type FieldErrors,
+} from "@/lib/auth/validation";
+import { signup } from "./actions";
 
 type Mode = "login" | "signup";
-
-type FieldErrors = {
-  username?: string;
-  password?: string;
-  confirm?: string;
-};
-
-const USERNAME_MIN = 3;
-const USERNAME_MAX = 20;
-const PASSWORD_MIN = 8;
 
 const COPY: Record<
   Mode,
@@ -43,19 +42,18 @@ function validate(
   password: string,
   confirm: string,
 ): FieldErrors {
+  if (mode === "signup") {
+    const parsed = signupSchema.safeParse({ username, password, confirm });
+    return parsed.success ? {} : toFieldErrors(parsed.error);
+  }
+
   const errors: FieldErrors = {};
   const name = username.trim();
-
   if (name.length < USERNAME_MIN || name.length > USERNAME_MAX) {
     errors.username = `Entre ${USERNAME_MIN} à ${USERNAME_MAX} caractères.`;
   }
   if (password.length === 0) {
     errors.password = "Requis.";
-  } else if (mode === "signup" && password.length < PASSWORD_MIN) {
-    errors.password = `Au moins ${PASSWORD_MIN} caractères.`;
-  }
-  if (mode === "signup" && confirm !== password) {
-    errors.confirm = "Ne correspond pas.";
   }
   return errors;
 }
@@ -92,6 +90,7 @@ export function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [submitting, startSubmit] = useTransition();
 
   const copy = COPY[mode];
 
@@ -132,11 +131,28 @@ export function AuthScreen() {
     event.preventDefault();
     const found = validate(mode, username, password, confirm);
     setErrors(found);
-    if (Object.keys(found).length > 0) {
+    if (Object.values(found).some(Boolean)) {
       setNotice(null);
       return;
     }
-    announcePending();
+    if (mode === "login") {
+      announcePending();
+      return;
+    }
+
+    startSubmit(async () => {
+      const result = await signup({ username, password, confirm });
+      if (!result.ok) {
+        setErrors(result.errors);
+        setNotice(result.message ?? null);
+        return;
+      }
+      // No session yet: send the new user to the login tab with their name kept.
+      setMode("login");
+      setPassword("");
+      setConfirm("");
+      setNotice("compte créé, connecte-toi");
+    });
   }
 
   return (
@@ -267,7 +283,8 @@ export function AuthScreen() {
 
             <button
               type="submit"
-              className={`mt-1 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf`}
+              disabled={submitting}
+              className={`mt-1 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-progress disabled:opacity-60 rounded-leaf`}
             >
               {copy.submit}
             </button>
