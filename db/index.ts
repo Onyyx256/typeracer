@@ -9,7 +9,13 @@ function createPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set.");
   }
-  return new Pool({ connectionString });
+  const created = new Pool({ connectionString });
+  // An idle connection dropped by the database emits "error" on the pool;
+  // without a listener that is an uncaught exception and takes the server down.
+  created.on("error", (error) => {
+    console.error("database connection lost:", error.message);
+  });
+  return created;
 }
 
 // Reuse the pool across hot reloads in dev, otherwise each one leaks connections.
