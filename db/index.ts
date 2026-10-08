@@ -1,27 +1,28 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
 
-const globalForDb = globalThis as unknown as { pgPool?: Pool };
+type Database = NodePgDatabase<typeof schema>;
 
-function createPool(): Pool {
+// Kept on globalThis so dev hot reloads reuse the pool instead of leaking connections.
+const globalForDb = globalThis as unknown as { database?: Database };
+
+function connect(): Database {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set.");
   }
-  const created = new Pool({ connectionString });
+  const pool = new Pool({ connectionString });
   // An idle connection dropped by the database emits "error" on the pool;
   // without a listener that is an uncaught exception and takes the server down.
-  created.on("error", (error) => {
+  pool.on("error", (error) => {
     console.error("database connection lost:", error.message);
   });
-  return created;
+  return drizzle(pool, { schema });
 }
 
-// Reuse the pool across hot reloads in dev, otherwise each one leaks connections.
-const pool = globalForDb.pgPool ?? createPool();
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.pgPool = pool;
+/** Connects on first use, so importing this module (as `next build` does) needs no database. */
+export function getDb(): Database {
+  globalForDb.database ??= connect();
+  return globalForDb.database;
 }
-
-export const db = drizzle(pool, { schema });

@@ -37,6 +37,13 @@ export const signupSchema = z
     error: "Ne correspond pas.",
   });
 
+// Deliberately loose: login only needs enough to look the account up, and
+// stricter rules here would lock out accounts created under older ones.
+export const loginSchema = z.object({
+  username: z.string().trim().min(1).max(USERNAME_MAX),
+  password: z.string().min(1).max(PASSWORD_MAX),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 
 /** Keeps the first message of each field, which is all the form has room for. */
