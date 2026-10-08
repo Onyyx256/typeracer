@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { DiscordIcon, GitHubIcon } from "@/app/components/brand-icons";
@@ -14,7 +15,7 @@ import {
   toFieldErrors,
   type FieldErrors,
 } from "@/lib/auth/validation";
-import { signup } from "./actions";
+import { login, signup } from "./actions";
 
 type Mode = "login" | "signup";
 
@@ -91,6 +92,7 @@ export function AuthScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, startSubmit] = useTransition();
+  const router = useRouter();
 
   const copy = COPY[mode];
 
@@ -135,23 +137,23 @@ export function AuthScreen() {
       setNotice(null);
       return;
     }
-    if (mode === "login") {
-      announcePending();
-      return;
-    }
-
     startSubmit(async () => {
-      const result = await signup({ username, password, confirm });
-      if (!result.ok) {
-        setErrors(result.errors);
-        setNotice(result.message ?? null);
-        return;
+      if (mode === "login") {
+        const result = await login({ username, password });
+        if (!result.ok) {
+          setNotice(result.message);
+          return;
+        }
+      } else {
+        const result = await signup({ username, password, confirm });
+        if (!result.ok) {
+          setErrors(result.errors);
+          setNotice(result.message ?? null);
+          return;
+        }
       }
-      // No session yet: send the new user to the login tab with their name kept.
-      setMode("login");
-      setPassword("");
-      setConfirm("");
-      setNotice("compte créé, connecte-toi");
+      // Both actions leave a session cookie behind.
+      router.replace("/");
     });
   }
 
