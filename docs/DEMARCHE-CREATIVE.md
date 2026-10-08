@@ -33,7 +33,7 @@ Je trouvais que la charte pour le nombre de joueurs actifs pour un jeu pouvait b
 J'avais également dessiné à la main quelques concepts auxquels j'avais pensé, dont comment voir la progression d'un joueur lorsqu'il écrit. Je pensais faire des fleurs qui poussent au fur et à mesure que le texte est écrit, d'où le thème de fleurs. J'avais également pensé à quelques bonus/malus en lien avec le thème, comme un peu de pluie et de soleil pour signifier une course moins longue (donc plus rapide), la nuit qui pourrait signifier une course plus longue ou un soleil aveuglant comme distraction pour les joueurs dans les premières places.
 
 ## Palette de couleur et typographie
-![alt text](image-9.png)
+![alt text](image-11.png)
 
 J'ai choisi une palette qui avait des couleurs plutôt floral, mais je voulais également que ce ne soit pas trop rose. Je voulais qu'il y ait un style un peu de feuillage, donc je voulais également des accents verts. Mes couleurs princiales seraient la deuxième et la quatrième, le reste serait des accents pour ces deux couleurs.
 
