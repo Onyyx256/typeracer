@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { logout } from "@/app/login/actions";
-import { getSessionUserId } from "@/lib/auth/session";
-import { findProfile } from "@/lib/auth/users";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { ThemeToggle } from "./theme-toggle";
 
 export function SiteHeader() {
@@ -37,8 +36,7 @@ export function SiteHeader() {
 }
 
 async function AccountStatus() {
-  const userId = await getSessionUserId();
-  const user = userId ? await findProfile(userId) : null;
+  const user = await getCurrentUser();
   if (!user) {
     return null;
   }
