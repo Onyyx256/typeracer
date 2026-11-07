@@ -32,6 +32,10 @@ export async function SiteHeader() {
         </span>
       </Link>
 
+      {/* The menu reads the URL (active link, language switch). Under a route
+          with a dynamic segment, like /rooms/[code], the URL is only known
+          at request time, so the menu streams in instead of blocking the shell. */}
+      <Suspense fallback={null}>
       <HeaderMenu label={dict.header.menu}>
         <nav
           aria-label={dict.header.nav}
@@ -53,6 +57,7 @@ export async function SiteHeader() {
           />
         </div>
       </HeaderMenu>
+      </Suspense>
 
       <div className="order-1 ml-auto lg:order-2 lg:ml-0">
         <Suspense fallback={<span className="block size-10" />}>
