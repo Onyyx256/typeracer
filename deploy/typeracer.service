@@ -10,9 +10,12 @@ Wants=network-online.target
 User=ubuntu
 WorkingDirectory=/home/ubuntu/typeracer
 Environment=NODE_ENV=production
-# Next.js reads .env.production.local itself. It listens on localhost only;
-# Caddy is the public entry point.
-ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+# server.ts runs Next.js and Socket.IO together (needs Node 22.6+ for type
+# stripping). Next.js reads .env.production.local itself. It listens on
+# localhost only; Caddy is the public entry point and passes WebSockets through.
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server.ts
 Restart=always
 RestartSec=5
 

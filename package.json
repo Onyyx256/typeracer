@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server.ts",
     "lint": "eslint",
     "db:up": "docker compose up -d --wait",
     "db:generate": "drizzle-kit generate",
@@ -24,6 +24,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {
