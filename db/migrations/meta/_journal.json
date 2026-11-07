@@ -15,6 +15,13 @@
       "when": 1794094159587,
       "tag": "0001_create_texts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794094212487,
+      "tag": "0002_create_rooms",
+      "breakpoints": true
     }
   ]
 }

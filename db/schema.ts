@@ -4,12 +4,19 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type {
+  HostRole,
+  RaceConfig,
+  RoomState,
+  Visibility,
+} from "@/lib/rooms/settings";
 
 export const users = pgTable(
   "users",
@@ -81,3 +88,73 @@ export const texts = pgTable(
 
 export type Text = typeof texts.$inferSelect;
 export type NewText = typeof texts.$inferInsert;
+
+export const rooms = pgTable(
+  "rooms",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** SALLE-02: 6 characters, without 0/O and 1/I/L. */
+    code: text("code").notNull(),
+    hostId: uuid("host_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    visibility: text("visibility").$type<Visibility>().notNull(),
+    capacity: integer("capacity").notNull(),
+    state: text("state").$type<RoomState>().notNull().default("waiting"),
+    /** Everything else the host configures (CONF-01 to CONF-09). */
+    config: jsonb("config").$type<RaceConfig>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("rooms_code_idx").on(table.code),
+    // The room browser lists public rooms that aren't closed (JOIN-02).
+    index("rooms_visibility_state_idx").on(table.visibility, table.state),
+    check("rooms_code_format", sql`${table.code} ~ '^[A-HJKMNP-Z2-9]{6}$'`),
+    check(
+      "rooms_visibility",
+      sql`${table.visibility} in ('public', 'code', 'private')`,
+    ),
+    check("rooms_capacity", sql`${table.capacity} between 2 and 30`),
+    check(
+      "rooms_state",
+      sql`${table.state} in ('waiting', 'countdown', 'racing', 'results', 'closed')`,
+    ),
+  ],
+);
+
+export type Room = typeof rooms.$inferSelect;
+export type NewRoom = typeof rooms.$inferInsert;
+
+export const roomMembers = pgTable(
+  "room_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => rooms.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").$type<HostRole>().notNull(),
+    /** The longest-present member becomes host when the host leaves (SALLE-08). */
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // SALLE-06: one room per person at a time, whatever the interface does.
+    uniqueIndex("room_members_user_idx").on(table.userId),
+    index("room_members_room_idx").on(table.roomId, table.joinedAt),
+    check("room_members_role", sql`${table.role} in ('participant', 'spectator')`),
+  ],
+);
+
+export type RoomMember = typeof roomMembers.$inferSelect;
+export type NewRoomMember = typeof roomMembers.$inferInsert;
