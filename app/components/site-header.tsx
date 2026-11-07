@@ -5,6 +5,7 @@ import { logout } from "@/app/[lang]/login/actions";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { LanguageSwitch } from "./language-switch";
 import { ThemeToggle } from "./theme-toggle";
 
 export async function SiteHeader() {
@@ -33,6 +34,7 @@ export async function SiteHeader() {
         <Suspense fallback={null}>
           <AccountStatus />
         </Suspense>
+        <LanguageSwitch current={locale} label={dict.header.language} />
         <ThemeToggle
           label={dict.header.themeLabel}
           title={dict.header.themeTitle}
