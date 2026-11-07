@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { Presence } from "@/app/components/live-updates";
 import { SiteHeader } from "@/app/components/site-header";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { ThemeScript } from "@/app/components/theme-script";
 import { LOCALES } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
@@ -20,6 +23,11 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
+
+async function SessionPresence() {
+  const user = await getCurrentUser();
+  return <Presence userId={user?.id ?? null} />;
+}
 
 // One prerendered shell per language (required by Cache Components for root params).
 export function generateStaticParams() {
@@ -56,6 +64,10 @@ export default async function RootLayout({
         {/* In the layout so every page, including 404 and error pages, gets the language switch. */}
         <SiteHeader />
         {children}
+        {/* Reads the session cookie, so it streams in after the static shell. */}
+        <Suspense fallback={null}>
+          <SessionPresence />
+        </Suspense>
       </body>
     </html>
   );

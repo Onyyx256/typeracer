@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { LiveRoom } from "@/app/components/live-updates";
 import { RoomSummary } from "@/app/components/room-summary";
 import { requireUser } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
@@ -60,6 +61,8 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      {/* Members, host and settings re-render as soon as they change. */}
+      <LiveRoom code={room.code} />
       <div className="grid gap-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>

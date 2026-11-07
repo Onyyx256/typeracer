@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { LiveLobby } from "@/app/components/live-updates";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { LOCALE_NAMES, localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
@@ -48,6 +49,8 @@ async function RoomList() {
 
   return (
     <>
+      {/* Rooms appear, fill up and close without reloading (JOIN-02). */}
+      <LiveLobby />
       {current && (
         <p className="mt-6 flex flex-wrap items-center gap-3 border border-primary-text bg-surface px-4 py-3 rounded-leaf">
           {interpolate(t.current, { code: current.code })}
