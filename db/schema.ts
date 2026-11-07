@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
+  index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -44,3 +47,37 @@ export const users = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+/**
+ * Passages for coherent texts (CONF-03), from public-domain books. A race
+ * takes a run of whole sentences out of one passage; see lib/texts/.
+ */
+export const texts = pgTable(
+  "texts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    language: text("language").notNull(),
+    content: text("content").notNull(),
+    wordCount: integer("word_count").notNull(),
+    /** From the passage's score (CONF-05), see lib/texts/complexity.ts. */
+    complexity: text("complexity").notNull(),
+    /** Passages with digits are skipped when numbers are off (CONF-06). */
+    hasDigits: boolean("has_digits").notNull(),
+    sourceTitle: text("source_title").notNull(),
+    sourceAuthor: text("source_author").notNull(),
+    /** "gutenberg:<book id>:<passage index>", so the seed can run twice. */
+    sourceRef: text("source_ref").notNull(),
+  },
+  (table) => [
+    uniqueIndex("texts_source_ref_idx").on(table.sourceRef),
+    index("texts_language_complexity_idx").on(table.language, table.complexity),
+    check("texts_language", sql`${table.language} in ('fr', 'en')`),
+    check(
+      "texts_complexity",
+      sql`${table.complexity} in ('easy', 'medium', 'hard')`,
+    ),
+  ],
+);
+
+export type Text = typeof texts.$inferSelect;
+export type NewText = typeof texts.$inferInsert;
