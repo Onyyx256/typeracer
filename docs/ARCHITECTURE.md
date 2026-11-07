@@ -1,6 +1,6 @@
 # Architecture
 
-Version initiale (checkpoint 1). Pour l'instant, seulement la table `users` existe dans la base de données, le reste est ce que je prévois faire.
+Les tables `users`, `texts`, `rooms` et `room_members` existent. Les autres (`accounts`, `invite_links`, `races`, `race_results`) sont ce que je prévois faire.
 
 ## Modèle de données
 
@@ -30,19 +30,18 @@ erDiagram
     }
     rooms {
         uuid id PK
-        text code
+        text code UK
         uuid host_id FK
         text visibility
         int capacity
         text state
         jsonb config
+        timestamp closed_at
     }
     room_members {
         uuid id PK
         uuid room_id FK
-        uuid user_id FK
-        text guest_id
-        text nickname
+        uuid user_id FK,UK
         text role
         timestamp joined_at
     }
@@ -57,8 +56,12 @@ erDiagram
     texts {
         uuid id PK
         text language
-        text difficulty
+        text complexity
         text content
+        int word_count
+        boolean has_digits
+        text source_title
+        text source_ref UK
     }
     races {
         uuid id PK
@@ -84,9 +87,12 @@ erDiagram
 Quelques précisions :
 
 - `accounts` sert pour les connexions Discord et GitHub. `password_hash` est null si le compte utilise seulement OAuth.
-- Un membre de salle est soit un utilisateur connecté (`user_id`), soit un invité (`guest_id`, qui vient de son cookie signé). `role` est participant ou spectateur.
-- Pour SALLE-06, il y aura une contrainte unique sur `user_id` et sur `guest_id` dans `room_members`, donc une personne ne peut pas être dans deux salles en même temps, même si l'interface a un bogue.
-- La configuration de la salle est dans une colonne `jsonb` parce que ce sont beaucoup d'options qui sont toujours lues ensemble.
+- Un membre de salle est pour l'instant un utilisateur connecté (`user_id`). Les invités (AUTH-02) auront une colonne `guest_id` qui vient de leur cookie signé. `role` est participant ou spectateur.
+- Pour SALLE-06, `room_members.user_id` a une contrainte unique, donc une personne ne peut pas être dans deux salles en même temps, même si l'interface a un bogue ou si deux onglets envoient la demande en même temps. `guest_id` aura la même contrainte.
+- Le code de salle a un index unique et une contrainte `check` sur son format (6 caractères sans 0/O ni 1/I/L, SALLE-02). La capacité est vérifiée entre 2 et 30 par la base aussi (SALLE-05).
+- La visibilité et la capacité ont leur propre colonne parce que la liste des salles filtre dessus. Le reste de la configuration (texte, temps, mode d'erreur, bonus) est dans la colonne `jsonb` `config`, parce que ce sont beaucoup d'options qui sont toujours lues ensemble. Elle est relue avec le schéma Zod `raceConfigSchema`.
+- Quand l'hôte quitte, le membre présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il ne reste personne, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
+- `texts` contient les passages des textes cohérents. Leur provenance et le calcul de la difficulté sont expliqués dans [TEXTES.md](TEXTES.md).
 - `race_results` est seulement pour les utilisateurs connectés (RES-05). `wpm_series` garde le MPM dans le temps pour pouvoir réafficher les graphiques.
 - La progression pendant la course n'est pas dans la base de données. Elle reste en mémoire sur le serveur et les résultats sont écrits une seule fois à la fin (PERF-02).
 
