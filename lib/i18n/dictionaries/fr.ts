@@ -50,7 +50,21 @@ export const fr = {
   roomsPage: {
     title: "Rejoindre une salle",
     heading: "Rejoindre une salle",
-    soon: "liste des salles et code d'accès bientôt disponibles",
+    lead: "Les salles publiques ouvertes en ce moment. Entre dans celle qui te plaît.",
+    empty: "aucune salle publique pour l'instant",
+    create: "Créer une salle",
+    current: "Tu es dans la salle {code}.",
+    backToRoom: "Y retourner",
+    caption: "Salles publiques",
+    columns: {
+      room: "Salle",
+      host: "Hôte",
+      runners: "Coureurs",
+      text: "Texte",
+      state: "État",
+    },
+    open: "Voir la salle {code}",
+    codeSoon: "rejoindre avec un code bientôt disponible",
   },
   room: {
     title: "Salle {code}",

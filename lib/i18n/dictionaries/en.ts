@@ -48,7 +48,21 @@ export const en: Dictionary = {
   roomsPage: {
     title: "Join a room",
     heading: "Join a room",
-    soon: "room list and join by code coming soon",
+    lead: "Public rooms open right now. Step into the one you like.",
+    empty: "no public room yet",
+    create: "Create a room",
+    current: "You're in room {code}.",
+    backToRoom: "Go back",
+    caption: "Public rooms",
+    columns: {
+      room: "Room",
+      host: "Host",
+      runners: "Runners",
+      text: "Text",
+      state: "State",
+    },
+    open: "Open room {code}",
+    codeSoon: "joining with a code coming soon",
   },
   room: {
     title: "Room {code}",
