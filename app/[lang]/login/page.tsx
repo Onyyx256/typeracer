@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/app/components/site-header";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { AuthScreen } from "./auth-screen";
 
@@ -16,7 +15,6 @@ export default async function LoginPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
       {/* Only the auth strings are sent to the browser, not the whole dictionary. */}
       <AuthScreen dict={dict.auth} locale={locale} />
     </div>

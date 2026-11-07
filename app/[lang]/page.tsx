@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { SiteHeader } from "@/app/components/site-header";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
@@ -9,7 +8,6 @@ import { interpolate } from "@/lib/i18n/format";
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
       <main className="flex flex-1 flex-col items-center justify-center px-5 text-center sm:px-8">
         {/* Reads the session cookie, so it streams in after the static shell. */}
         <Suspense fallback={null}>

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SiteHeader } from "@/app/components/site-header";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 
@@ -10,7 +9,6 @@ export default async function NotFound() {
     <div className="flex flex-1 flex-col">
       {/* not-found can't export metadata, so the title is set here (React hoists it to <head>). */}
       <title>{`${dict.notFound.title} · NelumboType`}</title>
-      <SiteHeader />
       <main className="flex flex-1 flex-col items-center justify-center px-5 text-center sm:px-8">
         <p className="font-mono text-sm text-accent-text">&gt; 404</p>
         <h1 className="mt-2 font-display text-4xl leading-tight font-semibold">

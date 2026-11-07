@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
+import { SiteHeader } from "@/app/components/site-header";
 import { LOCALES } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import "../globals.css";
@@ -53,7 +54,11 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* In the layout so every page, including 404 and error pages, gets the language switch. */}
+        <SiteHeader />
+        {children}
+      </body>
     </html>
   );
 }
