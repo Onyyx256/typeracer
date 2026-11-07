@@ -13,7 +13,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | TECH-03 | complet | `app/globals.css` | — | Tailwind CSS 4. |
 | TECH-04 | partiel | `db/schema.ts`, `db/migrations/`, `db/seed.ts` | — | PostgreSQL avec Drizzle, migrations versionnées (`users`, `texts`, `rooms`, `room_members`). Le seed (`bun run db:seed`) charge le corpus de 600 passages ; les utilisateurs et l'historique de démo manquent encore. |
 | TECH-05 | complet | `deploy/deploy.sh`, `deploy/typeracer.service`, `docker-compose.prod.yml` | — | VPS AWS EC2 (Ubuntu 26.04, t4g.small) à https://nelumbotype.online. Caddy (`deploy/Caddyfile`) gère le HTTPS avec un certificat Let's Encrypt renouvelé automatiquement. PostgreSQL tourne dans Docker, accessible seulement depuis le serveur. Next.js tourne comme service systemd et redémarre seul. `deploy/deploy.sh` met à jour la production en une commande (pull, migrations, build, redémarrage). |
-| TECH-06 | non fait | — | — | Choix de la technologie décrit dans `docs/ARCHITECTURE.md` (ADR 1). |
+| TECH-06 | partiel | `server.ts`, `lib/realtime/handlers.ts`, `lib/realtime/client.ts` | — | Socket.IO sur un serveur personnalisé (ADR 1) : membres, hôte et liste des salles se mettent à jour en direct. La progression des participants pendant la course n'existe pas encore. |
 | TECH-07 | partiel | `lib/auth/validation.ts`, `app/[lang]/rooms/actions.ts`, `lib/rooms/settings.ts` | `lib/rooms/code.test.ts` | Les server actions (inscription, connexion, créer/rejoindre/quitter une salle) valident leurs entrées avec Zod ; la config lue en base est aussi revalidée. Les messages temps réel n'existent pas encore. |
 | TECH-08 | complet | — | — | Le seul coût est le serveur EC2, payé avec les crédits gratuits d'AWS. Aucun autre service payant. L'enseignant n'a rien à payer pour corriger. À revérifier si un service externe est ajouté (ex. stockage des photos de profil). |
 | TECH-09 | non fait | — | — | Pas encore de workflow GitHub Actions. |
@@ -52,7 +52,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | SALLE-05 | complet | `lib/rooms/rooms.ts`, `db/schema.ts` | — | Capacité 2–30 validée par Zod et par un `check` en base. En rejoignant, seuls les coureurs comptent, sous verrou de ligne (`for update`) pour que la dernière place ne soit pas prise deux fois. |
 | SALLE-06 | complet | `db/schema.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/[code]/join-room.tsx` | — | Index unique sur `room_members.user_id`. Créer ou rejoindre en étant déjà ailleurs propose de retourner dans sa salle ou de la quitter ; un deuxième onglet ne crée pas de doublon. Les invités n'existent pas encore ; leur colonne `guest_id` aura la même contrainte. |
 | SALLE-07 | non fait | — | — | |
-| SALLE-08 | partiel | `lib/rooms/rooms.ts` | — | Quand l'hôte quitte, le membre présent depuis le plus longtemps devient hôte ; salle fermée quand vide. On ne vérifie pas encore qu'il est connecté (viendra avec le temps réel). |
+| SALLE-08 | complet | `lib/rooms/rooms.ts`, `lib/realtime/presence.ts` | — | Quand l'hôte quitte, le membre connecté (un onglet ouvert) présent depuis le plus longtemps devient hôte ; s'il n'y a personne de connecté, la salle se ferme. Un membre sans onglet ouvert depuis 30 s est considéré comme parti. Vérifié dans le navigateur. |
 | SALLE-09 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | — | `joinRoom` refuse hors des états `waiting` et `results`. Les courses n'existent pas encore, donc ce cas n'a pas pu être exercé. |
 | SALLE-10 | non fait | — | — | |
 
@@ -61,7 +61,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | JOIN-01 | non fait | — | — | |
-| JOIN-02 | partiel | `app/[lang]/rooms/page.tsx`, `lib/rooms/rooms.ts` | — | Liste des salles publiques ouvertes : coureurs/capacité, langue, type, difficulté, hôte, état. Manquent les filtres par langue et difficulté et la mise à jour sans recharger. |
+| JOIN-02 | partiel | `app/[lang]/rooms/page.tsx`, `lib/rooms/rooms.ts`, `app/components/live-updates.tsx` | — | Liste des salles publiques ouvertes : coureurs/capacité, langue, type, difficulté, hôte, état ; mise à jour en direct sans recharger. Manquent les filtres par langue et difficulté. |
 | JOIN-03 | non fait | — | — | |
 
 ## CONF — Configuration de la course
@@ -79,7 +79,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | CONF-09 | partiel | `lib/rooms/settings.ts` | — | Activé/désactivé et enregistré ; les bonus ne sont pas encore codés. |
 | CONF-10 | non fait | — | — | |
 | CONF-11 | partiel | `lib/rooms/settings.ts`, `lib/rooms/rooms.ts` | — | Visibilité et capacité choisies à la création ; pas encore modifiables entre les courses. |
-| CONF-12 | non fait | — | — | |
+| CONF-12 | partiel | `lib/realtime/notify.ts`, `app/components/live-updates.tsx` | — | La page de salle (réglages, membres, hôte) se met à jour en direct pour tout le monde. La configuration ne peut pas encore être modifiée entre les courses, donc seul l'avis de changement existe pour l'instant. |
 
 ## COURSE — Déroulement d'une course
 
