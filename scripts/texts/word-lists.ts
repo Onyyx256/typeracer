@@ -16,6 +16,21 @@ const SINGLE_LETTER_WORDS: Record<Locale, string[]> = {
   fr: ["a", "à", "y"],
 };
 
+/**
+ * Two-letter tokens are mostly subtitle noise (other languages, sounds,
+ * abbreviations), so only these real words are kept.
+ */
+const TWO_LETTER_WORDS: Record<Locale, Set<string>> = {
+  en: new Set(
+    `to it of is in we me he my on do no be so go if up at oh as an us or by am
+    hi ad ex ye lo ox ax pi`.split(/\s+/),
+  ),
+  fr: new Set(
+    `de je le la tu un et il ne en on ça ce ai me si du te au va as se ma es où
+    là ou sa ta vu eu dû pu ni an or su lu bu os né nu çà ci ri us`.split(/\s+/),
+  ),
+};
+
 /** Common irregular forms the old Webster's list doesn't have. */
 const ENGLISH_IRREGULAR = new Set(
   `am is are was were been has had did does done went gone saw seen said made
@@ -96,6 +111,9 @@ export function buildWordList({
     }
     // Other one-letter tokens are subtitle noise ("I" is always a capital).
     if (word.length === 1 && !SINGLE_LETTER_WORDS[language].includes(word)) {
+      continue;
+    }
+    if (word.length === 2 && !TWO_LETTER_WORDS[language].has(word)) {
       continue;
     }
     if (looksLikeName(word, casing)) {

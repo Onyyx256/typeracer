@@ -18,7 +18,7 @@ export const BLOCKLIST: Record<Locale, string[]> = {
     gonna wanna gotta kinda sorta outta dunno lemme gimme ain yeah yep yup nope
     nah hey ok okay uh huh hmm mm mmm ooh ohh aah ahh shh whoa wow oops ugh
     yo bro dude hon ma pa mom mommy wha doin goin ya ah um em er ha ho aw ow
-    eh whoo hm la de da
+    eh whoo hm la de da th sh
 
     sighs laughs chuckles grunts gasps grunting groans groaning panting
     chuckling scoffs gasping sobbing exhales coughing coughs giggles sighing
