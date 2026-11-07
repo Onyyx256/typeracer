@@ -1,11 +1,18 @@
 "use client";
 
-import { useId, useState } from "react";
+import Link from "next/link";
+import { useId, useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import { RoomSummary, formatSeconds } from "@/app/components/room-summary";
 import { TextField } from "@/app/components/text-field";
-import { LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
+import {
+  LOCALES,
+  LOCALE_NAMES,
+  localePath,
+  type Locale,
+} from "@/lib/i18n/config";
 import type { CreateRoomDictionary } from "@/lib/i18n/dictionaries/fr";
-import { plural } from "@/lib/i18n/format";
+import { interpolate, plural } from "@/lib/i18n/format";
 import {
   CAPACITY_MAX,
   CAPACITY_MIN,
@@ -23,13 +30,7 @@ import {
   roomSettingsSchema,
   type RoomSettings,
 } from "@/lib/rooms/settings";
-
-type Notice = "soon" | "invalid";
-
-/** 30 → "30 s", 120 → "2 min": the same in both languages. */
-function formatSeconds(seconds: number): string {
-  return seconds < 60 ? `${seconds} s` : `${seconds / 60} min`;
-}
+import { createRoomAction, type RoomActionError } from "../actions";
 
 type CreateRoomFormProps = {
   dict: CreateRoomDictionary;
@@ -40,71 +41,38 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
   const [settings, setSettings] = useState<RoomSettings>(() =>
     defaultRoomSettings(locale),
   );
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const [error, setError] = useState<RoomActionError | null>(null);
+  // The room the user is already in, when the server refused for that reason.
+  const [currentCode, setCurrentCode] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   function update<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
     setSettings((current) => ({ ...current, [key]: value }));
-    setNotice(null);
+    setError(null);
+  }
+
+  function submit(leaveCurrent: boolean) {
+    if (!roomSettingsSchema.safeParse(settings).success) {
+      setError("invalid");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      // On success the action redirects to the new room.
+      const result = await createRoomAction({ lang: locale, settings, leaveCurrent });
+      setError(result.error);
+      setCurrentCode(result.error === "alreadyInRoom" ? (result.currentCode ?? null) : null);
+    });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = roomSettingsSchema.safeParse(settings);
-    // The server action that creates the room is the next step.
-    setNotice(parsed.success ? "soon" : "invalid");
+    submit(false);
   }
 
   const french = settings.language === "fr";
   const random = settings.textType === "random";
-  const enabledCharacters = (
-    ["punctuation", "numbers", "capitals", "accents"] as const
-  ).filter((key) => settings[key] && (key !== "accents" || french));
-
-  // Same grouping as the form, one labelled row per setting.
-  const summary: { title: string; rows: [string, string][] }[] = [
-    {
-      title: dict.sections.room,
-      rows: [
-        [dict.role.legend, dict.role[settings.hostRole]],
-        [dict.visibility.legend, dict.visibility[settings.visibility]],
-        [
-          dict.capacity.label,
-          plural(locale, dict.capacity.value, settings.capacity),
-        ],
-      ],
-    },
-    {
-      title: dict.sections.text,
-      rows: [
-        [dict.language, LOCALE_NAMES[settings.language]],
-        [dict.textType.legend, dict.textType[settings.textType]],
-        [dict.length.label, plural(locale, dict.length.value, settings.length)],
-        [dict.complexity.legend, dict.complexity[settings.complexity]],
-        [
-          dict.characters.legend,
-          enabledCharacters.length > 0
-            ? enabledCharacters.map((key) => dict.characters[key]).join(", ")
-            : dict.summary.lettersOnly,
-        ],
-      ],
-    },
-    {
-      title: dict.sections.race,
-      rows: [
-        [
-          dict.timeLimit.legend,
-          settings.timeLimit === 0
-            ? dict.timeLimit.none
-            : formatSeconds(settings.timeLimit),
-        ],
-        [dict.errorMode.legend, dict.errorMode[settings.errorMode]],
-        [
-          dict.bonuses.label,
-          settings.bonuses ? dict.summary.on : dict.summary.off,
-        ],
-      ],
-    },
-  ];
+  const elsewhere = error === "alreadyInRoom" && currentCode;
 
   return (
     <form
@@ -288,37 +256,41 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
         <h2 className="font-display text-xl font-semibold">
           {dict.summary.heading}
         </h2>
-        <div className="mt-4 grid gap-5">
-          {summary.map((group) => (
-            <section key={group.title}>
-              <h3 className="font-mono text-xs tracking-wide text-accent-text uppercase">
-                <span aria-hidden="true">&gt; </span>
-                {group.title}
-              </h3>
-              <dl className="mt-1 divide-y divide-line text-sm">
-                {group.rows.map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-baseline justify-between gap-4 py-1.5"
-                  >
-                    <dt className="text-muted">{label}</dt>
-                    <dd className="text-right font-medium">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ))}
+        <div className="mt-4">
+          <RoomSummary dict={dict} locale={locale} settings={settings} />
         </div>
-        <button
-          type="submit"
-          className="mt-6 h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
-        >
-          {dict.submit}
-        </button>
+        {elsewhere ? (
+          // SALLE-06: one room at a time, so offer to go back or leave it.
+          <div className="mt-6 grid gap-2">
+            <p className="text-sm">{interpolate(dict.elsewhere, { code: currentCode })}</p>
+            <Link
+              href={localePath(locale, `/rooms/${currentCode}`)}
+              className="flex h-11 items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf"
+            >
+              {interpolate(dict.goBack, { code: currentCode })}
+            </Link>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => submit(true)}
+              className="h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-wait disabled:opacity-70 rounded-leaf"
+            >
+              {dict.leaveAndCreate}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-6 h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-wait disabled:opacity-70 rounded-leaf"
+          >
+            {dict.submit}
+          </button>
+        )}
         <p role="status" className="mt-3 min-h-5 font-mono text-sm text-accent-text">
-          {notice && (
+          {(pending || (error && !elsewhere)) && (
             <>
-              &gt; {dict[notice]}
+              &gt; {pending ? dict.submitting : error && dict.errors[error]}
               <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">
                 _
               </span>
