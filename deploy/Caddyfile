@@ -1,0 +1,11 @@
+# Caddy config on the VPS (/etc/caddy/Caddyfile).
+# HTTPS is automatic: Caddy gets and renews the Let's Encrypt certificate.
+nelumbotype.online {
+	encode zstd gzip
+	# The Next.js app listens on port 3000. WebSockets pass through as-is.
+	reverse_proxy localhost:3000
+}
+
+www.nelumbotype.online {
+	redir https://nelumbotype.online{uri} permanent
+}

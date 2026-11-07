@@ -1,0 +1,20 @@
+# systemd service that keeps the Next.js app running on the VPS.
+# Install: sudo cp deploy/typeracer.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now typeracer
+[Unit]
+Description=NelumboType (Next.js)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/typeracer
+Environment=NODE_ENV=production
+# Next.js reads .env.production.local itself. It listens on localhost only;
+# Caddy is the public entry point.
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
