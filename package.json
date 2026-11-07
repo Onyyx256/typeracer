@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun db/seed.ts",
-    "texts:build": "bun scripts/build-texts.ts"
+    "texts:build": "bun scripts/build-texts.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
