@@ -23,6 +23,13 @@ export const fr = {
     lead: "Cette page n'existe pas ou a été déplacée.",
     home: "Retour à l'accueil",
   },
+  error: {
+    title: "Erreur",
+    heading: "Quelque chose a flétri",
+    lead: "Une erreur inattendue est survenue. Réessaie, ou reviens à l'accueil.",
+    retry: "Réessayer",
+    home: "Retour à l'accueil",
+  },
   loginPage: {
     title: "Connexion",
     description: "Connecte-toi ou crée ton compte NelumboType.",

@@ -49,6 +49,12 @@ export function negotiateLocale(acceptLanguage: string | null): Locale {
   return DEFAULT_LOCALE;
 }
 
+/** The locale at the start of a pathname, for Client Components that can't use root params. */
+export function localeFromPathname(pathname: string): Locale {
+  const first = pathname.split("/")[1] ?? "";
+  return hasLocale(first) ? first : DEFAULT_LOCALE;
+}
+
 /** "/login" in French is "/fr/login"; "/" is "/fr". */
 export function localePath(locale: Locale, path: string): string {
   return path === "/" ? `/${locale}` : `/${locale}${path}`;

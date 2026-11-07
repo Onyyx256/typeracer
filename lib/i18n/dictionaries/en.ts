@@ -21,6 +21,13 @@ export const en: Dictionary = {
     lead: "This page doesn't exist or has moved.",
     home: "Back to home",
   },
+  error: {
+    title: "Error",
+    heading: "Something wilted",
+    lead: "An unexpected error occurred. Try again, or go back home.",
+    retry: "Try again",
+    home: "Back to home",
+  },
   loginPage: {
     title: "Log in",
     description: "Log in or create your NelumboType account.",
