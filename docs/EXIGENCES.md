@@ -8,13 +8,13 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| TECH-01 | complet | `app/layout.tsx`, `package.json` | — | Next.js 16 avec l'App Router et React 19. |
+| TECH-01 | complet | `app/[lang]/layout.tsx`, `package.json` | — | Next.js 16 avec l'App Router et React 19. |
 | TECH-02 | complet | `tsconfig.json`, `eslint.config.mjs` | — | `strict: true`; `no-explicit-any` est une erreur ESLint (config `eslint-config-next/typescript`); aucun fichier `.js`/`.jsx` et aucun `@ts-ignore`. |
 | TECH-03 | complet | `app/globals.css` | — | Tailwind CSS 4. |
 | TECH-04 | partiel | `db/schema.ts`, `db/migrations/`, `drizzle.config.ts` | — | PostgreSQL avec Drizzle, migrations versionnées. Seulement la table `users` pour l'instant. Pas encore de script de seed. |
 | TECH-05 | complet | `deploy/deploy.sh`, `deploy/typeracer.service`, `docker-compose.prod.yml` | — | VPS AWS EC2 (Ubuntu 26.04, t4g.small) à https://nelumbotype.online. Caddy (`deploy/Caddyfile`) gère le HTTPS avec un certificat Let's Encrypt renouvelé automatiquement. PostgreSQL tourne dans Docker, accessible seulement depuis le serveur. Next.js tourne comme service systemd et redémarre seul. `deploy/deploy.sh` met à jour la production en une commande (pull, migrations, build, redémarrage). |
 | TECH-06 | non fait | — | — | Choix de la technologie décrit dans `docs/ARCHITECTURE.md` (ADR 1). |
-| TECH-07 | partiel | `lib/auth/validation.ts`, `app/login/actions.ts` | — | Les server actions d'inscription et de connexion valident leurs entrées avec Zod. Les autres entrées (salles, temps réel) n'existent pas encore. |
+| TECH-07 | partiel | `lib/auth/validation.ts`, `app/[lang]/login/actions.ts` | — | Les server actions d'inscription et de connexion valident leurs entrées avec Zod. Les autres entrées (salles, temps réel) n'existent pas encore. |
 | TECH-08 | complet | — | — | Le seul coût est le serveur EC2, payé avec les crédits gratuits d'AWS. Aucun autre service payant. L'enseignant n'a rien à payer pour corriger. À revérifier si un service externe est ajouté (ex. stockage des photos de profil). |
 | TECH-09 | non fait | — | — | Pas encore de workflow GitHub Actions. |
 | TECH-10 | complet | `.env.example` | — | Documente `DATABASE_URL`, `SESSION_SECRET` et `POSTGRES_PASSWORD` (production seulement). Aucun secret dans le dépôt : en production, ils sont dans `.env.production.local` sur le serveur. |
@@ -26,15 +26,15 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | DES-01 | complet | `docs/DEMARCHE-CREATIVE.md` | — | Nom : NelumboType. Démarche décrite dans la section « Nom et logo ». |
 | DES-02 | partiel | `public/logo.png`, `app/components/site-header.tsx` | — | Croquis joints et logo affiché dans l'en-tête. Le favicon est encore celui de Next.js par défaut. |
 | DES-03 | complet | `docs/DEMARCHE-CREATIVE.md` | — | Moodboard de 5 références, palette de couleurs et typographie. |
-| DES-04 | partiel | `app/globals.css`, `app/login/auth-screen.tsx` | — | Seules les pages d'accueil et de connexion existent. La piste de progression (fleurs qui poussent) n'est pas encore faite. |
-| DES-05 | complet | `app/components/theme-toggle.tsx`, `app/layout.tsx` | — | Bouton clair/sombre, préférence du système par défaut, script inline qui applique le thème avant le premier affichage (pas de flash). |
+| DES-04 | partiel | `app/globals.css`, `app/[lang]/login/auth-screen.tsx` | — | Seules les pages d'accueil et de connexion existent. La piste de progression (fleurs qui poussent) n'est pas encore faite. |
+| DES-05 | complet | `app/components/theme-toggle.tsx`, `app/[lang]/layout.tsx` | — | Bouton clair/sombre, préférence du système par défaut, script inline qui applique le thème avant le premier affichage (pas de flash). |
 | DES-06 | partiel | `app/components/site-header.tsx` | — | Les pages existantes s'adaptent aux petits écrans. Le message pour mobile sur la page de course n'est pas fait. |
 
 ## AUTH — Comptes et profil
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| AUTH-01 | partiel | `app/login/actions.ts`, `lib/auth/session.ts` | — | Inscription et connexion par nom d'utilisateur et mot de passe faites. OAuth Discord et GitHub pas encore. |
+| AUTH-01 | partiel | `app/[lang]/login/actions.ts`, `lib/auth/session.ts` | — | Inscription et connexion par nom d'utilisateur et mot de passe faites. OAuth Discord et GitHub pas encore. |
 | AUTH-02 | non fait | — | — | |
 | AUTH-03 | non fait | — | — | |
 | AUTH-04 | non fait | — | — | |
@@ -137,9 +137,9 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| I18N-01 | non fait | — | — | L'interface est seulement en français, avec les textes directement dans les composants. |
-| I18N-02 | non fait | — | — | |
-| I18N-03 | non fait | — | — | |
+| I18N-01 | partiel | `lib/i18n/dictionaries/fr.ts`, `lib/i18n/dictionaries/en.ts`, `lib/i18n/dictionaries.ts` | — | Tous les textes des pages existantes (libellés, erreurs, métadonnées) viennent des dictionnaires français et anglais; le type `Dictionary` empêche d'oublier une clé en anglais. Les erreurs Zod et des server actions sont des codes traduits côté client. Manque : la page 404 est encore celle de Next.js (en anglais seulement), et chaque nouvelle page devra suivre le même modèle. |
+| I18N-02 | partiel | `app/components/language-switch.tsx`, `proxy.ts`, `lib/i18n/config.ts` | — | Choix : la langue est dans l'URL (`/fr/...`, `/en/...`), comme le recommande la doc de Next.js 16, ce qui garde une page prérendue par langue. Le sélecteur FR/EN est dans l'en-tête et garde le choix dans un cookie `locale`; sans cookie, `proxy.ts` utilise `Accept-Language`, sinon le français. Manque : la page 404 n'a pas d'en-tête, donc pas de sélecteur. |
+| I18N-03 | partiel | `lib/i18n/format.ts` | — | Les nombres passent par `Intl` selon la langue (pourcentage « 42 % » / « 42% », pluriels avec `Intl.PluralRules`). Aucune date n'est encore affichée; les dates (historique, courses) devront utiliser `Intl.DateTimeFormat` de la même façon. |
 
 ## TEST — Tests
 
@@ -162,7 +162,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | A11Y-01 | partiel | `app/globals.css` | — | Palette ajustée pour le contraste (ex. vert assombri pour le texte blanc des boutons). Pas encore vérifié avec un outil dans les deux thèmes. |
-| A11Y-02 | partiel | `app/components/site-header.tsx`, `app/page.tsx` | — | Les pages existantes utilisent `<header>`, `<main>`, `<button>` et `<a>` correctement. À vérifier pour chaque nouvelle page. |
+| A11Y-02 | partiel | `app/components/site-header.tsx`, `app/[lang]/page.tsx` | — | Les pages existantes utilisent `<header>`, `<main>`, `<button>` et `<a>` correctement. À vérifier pour chaque nouvelle page. |
 | A11Y-03 | partiel | `app/components/text-field.tsx` | — | Les champs ont un `<label>` et leurs erreurs sont liées avec `aria-describedby`. À vérifier pour chaque nouvelle page. |
 | A11Y-04 | partiel | `app/globals.css` | — | Indicateur de focus visible (`:focus-visible`). Navigation au clavier pas encore testée sur toutes les pages. |
 
@@ -172,4 +172,4 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | --- | --- | --- | --- | --- |
 | SEC-01 | non fait | — | — | Aucune action d'hôte n'existe encore. |
 | SEC-02 | non fait | — | — | |
-| SEC-03 | complet | `lib/auth/password.ts`, `app/login/actions.ts` | — | Argon2id avec les paramètres minimaux de l'OWASP. Les erreurs de base de données sont journalisées sans les paramètres de la requête, donc jamais le mot de passe. |
+| SEC-03 | complet | `lib/auth/password.ts`, `app/[lang]/login/actions.ts` | — | Argon2id avec les paramètres minimaux de l'OWASP. Les erreurs de base de données sont journalisées sans les paramètres de la requête, donc jamais le mot de passe. |
