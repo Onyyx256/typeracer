@@ -11,10 +11,10 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | TECH-01 | complet | `app/[lang]/layout.tsx`, `package.json` | — | Next.js 16 avec l'App Router et React 19. |
 | TECH-02 | complet | `tsconfig.json`, `eslint.config.mjs` | — | `strict: true`; `no-explicit-any` est une erreur ESLint (config `eslint-config-next/typescript`); aucun fichier `.js`/`.jsx` et aucun `@ts-ignore`. |
 | TECH-03 | complet | `app/globals.css` | — | Tailwind CSS 4. |
-| TECH-04 | partiel | `db/schema.ts`, `db/migrations/`, `drizzle.config.ts` | — | PostgreSQL avec Drizzle, migrations versionnées. Seulement la table `users` pour l'instant. Pas encore de script de seed. |
+| TECH-04 | partiel | `db/schema.ts`, `db/migrations/`, `db/seed.ts` | — | PostgreSQL avec Drizzle, migrations versionnées (`users`, `texts`, `rooms`, `room_members`). Le seed (`bun run db:seed`) charge le corpus de 600 passages ; les utilisateurs et l'historique de démo manquent encore. |
 | TECH-05 | complet | `deploy/deploy.sh`, `deploy/typeracer.service`, `docker-compose.prod.yml` | — | VPS AWS EC2 (Ubuntu 26.04, t4g.small) à https://nelumbotype.online. Caddy (`deploy/Caddyfile`) gère le HTTPS avec un certificat Let's Encrypt renouvelé automatiquement. PostgreSQL tourne dans Docker, accessible seulement depuis le serveur. Next.js tourne comme service systemd et redémarre seul. `deploy/deploy.sh` met à jour la production en une commande (pull, migrations, build, redémarrage). |
 | TECH-06 | non fait | — | — | Choix de la technologie décrit dans `docs/ARCHITECTURE.md` (ADR 1). |
-| TECH-07 | partiel | `lib/auth/validation.ts`, `app/[lang]/login/actions.ts` | — | Les server actions d'inscription et de connexion valident leurs entrées avec Zod. Les autres entrées (salles, temps réel) n'existent pas encore. |
+| TECH-07 | partiel | `lib/auth/validation.ts`, `app/[lang]/rooms/actions.ts`, `lib/rooms/settings.ts` | `lib/rooms/code.test.ts` | Les server actions (inscription, connexion, créer/rejoindre/quitter une salle) valident leurs entrées avec Zod ; la config lue en base est aussi revalidée. Les messages temps réel n'existent pas encore. |
 | TECH-08 | complet | — | — | Le seul coût est le serveur EC2, payé avec les crédits gratuits d'AWS. Aucun autre service payant. L'enseignant n'a rien à payer pour corriger. À revérifier si un service externe est ajouté (ex. stockage des photos de profil). |
 | TECH-09 | non fait | — | — | Pas encore de workflow GitHub Actions. |
 | TECH-10 | complet | `.env.example` | — | Documente `DATABASE_URL`, `SESSION_SECRET` et `POSTGRES_PASSWORD` (production seulement). Aucun secret dans le dépôt : en production, ils sont dans `.env.production.local` sur le serveur. |
@@ -45,15 +45,15 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| SALLE-01 | non fait | — | — | |
-| SALLE-02 | non fait | — | — | |
-| SALLE-03 | non fait | — | — | |
+| SALLE-01 | complet | `app/[lang]/rooms/actions.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/new/create-room-form.tsx` | — | Un utilisateur connecté crée la salle et en devient l'hôte, comme coureur ou spectateur. Vérifié dans le navigateur. |
+| SALLE-02 | complet | `lib/rooms/code.ts`, `db/schema.ts` | `lib/rooms/code.test.ts` | 6 caractères parmi `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (`crypto.randomInt`), index unique et `check` du format en base ; nouvelle tentative en cas de collision. |
+| SALLE-03 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | — | Les trois visibilités se choisissent et sont enregistrées. Seules les salles publiques sont listées et rejoignables ; une salle par code ou privée répond « introuvable » pour l'instant. |
 | SALLE-04 | non fait | — | — | |
-| SALLE-05 | non fait | — | — | |
-| SALLE-06 | non fait | — | — | |
+| SALLE-05 | complet | `lib/rooms/rooms.ts`, `db/schema.ts` | — | Capacité 2–30 validée par Zod et par un `check` en base. En rejoignant, seuls les coureurs comptent, sous verrou de ligne (`for update`) pour que la dernière place ne soit pas prise deux fois. |
+| SALLE-06 | complet | `db/schema.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/[code]/join-room.tsx` | — | Index unique sur `room_members.user_id`. Créer ou rejoindre en étant déjà ailleurs propose de retourner dans sa salle ou de la quitter ; un deuxième onglet ne crée pas de doublon. Les invités n'existent pas encore ; leur colonne `guest_id` aura la même contrainte. |
 | SALLE-07 | non fait | — | — | |
-| SALLE-08 | non fait | — | — | |
-| SALLE-09 | non fait | — | — | |
+| SALLE-08 | partiel | `lib/rooms/rooms.ts` | — | Quand l'hôte quitte, le membre présent depuis le plus longtemps devient hôte ; salle fermée quand vide. On ne vérifie pas encore qu'il est connecté (viendra avec le temps réel). |
+| SALLE-09 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | — | `joinRoom` refuse hors des états `waiting` et `results`. Les courses n'existent pas encore, donc ce cas n'a pas pu être exercé. |
 | SALLE-10 | non fait | — | — | |
 
 ## JOIN — Rejoindre une course
@@ -61,33 +61,33 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | JOIN-01 | non fait | — | — | |
-| JOIN-02 | non fait | — | — | |
+| JOIN-02 | partiel | `app/[lang]/rooms/page.tsx`, `lib/rooms/rooms.ts` | — | Liste des salles publiques ouvertes : coureurs/capacité, langue, type, difficulté, hôte, état. Manquent les filtres par langue et difficulté et la mise à jour sans recharger. |
 | JOIN-03 | non fait | — | — | |
 
 ## CONF — Configuration de la course
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| CONF-01 | non fait | — | — | |
-| CONF-02 | non fait | — | — | |
-| CONF-03 | non fait | — | — | |
-| CONF-04 | non fait | — | — | |
-| CONF-05 | non fait | — | — | |
-| CONF-06 | non fait | — | — | |
-| CONF-07 | non fait | — | — | |
-| CONF-08 | non fait | — | — | |
-| CONF-09 | non fait | — | — | |
+| CONF-01 | partiel | `lib/rooms/settings.ts` | — | Aucune limite ou 30 s à 10 min, choisi à la création et enregistré. Pas encore appliqué (pas de course) ni modifiable entre les courses. |
+| CONF-02 | partiel | `lib/rooms/settings.ts`, `lib/texts/generate.ts` | `lib/texts/random-text.test.ts` | Langue du texte FR/EN indépendante de l'interface ; le générateur la respecte. Pas encore modifiable entre les courses. |
+| CONF-03 | partiel | `lib/texts/generate.ts`, `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts` | Cohérent : extraits de 600 passages Gutenberg en base ; aléatoire : listes de 10 000 mots par langue. Voir `docs/TEXTES.md`. `generateText` sera appelé au lancement des courses, pas encore codé. |
+| CONF-04 | partiel | `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts` | Aléatoire : nombre exact de mots. Cohérent : phrases entières à ±15 % (choix documenté dans `docs/TEXTES.md`). Pas encore utilisé en course. |
+| CONF-05 | partiel | `lib/texts/complexity.ts` | `lib/texts/*.test.ts` | Critères mesurables documentés dans `docs/TEXTES.md` : rang de fréquence et longueur (aléatoire), score longueur moyenne + 5 × mots peu courants (cohérent). Pas encore utilisé en course. |
+| CONF-06 | partiel | `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts` | Les quatre options agissent sur les deux types de texte (tableau dans `docs/TEXTES.md`) ; en cohérent, « chiffres » ne peut qu'exclure les passages qui en ont. Pas encore utilisé en course. |
+| CONF-07 | partiel | `lib/texts/word-pool.ts`, `lib/rooms/settings.ts` | `lib/texts/random-text.test.ts` | Aléatoire seulement : chaque mot contient au moins une lettre « à inclure », les caractères exclus n'apparaissent jamais. Désactivé et vidé en mode cohérent (choix documenté). Une config sans aucun mot est refusée. Pas encore utilisé en course. |
+| CONF-08 | partiel | `lib/rooms/settings.ts` | — | Choisi et enregistré ; sera appliqué dans la zone de frappe. |
+| CONF-09 | partiel | `lib/rooms/settings.ts` | — | Activé/désactivé et enregistré ; les bonus ne sont pas encore codés. |
 | CONF-10 | non fait | — | — | |
-| CONF-11 | non fait | — | — | |
+| CONF-11 | partiel | `lib/rooms/settings.ts`, `lib/rooms/rooms.ts` | — | Visibilité et capacité choisies à la création ; pas encore modifiables entre les courses. |
 | CONF-12 | non fait | — | — | |
 
 ## COURSE — Déroulement d'une course
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| COURSE-01 | partiel | `docs/ARCHITECTURE.md` | — | La machine à états est documentée, mais pas encore codée. |
+| COURSE-01 | partiel | `docs/ARCHITECTURE.md`, `lib/rooms/settings.ts`, `db/schema.ts` | — | Machine à états documentée ; les états existent dans la colonne `rooms.state` (`check` en base), mais les transitions ne sont pas encore codées. |
 | COURSE-02 | non fait | — | — | |
-| COURSE-03 | non fait | — | — | |
+| COURSE-03 | non fait | `lib/texts/generate.ts` | — | Le texte est généré par `generateText`, prévu pour être appelé au début du décompte ; le décompte n'existe pas encore. |
 | COURSE-04 | non fait | — | — | |
 | COURSE-05 | non fait | — | — | |
 | COURSE-06 | non fait | — | — | |
@@ -145,7 +145,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| TEST-01 | non fait | — | — | |
+| TEST-01 | partiel | `lib/texts/random-text.test.ts`, `lib/texts/passage-text.test.ts`, `lib/rooms/code.test.ts` | idem | `bun test` : génération de textes (filtres, longueur, graine, options), extraits de passages, codes de salle. Formules, classement, machine à états, bots et bonus pas encore testés. |
 | TEST-02 | non fait | — | — | |
 | TEST-03 | non fait | — | — | La connexion par mot de passe existe déjà pour les futurs tests e2e. |
 
