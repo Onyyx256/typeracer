@@ -10,16 +10,19 @@ import {
   loginSchema,
   signupSchema,
   toFieldErrors,
+  type AuthError,
   type FieldErrors,
 } from "@/lib/auth/validation";
 
+// Messages are error codes; the form shows them in the visitor's language.
 export type SignupResult =
-  { ok: true } | { ok: false; errors: FieldErrors; message?: string };
+  | { ok: true }
+  | { ok: false; errors: FieldErrors; message?: AuthError };
 
-export type LoginResult = { ok: true } | { ok: false; message: string };
+export type LoginResult = { ok: true } | { ok: false; message: AuthError };
 
 // One message for every failure, so the form never confirms that a username exists.
-const BAD_CREDENTIALS = "nom d'utilisateur ou mot de passe incorrect";
+const BAD_CREDENTIALS = "badCredentials";
 
 /** Logs only the driver's message: Drizzle's own embeds the query parameters. */
 function logFailure(action: string, error: unknown): void {
@@ -40,7 +43,7 @@ export async function signup(input: unknown): Promise<SignupResult> {
   try {
     const created = await createUser(username, await hashPassword(password));
     if (!created) {
-      return { ok: false, errors: { username: "Ce nom est déjà pris." } };
+      return { ok: false, errors: { username: "usernameTaken" } };
     }
     await createSession(created.id);
   } catch (error) {
@@ -48,7 +51,7 @@ export async function signup(input: unknown): Promise<SignupResult> {
     return {
       ok: false,
       errors: {},
-      message: "inscription impossible pour le moment, réessaie plus tard",
+      message: "signupUnavailable",
     };
   }
 
@@ -73,7 +76,7 @@ export async function login(input: unknown): Promise<LoginResult> {
     logFailure("login", error);
     return {
       ok: false,
-      message: "connexion impossible pour le moment, réessaie plus tard",
+      message: "loginUnavailable",
     };
   }
 

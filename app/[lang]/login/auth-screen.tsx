@@ -8,34 +8,24 @@ import { DiscordIcon, GitHubIcon } from "@/app/components/brand-icons";
 import { GrowingStem } from "@/app/components/growing-stem";
 import { TextField } from "@/app/components/text-field";
 import {
+  AUTH_LIMITS,
   PASSWORD_MIN,
   USERNAME_MAX,
   USERNAME_MIN,
   signupSchema,
   toFieldErrors,
+  type AuthError,
   type FieldErrors,
 } from "@/lib/auth/validation";
+import { localePath, type Locale } from "@/lib/i18n/config";
+import type { AuthDictionary } from "@/lib/i18n/dictionaries/fr";
+import { formatPercent, interpolate, plural } from "@/lib/i18n/format";
 import { login, signup } from "./actions";
 
 type Mode = "login" | "signup";
 
-const COPY: Record<
-  Mode,
-  { title: string; lead: string; submit: string; oauth: string }
-> = {
-  login: {
-    title: "Bon retour au jardin",
-    lead: "Connecte-toi pour retrouver tes courses et tes statistiques.",
-    submit: "Se connecter",
-    oauth: "Continuer avec",
-  },
-  signup: {
-    title: "Plante ta première graine",
-    lead: "Ouvre des salles et garde ton historique.",
-    submit: "Créer mon compte",
-    oauth: "S'inscrire avec",
-  },
-};
+/** What the status line shows: a server or validation error, or the OAuth placeholder. */
+type Notice = AuthError | "oauthSoon";
 
 function validate(
   mode: Mode,
@@ -51,50 +41,61 @@ function validate(
   const errors: FieldErrors = {};
   const name = username.trim();
   if (name.length < USERNAME_MIN || name.length > USERNAME_MAX) {
-    errors.username = `Entre ${USERNAME_MIN} à ${USERNAME_MAX} caractères.`;
+    errors.username = "usernameLength";
   }
   if (password.length === 0) {
-    errors.password = "Requis.";
+    errors.password = "required";
   }
   return errors;
 }
 
-function remaining(count: number): string {
-  return `encore ${count} caractère${count > 1 ? "s" : ""}`;
-}
-
 /** What still keeps the flower from blooming, or null when the form is complete. */
 function nextStep(
+  dict: AuthDictionary,
+  locale: Locale,
   mode: Mode,
   username: string,
   password: string,
   confirm: string,
 ): string | null {
+  const remaining = (count: number) =>
+    plural(locale, dict.steps.remaining, count);
   const name = username.trim();
   if (name.length < USERNAME_MIN) {
-    return `nom d'utilisateur : ${remaining(USERNAME_MIN - name.length)}`;
+    return interpolate(dict.steps.username, {
+      remaining: remaining(USERNAME_MIN - name.length),
+    });
   }
   if (password.length < PASSWORD_MIN) {
-    return `mot de passe : ${remaining(PASSWORD_MIN - password.length)}`;
+    return interpolate(dict.steps.password, {
+      remaining: remaining(PASSWORD_MIN - password.length),
+    });
   }
   if (mode === "signup" && confirm !== password) {
-    return "confirme ton mot de passe";
+    return dict.steps.confirm;
   }
   return null;
 }
 
-export function AuthScreen() {
+type AuthScreenProps = {
+  dict: AuthDictionary;
+  locale: Locale;
+};
+
+export function AuthScreen({ dict, locale }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [submitting, startSubmit] = useTransition();
   const router = useRouter();
 
-  const copy = COPY[mode];
+  const copy = dict[mode];
+  const errorText = (code: AuthError | undefined) =>
+    code === undefined ? undefined : interpolate(dict.errors[code], AUTH_LIMITS);
 
   // Every keystroke grows the stem, the same way a race will.
   const steps = [
@@ -108,7 +109,7 @@ export function AuthScreen() {
         : Math.min(confirm.length / PASSWORD_MIN, 1) * 0.8,
     );
   }
-  const pending = nextStep(mode, username, password, confirm);
+  const pending = nextStep(dict, locale, mode, username, password, confirm);
   // Bloom exactly when nothing is pending, so the caption and the flower never disagree.
   const progress =
     pending === null
@@ -126,7 +127,7 @@ export function AuthScreen() {
   }
 
   function announcePending() {
-    setNotice("authentification bientôt disponible");
+    setNotice("oauthSoon");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -153,7 +154,7 @@ export function AuthScreen() {
         }
       }
       // Both actions leave a session cookie behind.
-      router.replace("/");
+      router.replace(localePath(locale, "/"));
     });
   }
 
@@ -161,7 +162,7 @@ export function AuthScreen() {
     <div className="grid flex-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <aside className="relative hidden overflow-hidden bg-panel text-on-panel lg:flex lg:flex-col lg:justify-between lg:p-12">
         <p className="max-w-xs font-display text-4xl leading-tight font-semibold">
-          Chaque mot fait pousser la fleur.
+          {dict.tagline}
         </p>
         <GrowingStem
           progress={progress}
@@ -170,8 +171,8 @@ export function AuthScreen() {
         <p className="font-mono text-sm text-on-panel-muted" aria-hidden="true">
           <span className="text-on-panel">&gt;</span>{" "}
           {pending === null
-            ? "en fleur"
-            : `${Math.round(progress * 100)} % — ${pending}`}
+            ? dict.inBloom
+            : `${formatPercent(locale, progress)} — ${pending}`}
           <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">
             _
           </span>
@@ -187,13 +188,13 @@ export function AuthScreen() {
               active={mode === "login"}
               onClick={() => switchMode("login")}
             >
-              Connexion
+              {dict.login.tab}
             </ModeButton>
             <ModeButton
               active={mode === "signup"}
               onClick={() => switchMode("signup")}
             >
-              Inscription
+              {dict.signup.tab}
             </ModeButton>
           </div>
 
@@ -221,13 +222,13 @@ export function AuthScreen() {
 
           <div className="my-4 flex items-center gap-4 font-mono text-xs text-muted">
             <span className="h-px flex-1 bg-line" />
-            ou avec un mot de passe
+            {dict.orPassword}
             <span className="h-px flex-1 bg-line" />
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="grid gap-4">
             <TextField
-              label="Nom d'utilisateur"
+              label={dict.username}
               name="username"
               value={username}
               onChange={setUsername}
@@ -235,17 +236,17 @@ export function AuthScreen() {
               maxLength={USERNAME_MAX}
               hint={
                 mode === "signup"
-                  ? `${USERNAME_MIN} à ${USERNAME_MAX} caractères`
+                  ? interpolate(dict.usernameHint, AUTH_LIMITS)
                   : undefined
               }
-              error={errors.username}
+              error={errorText(errors.username)}
             />
             {/* Side by side on wider screens so the signup form fits without scrolling. */}
             <div
               className={`grid gap-4 ${mode === "signup" ? "sm:grid-cols-2" : ""}`}
             >
               <TextField
-                label="Mot de passe"
+                label={dict.password}
                 name="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -255,10 +256,10 @@ export function AuthScreen() {
                 }
                 hint={
                   mode === "signup"
-                    ? `${PASSWORD_MIN} caractères min.`
+                    ? interpolate(dict.passwordHint, AUTH_LIMITS)
                     : undefined
                 }
-                error={errors.password}
+                error={errorText(errors.password)}
                 action={
                   <button
                     type="button"
@@ -266,19 +267,19 @@ export function AuthScreen() {
                     aria-pressed={showPassword}
                     className="cursor-pointer px-3 font-mono text-xs text-primary-text hover:underline"
                   >
-                    {showPassword ? "masquer" : "afficher"}
+                    {showPassword ? dict.hide : dict.show}
                   </button>
                 }
               />
               {mode === "signup" && (
                 <TextField
-                  label="Confirmation"
+                  label={dict.confirm}
                   name="confirm"
                   type={showPassword ? "text" : "password"}
                   value={confirm}
                   onChange={setConfirm}
                   autoComplete="new-password"
-                  error={errors.confirm}
+                  error={errorText(errors.confirm)}
                 />
               )}
             </div>
@@ -297,7 +298,8 @@ export function AuthScreen() {
             >
               {notice && (
                 <>
-                  &gt; {notice}
+                  &gt;{" "}
+                  {notice === "oauthSoon" ? dict.oauthSoon : errorText(notice)}
                   <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">
                     _
                   </span>
@@ -307,12 +309,12 @@ export function AuthScreen() {
           </form>
 
           <p className="mt-4 border-t border-line pt-4 text-sm text-muted">
-            Juste de passage ?{" "}
+            {dict.justVisiting}{" "}
             <Link
-              href="/"
+              href={localePath(locale, "/")}
               className="font-medium text-primary-text underline-offset-4 hover:underline"
             >
-              Jouer en tant qu&apos;invité
+              {dict.playAsGuest}
             </Link>
           </p>
         </div>
