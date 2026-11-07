@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { logout } from "@/app/login/actions";
+import { logout } from "@/app/[lang]/login/actions";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { ThemeToggle } from "./theme-toggle";
 
