@@ -1,0 +1,23 @@
+# Production database on the VPS. Run from the repo root on the server:
+#   docker compose -f docker-compose.prod.yml --env-file .env.production.local up -d --wait
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: typeracer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production.local}
+      POSTGRES_DB: typeracer
+    # Only the app on the same machine can reach the database.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U typeracer"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  db-data:
