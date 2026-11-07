@@ -1,0 +1,77 @@
+import type { PluralForms } from "../format";
+
+// French is the reference dictionary: its shape is the `Dictionary` type,
+// so a key missing from another language is a type error.
+export const fr = {
+  metadata: {
+    description: "Courses de dactylographie où chaque mot fait pousser ta fleur.",
+  },
+  header: {
+    logout: "Déconnexion",
+    themeLabel: "Changer de thème (clair ou sombre)",
+    themeTitle: "Changer de thème",
+    language: "Langue",
+  },
+  home: {
+    greeting: "Bonjour {name}",
+    guest: "invité",
+    login: "Se connecter",
+  },
+  loginPage: {
+    title: "Connexion",
+    description: "Connecte-toi ou crée ton compte NelumboType.",
+  },
+  auth: {
+    login: {
+      tab: "Connexion",
+      title: "Bon retour au jardin",
+      lead: "Connecte-toi pour retrouver tes courses et tes statistiques.",
+      submit: "Se connecter",
+      oauth: "Continuer avec",
+    },
+    signup: {
+      tab: "Inscription",
+      title: "Plante ta première graine",
+      lead: "Ouvre des salles et garde ton historique.",
+      submit: "Créer mon compte",
+      oauth: "S'inscrire avec",
+    },
+    tagline: "Chaque mot fait pousser la fleur.",
+    inBloom: "en fleur",
+    orPassword: "ou avec un mot de passe",
+    username: "Nom d'utilisateur",
+    password: "Mot de passe",
+    confirm: "Confirmation",
+    usernameHint: "{usernameMin} à {usernameMax} caractères",
+    passwordHint: "{passwordMin} caractères min.",
+    show: "afficher",
+    hide: "masquer",
+    justVisiting: "Juste de passage ?",
+    playAsGuest: "Jouer en tant qu'invité",
+    oauthSoon: "authentification bientôt disponible",
+    steps: {
+      username: "nom d'utilisateur : {remaining}",
+      password: "mot de passe : {remaining}",
+      confirm: "confirme ton mot de passe",
+      remaining: {
+        one: "encore {count} caractère",
+        other: "encore {count} caractères",
+      } satisfies PluralForms,
+    },
+    errors: {
+      usernameLength: "Entre {usernameMin} à {usernameMax} caractères.",
+      usernameChars: "Lettres, chiffres, . _ - seulement.",
+      required: "Requis.",
+      passwordMin: "Au moins {passwordMin} caractères.",
+      passwordMax: "Au plus {passwordMax} caractères.",
+      confirmMismatch: "Ne correspond pas.",
+      usernameTaken: "Ce nom est déjà pris.",
+      badCredentials: "nom d'utilisateur ou mot de passe incorrect",
+      signupUnavailable: "inscription impossible pour le moment, réessaie plus tard",
+      loginUnavailable: "connexion impossible pour le moment, réessaie plus tard",
+    },
+  },
+};
+
+export type Dictionary = typeof fr;
+export type AuthDictionary = Dictionary["auth"];
