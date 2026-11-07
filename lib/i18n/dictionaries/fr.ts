@@ -63,9 +63,9 @@ export const fr = {
     },
     role: {
       legend: "Ton rôle",
-      participant: "Je cours",
+      participant: "Coureur",
       participantHint: "Tu prends part à la course.",
-      spectator: "Je regarde",
+      spectator: "Spectateur",
       spectatorHint: "Tu suis la piste sans taper.",
     },
     visibility: {

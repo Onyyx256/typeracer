@@ -61,9 +61,9 @@ export const en: Dictionary = {
     },
     role: {
       legend: "Your role",
-      participant: "I race",
+      participant: "Runner",
       participantHint: "You take part in the race.",
-      spectator: "I watch",
+      spectator: "Spectator",
       spectatorHint: "You follow the track without typing.",
     },
     visibility: {
