@@ -52,6 +52,45 @@ export const fr = {
     heading: "Rejoindre une salle",
     soon: "liste des salles et code d'accès bientôt disponibles",
   },
+  room: {
+    title: "Salle {code}",
+    heading: "Salle",
+    states: {
+      waiting: "En attente",
+      countdown: "Décompte",
+      racing: "En course",
+      results: "Résultats",
+      closed: "Fermée",
+    },
+    runners: "Coureurs",
+    runnerCount: {
+      one: "{count} sur {capacity}",
+      other: "{count} sur {capacity}",
+    } satisfies PluralForms,
+    spectators: "Spectateurs",
+    noRunners: "personne pour l'instant",
+    noSpectators: "aucun spectateur",
+    host: "hôte",
+    you: "toi",
+    settings: "Réglages",
+    join: "Entrer comme coureur",
+    joinSpectator: "Entrer comme spectateur",
+    leave: "Quitter la salle",
+    waitingNote: "le lancement des courses arrive bientôt",
+    elsewhere: "Tu es déjà dans la salle {code}.",
+    goBack: "Retourner dans {code}",
+    leaveAndJoin: "La quitter et entrer ici",
+    errors: {
+      invalid: "ce code de salle n'est pas valide",
+      notSignedIn: "connecte-toi pour entrer dans une salle",
+      notFound: "cette salle n'existe plus",
+      notJoinable: "une course est en cours, tu pourras entrer à la fin",
+      full: "la salle est pleine, tu peux entrer comme spectateur",
+      alreadyInRoom: "tu es déjà dans une autre salle",
+      noWords: "aucun mot ne correspond à ces filtres",
+      unavailable: "impossible pour le moment, réessaie plus tard",
+    },
+  },
   createRoom: {
     title: "Créer une salle",
     heading: "Créer une salle",
@@ -220,3 +259,4 @@ export const fr = {
 export type Dictionary = typeof fr;
 export type AuthDictionary = Dictionary["auth"];
 export type CreateRoomDictionary = Dictionary["createRoom"];
+export type RoomDictionary = Dictionary["room"];
