@@ -58,7 +58,7 @@ export const BLOCKLIST: Record<Locale, string[]> = {
     shopping mail rate boom punch toast marks grade yard loser sports slip los
     arrange bat cap bond fans motion western timing gray offense chips bush pin
     cries li pro crane cookies pan dope web lame mi rangers bacon burger
-    masters ace yang khan han hui
+    masters ace yang khan han hui qu puisqu chester
 
     jack tom max henry bob bill mary richard tommy mark bobby dan walter lois
     carter maria louis cris karen mac donna miles robin oliver caroline roy
