@@ -11,6 +11,7 @@ git pull --ff-only
 bun install --frozen-lockfile
 docker compose -f docker-compose.prod.yml --env-file .env.production.local up -d --wait
 bun run db:migrate
+bun run db:seed
 bun run build
 sudo systemctl restart typeracer
 
