@@ -2,6 +2,8 @@ import "server-only";
 import { and, asc, count, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomMembers, rooms, users } from "@/db/schema";
+import { notifyRoomChanged } from "@/lib/realtime/notify";
+import { isConnected } from "@/lib/realtime/presence";
 import { generateRoomCode } from "./code";
 import {
   JOINABLE_STATES,
@@ -56,22 +58,23 @@ export async function findCurrentRoom(
 }
 
 /**
- * Removes the user from their room. If they were the host, the member who
- * has been there longest takes over (SALLE-08); if nobody is left, the room
- * closes. Connection status isn't tracked yet, so "connected" isn't checked.
+ * Removes the user from their room. If they were the host, the connected
+ * member who has been there longest takes over (SALLE-08). If no connected
+ * member is left, the room closes and releases the others, so the one-room
+ * rule (SALLE-06) doesn't keep them stuck in it.
  */
 export async function leaveRoom(userId: string): Promise<void> {
-  await getDb().transaction(async (tx) => {
+  const code = await getDb().transaction(async (tx) => {
     const [membership] = await tx
       .select({ roomId: roomMembers.roomId })
       .from(roomMembers)
       .where(eq(roomMembers.userId, userId));
     if (!membership) {
-      return;
+      return null;
     }
     // Locked so two people leaving at once can't both skip the handover.
     const [room] = await tx
-      .select({ id: rooms.id, hostId: rooms.hostId })
+      .select({ id: rooms.id, code: rooms.code, hostId: rooms.hostId })
       .from(rooms)
       .where(eq(rooms.id, membership.roomId))
       .for("update");
@@ -80,16 +83,17 @@ export async function leaveRoom(userId: string): Promise<void> {
       .where(eq(roomMembers.userId, userId))
       .returning({ id: roomMembers.id });
     if (!room || deleted.length === 0) {
-      return;
+      return null;
     }
 
-    const [next] = await tx
+    const remaining = await tx
       .select({ userId: roomMembers.userId })
       .from(roomMembers)
       .where(eq(roomMembers.roomId, room.id))
-      .orderBy(asc(roomMembers.joinedAt))
-      .limit(1);
+      .orderBy(asc(roomMembers.joinedAt));
+    const next = remaining.find((member) => isConnected(member.userId));
     if (!next) {
+      await tx.delete(roomMembers).where(eq(roomMembers.roomId, room.id));
       await tx
         .update(rooms)
         .set({ state: "closed", closedAt: new Date() })
@@ -97,7 +101,39 @@ export async function leaveRoom(userId: string): Promise<void> {
     } else if (room.hostId === userId) {
       await tx.update(rooms).set({ hostId: next.userId }).where(eq(rooms.id, room.id));
     }
+    return room.code;
   });
+  if (code) {
+    notifyRoomChanged(code);
+  }
+}
+
+/** Every user in a room, to check after a restart who never came back. */
+export async function listRoomMemberIds(): Promise<string[]> {
+  const rows = await getDb().select({ userId: roomMembers.userId }).from(roomMembers);
+  return rows.map((row) => row.userId);
+}
+
+/** Who may follow a room's live changes: anyone for a public room, members otherwise. */
+export async function canWatchRoom(userId: string | null, code: string): Promise<boolean> {
+  const [room] = await getDb()
+    .select({ id: rooms.id, visibility: rooms.visibility })
+    .from(rooms)
+    .where(and(eq(rooms.code, code), ne(rooms.state, "closed")));
+  if (!room) {
+    return false;
+  }
+  if (room.visibility === "public") {
+    return true;
+  }
+  if (!userId) {
+    return false;
+  }
+  const [member] = await getDb()
+    .select({ id: roomMembers.id })
+    .from(roomMembers)
+    .where(and(eq(roomMembers.roomId, room.id), eq(roomMembers.userId, userId)));
+  return member !== undefined;
 }
 
 /** With `leaveCurrent`, the user first leaves the room they're in (SALLE-06 asks to offer it). */
@@ -131,11 +167,13 @@ export async function createRoom(
   const config: RaceConfig = raceConfigSchema.parse(rest);
 
   try {
-    return await getDb().transaction(async (tx) => {
+    const result = await getDb().transaction(async (tx) => {
       const room = await insertRoom(tx, { userId, visibility, capacity, config });
       await tx.insert(roomMembers).values({ roomId: room.id, userId, role: hostRole });
       return { ok: true as const, code: room.code };
     });
+    notifyRoomChanged(result.code);
+    return result;
   } catch (error) {
     // Another tab put the user in a room in the meantime.
     if (isUniqueViolation(error, "room_members_user_idx")) {
@@ -186,7 +224,7 @@ export async function joinRoom(
   }
 
   try {
-    return await getDb().transaction(async (tx): Promise<RoomResult> => {
+    const result = await getDb().transaction(async (tx): Promise<RoomResult> => {
       // Locked so two people can't both take the last seat.
       const [room] = await tx
         .select({
@@ -229,6 +267,10 @@ export async function joinRoom(
       await tx.insert(roomMembers).values({ roomId: room.id, userId, role });
       return { ok: true, code };
     });
+    if (result.ok) {
+      notifyRoomChanged(code);
+    }
+    return result;
   } catch (error) {
     if (isUniqueViolation(error, "room_members_user_idx")) {
       const current = await findCurrentRoom(userId);
