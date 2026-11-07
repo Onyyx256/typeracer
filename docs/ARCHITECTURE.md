@@ -138,6 +138,15 @@ stateDiagram-v2
 - L'état des courses est en mémoire dans un seul processus. Si le serveur redémarre, les courses en cours sont perdues. Je trouve ça acceptable pour la taille du projet.
 - Tous les messages reçus par le serveur seront validés avec un schéma Zod (TECH-07).
 
+## Mise en œuvre du temps réel
+
+- `server.ts` démarre Next.js et Socket.IO sur le même serveur HTTP. Node l'exécute directement (suppression des types), donc ce fichier n'importe aucun code de l'application. Le serveur Socket.IO est rangé sur `globalThis`, et `instrumentation.ts` y branche les gestionnaires de `lib/realtime/handlers.ts` au démarrage de Next.
+- La poignée de main lit le cookie de session : un utilisateur connecté est identifié, un invité peut quand même se connecter pour suivre la liste des salles.
+- Pour l'instant, le serveur envoie seulement des avis « cette salle a changé » (`room:changed`) et « la liste a changé » (`lobby:changed`). La page se rafraîchit alors côté serveur (`router.refresh()`), ce qui refait toutes les vérifications de droits. La progression pendant la course aura ses propres messages, avec les données.
+- Suivre une salle (`room:watch`) est validé avec Zod et permis seulement pour une salle publique ou pour un membre (TECH-07).
+- Présence : chaque onglet ouvert garde un socket. Un membre qui n'a plus aucun onglet ouvert pendant 30 secondes est considéré comme parti (même délai que COURSE-08). Ça libère sa place et, si c'était l'hôte, passe le rôle au membre connecté présent depuis le plus longtemps (SALLE-08). Après un redémarrage du serveur, les membres qui ne se reconnectent pas dans les 30 secondes partent aussi.
+- L'état temps réel (sockets ouverts, minuteries) est sur `globalThis`, parce que `server.ts`, l'instrumentation et les server actions ne partagent pas les mêmes instances de modules.
+
 ## Approche prévue pour les bots
 
 Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le serveur, un bot est un participant comme les autres : sa progression est envoyée aux clients de la même façon que celle d'un humain, et il reçoit les bonus et malus aussi (BOT-04).
