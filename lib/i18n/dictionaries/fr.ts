@@ -52,6 +52,103 @@ export const fr = {
     heading: "Rejoindre une salle",
     soon: "liste des salles et code d'accès bientôt disponibles",
   },
+  createRoom: {
+    title: "Créer une salle",
+    heading: "Créer une salle",
+    lead: "Choisis qui peut entrer et à quoi ressemblera la course. Tout reste modifiable entre deux courses.",
+    sections: {
+      room: "La salle",
+      text: "Le texte",
+      race: "La course",
+    },
+    role: {
+      legend: "Ton rôle",
+      participant: "Je cours",
+      participantHint: "Tu prends part à la course.",
+      spectator: "Je regarde",
+      spectatorHint: "Tu suis la piste sans taper.",
+    },
+    visibility: {
+      legend: "Visibilité",
+      public: "Publique",
+      publicHint: "Listée, tout le monde peut entrer.",
+      code: "Par code",
+      codeHint: "Non listée, on entre avec le code ou un lien.",
+      private: "Privée",
+      privateHint: "Sur invitation, un lien par personne.",
+    },
+    capacity: {
+      label: "Places",
+      hint: "Les spectateurs ne comptent pas.",
+      value: {
+        one: "{count} place",
+        other: "{count} places",
+      } satisfies PluralForms,
+    },
+    language: "Langue du texte",
+    textType: {
+      legend: "Type de texte",
+      coherent: "Cohérent",
+      coherentHint: "De vrais passages de livres et d'articles.",
+      random: "Aléatoire",
+      randomHint: "Des mots du dictionnaire, au hasard.",
+    },
+    length: {
+      label: "Longueur",
+      value: {
+        one: "{count} mot",
+        other: "{count} mots",
+      } satisfies PluralForms,
+    },
+    complexity: {
+      legend: "Difficulté",
+      easy: "Facile",
+      easyHint: "Mots courts et courants.",
+      medium: "Moyenne",
+      mediumHint: "Mots variés.",
+      hard: "Difficile",
+      hardHint: "Mots longs et rares.",
+    },
+    characters: {
+      legend: "Caractères",
+      punctuation: "Ponctuation",
+      numbers: "Chiffres",
+      capitals: "Majuscules",
+      accents: "Accents",
+      accentsHint: "texte français seulement",
+    },
+    charset: {
+      include: "Seulement ces lettres",
+      exclude: "Sans ces lettres",
+      hint: "vide = toutes",
+      coherentNote: "les filtres de lettres s'appliquent seulement au texte aléatoire",
+    },
+    timeLimit: {
+      legend: "Temps limite",
+      none: "Aucun",
+    },
+    errorMode: {
+      legend: "Fautes",
+      strict: "À corriger",
+      strictHint: "Impossible d'avancer sans corriger.",
+      free: "Libres",
+      freeHint: "On continue, mais elles comptent.",
+    },
+    bonuses: {
+      label: "Bonus de rattrapage",
+      hint: "Aident les derniers, freinent le premier.",
+    },
+    botsNote: "Les bots s'ajoutent depuis la salle, une fois créée.",
+    summary: {
+      heading: "En bref",
+      noLimit: "sans limite de temps",
+      bonusesOn: "bonus activés",
+      bonusesOff: "sans bonus",
+    },
+    submit: "Créer la salle",
+    soon: "création de salles bientôt disponible",
+    invalid: "un réglage n'est pas valide",
+  },
   loginPage: {
     title: "Connexion",
     description: "Connecte-toi ou crée ton compte NelumboType.",
@@ -110,3 +207,4 @@ export const fr = {
 
 export type Dictionary = typeof fr;
 export type AuthDictionary = Dictionary["auth"];
+export type CreateRoomDictionary = Dictionary["createRoom"];
