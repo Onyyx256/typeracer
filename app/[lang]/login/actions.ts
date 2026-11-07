@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import * as z from "zod";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession, deleteSession } from "@/lib/auth/session";
 import { createUser, findCredentials } from "@/lib/auth/users";
+import { DEFAULT_LOCALE, localePath, localeSchema } from "@/lib/i18n/config";
 import {
   loginSchema,
   signupSchema,
@@ -78,7 +80,10 @@ export async function login(input: unknown): Promise<LoginResult> {
   return { ok: true };
 }
 
-export async function logout(): Promise<void> {
+const logoutSchema = z.object({ lang: localeSchema });
+
+export async function logout(formData: FormData): Promise<void> {
   await deleteSession();
-  redirect("/login");
+  const parsed = logoutSchema.safeParse({ lang: formData.get("lang") });
+  redirect(localePath(parsed.success ? parsed.data.lang : DEFAULT_LOCALE, "/login"));
 }

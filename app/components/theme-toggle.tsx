@@ -25,7 +25,12 @@ function applyTheme(theme: Theme) {
   document.documentElement.setAttribute("data-theme", theme);
 }
 
-export function ThemeToggle() {
+type ThemeToggleProps = {
+  label: string;
+  title: string;
+};
+
+export function ThemeToggle({ label, title }: ThemeToggleProps) {
   useLayoutEffect(() => {
     // Strict Mode's dev remount clears the attribute set by the inline script in layout.tsx.
     applyTheme(storedTheme() ?? systemTheme());
@@ -53,8 +58,8 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label="Changer de thème (clair ou sombre)"
-      title="Changer de thème"
+      aria-label={label}
+      title={title}
       className="grid size-10 cursor-pointer place-items-center rounded-full border border-line text-foreground transition-colors hover:bg-surface"
     >
       {/* Both icons are rendered; CSS picks one, so there is no hydration mismatch. */}

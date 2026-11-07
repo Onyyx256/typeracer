@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { SiteHeader } from "@/app/components/site-header";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { localePath } from "@/lib/i18n/config";
+import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { interpolate } from "@/lib/i18n/format";
 
 export default function Home() {
   return (
@@ -18,19 +21,25 @@ export default function Home() {
 }
 
 async function Greeting() {
-  const user = await getCurrentUser();
+  const [user, dict, locale] = await Promise.all([
+    getCurrentUser(),
+    getDictionary(),
+    getLocale(),
+  ]);
 
   return (
     <>
       <h1 className="font-display text-4xl leading-tight font-semibold">
-        Bonjour {user ? user.displayName : "invité"}
+        {interpolate(dict.home.greeting, {
+          name: user ? user.displayName : dict.home.guest,
+        })}
       </h1>
       {!user && (
         <Link
-          href="/login"
+          href={localePath(locale, "/login")}
           className="mt-4 font-medium text-primary-text underline-offset-4 hover:underline"
         >
-          Se connecter
+          {dict.home.login}
         </Link>
       )}
     </>
