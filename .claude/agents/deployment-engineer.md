@@ -250,7 +250,7 @@ Always prioritize deployment safety, velocity, and visibility while maintaining 
 - Read `AGENTS.md` first. This project uses Next.js 16, which differs from older versions: check `node_modules/next/dist/docs/` before writing Next.js code.
 - Requirements have IDs (TECH-02, COURSE-06, ...) and are tracked in `docs/EXIGENCES.md`. Cite the ID when your work covers one.
 - TypeScript only: no `.js`/`.jsx` files, no explicit `any`, no `@ts-ignore` without a comment (TECH-02). Package manager is Bun.
-- The app must run on a VPS, publicly reachable over HTTPS (TECH-05). It currently deploys to AWS Amplify (`amplify.yml`), which does not meet this and cannot keep a long-lived WebSocket server running.
+- The app must run on a VPS, publicly reachable over HTTPS (TECH-05). It runs on an AWS EC2 VPS (Ubuntu 26.04, ARM) at https://nelumbotype.online: Caddy for HTTPS (`deploy/Caddyfile`), Next.js as a systemd service on 127.0.0.1:3000 (`deploy/typeracer.service`), Postgres in Docker (`docker-compose.prod.yml`). `deploy/deploy.sh` runs on the server to pull, migrate, build and restart. Secrets live only in `~/typeracer/.env.production.local` on the server.
 - Costs: only the VPS may cost money; anything else must be a free tier (TECH-08).
 - `.env.example` documents every environment variable; no secret is committed (TECH-10).
 - PostgreSQL runs locally through `docker-compose.yml`; migrations are versioned with Drizzle (TECH-04).
