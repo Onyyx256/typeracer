@@ -55,6 +55,51 @@ export const roomSettingsSchema = z.object({
 
 export type RoomSettings = z.infer<typeof roomSettingsSchema>;
 
+/**
+ * The settings that shape the text and the race, kept together in the room's
+ * `config` column. Visibility and capacity have their own columns (they are
+ * filtered on), and the host's role is their membership row.
+ */
+export const raceConfigSchema = roomSettingsSchema.omit({
+  hostRole: true,
+  visibility: true,
+  capacity: true,
+});
+
+export type RaceConfig = z.infer<typeof raceConfigSchema>;
+
+export type HostRole = (typeof HOST_ROLES)[number];
+export type Visibility = (typeof VISIBILITIES)[number];
+
+/** COURSE-01: EN_ATTENTE, DÉCOMPTE, EN_COURSE, RÉSULTATS, FERMÉE. */
+export const ROOM_STATES = [
+  "waiting",
+  "countdown",
+  "racing",
+  "results",
+  "closed",
+] as const;
+
+export type RoomState = (typeof ROOM_STATES)[number];
+
+/** People can come in only between races (SALLE-09). */
+export const JOINABLE_STATES: readonly RoomState[] = ["waiting", "results"];
+
+/**
+ * Drops what the chosen options make meaningless, so the stored config says
+ * what the race really uses: accents only exist in French, and the
+ * include/exclude lists only apply to random text (CONF-07).
+ */
+export function normalizeSettings(settings: RoomSettings): RoomSettings {
+  const random = settings.textType === "random";
+  return {
+    ...settings,
+    accents: settings.language === "fr" && settings.accents,
+    includeChars: random ? settings.includeChars : "",
+    excludeChars: random ? settings.excludeChars : "",
+  };
+}
+
 /** What the create form starts with; the text language follows the interface. */
 export function defaultRoomSettings(language: Locale): RoomSettings {
   return {
