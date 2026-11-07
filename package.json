@@ -10,7 +10,8 @@
     "db:up": "docker compose up -d --wait",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "texts:build": "bun scripts/build-texts.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/bun": "^1.4.4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",

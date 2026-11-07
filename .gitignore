@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# downloaded text sources (scripts/build-texts.ts)
+/.cache/
