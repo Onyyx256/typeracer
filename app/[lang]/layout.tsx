@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import { SiteHeader } from "@/app/components/site-header";
+import { ThemeScript } from "@/app/components/theme-script";
 import { LOCALES } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import "../globals.css";
@@ -36,9 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Runs while the HTML is parsed so the saved (or system) theme is applied before first paint.
-const themeScript = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
-
 export default async function RootLayout({
   children,
 }: LayoutProps<"/[lang]">) {
@@ -52,7 +50,7 @@ export default async function RootLayout({
       className={`${fraunces.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col">
         {/* In the layout so every page, including 404 and error pages, gets the language switch. */}
