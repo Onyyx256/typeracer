@@ -141,9 +141,9 @@ export const fr = {
     botsNote: "les bots s'ajoutent depuis la salle, une fois créée",
     summary: {
       heading: "En bref",
-      noLimit: "sans limite de temps",
-      bonusesOn: "bonus activés",
-      bonusesOff: "sans bonus",
+      lettersOnly: "Lettres seulement",
+      on: "Activés",
+      off: "Désactivés",
     },
     submit: "Créer la salle",
     soon: "création de salles bientôt disponible",

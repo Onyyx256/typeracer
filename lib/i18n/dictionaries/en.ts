@@ -139,9 +139,9 @@ export const en: Dictionary = {
     botsNote: "you can add bots in the room once it's created",
     summary: {
       heading: "At a glance",
-      noLimit: "no time limit",
-      bonusesOn: "bonuses on",
-      bonusesOff: "no bonuses",
+      lettersOnly: "Letters only",
+      on: "On",
+      off: "Off",
     },
     submit: "Create the room",
     soon: "room creation coming soon",

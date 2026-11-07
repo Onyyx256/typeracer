@@ -60,17 +60,50 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
     ["punctuation", "numbers", "capitals", "accents"] as const
   ).filter((key) => settings[key] && (key !== "accents" || french));
 
-  const summary = [
-    `${dict.visibility[settings.visibility]} · ${plural(locale, dict.capacity.value, settings.capacity)} · ${dict.role[settings.hostRole]}`,
-    `${dict.textType[settings.textType]} · ${LOCALE_NAMES[settings.language]} · ${plural(locale, dict.length.value, settings.length)}`,
-    [dict.complexity[settings.complexity], ...enabledCharacters.map((key) => dict.characters[key])].join(" · "),
-    [
-      settings.timeLimit === 0
-        ? dict.summary.noLimit
-        : formatSeconds(settings.timeLimit),
-      dict.errorMode[settings.errorMode],
-      settings.bonuses ? dict.summary.bonusesOn : dict.summary.bonusesOff,
-    ].join(" · "),
+  // Same grouping as the form, one labelled row per setting.
+  const summary: { title: string; rows: [string, string][] }[] = [
+    {
+      title: dict.sections.room,
+      rows: [
+        [dict.role.legend, dict.role[settings.hostRole]],
+        [dict.visibility.legend, dict.visibility[settings.visibility]],
+        [
+          dict.capacity.label,
+          plural(locale, dict.capacity.value, settings.capacity),
+        ],
+      ],
+    },
+    {
+      title: dict.sections.text,
+      rows: [
+        [dict.language, LOCALE_NAMES[settings.language]],
+        [dict.textType.legend, dict.textType[settings.textType]],
+        [dict.length.label, plural(locale, dict.length.value, settings.length)],
+        [dict.complexity.legend, dict.complexity[settings.complexity]],
+        [
+          dict.characters.legend,
+          enabledCharacters.length > 0
+            ? enabledCharacters.map((key) => dict.characters[key]).join(", ")
+            : dict.summary.lettersOnly,
+        ],
+      ],
+    },
+    {
+      title: dict.sections.race,
+      rows: [
+        [
+          dict.timeLimit.legend,
+          settings.timeLimit === 0
+            ? dict.timeLimit.none
+            : formatSeconds(settings.timeLimit),
+        ],
+        [dict.errorMode.legend, dict.errorMode[settings.errorMode]],
+        [
+          dict.bonuses.label,
+          settings.bonuses ? dict.summary.on : dict.summary.off,
+        ],
+      ],
+    },
   ];
 
   return (
@@ -255,16 +288,27 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
         <h2 className="font-display text-xl font-semibold">
           {dict.summary.heading}
         </h2>
-        <ul className="mt-4 grid gap-2 font-mono text-sm">
-          {summary.map((line) => (
-            <li key={line} className="flex gap-2">
-              <span className="text-accent-text" aria-hidden="true">
-                &gt;
-              </span>
-              <span>{line}</span>
-            </li>
+        <div className="mt-4 grid gap-5">
+          {summary.map((group) => (
+            <section key={group.title}>
+              <h3 className="font-mono text-xs tracking-wide text-accent-text uppercase">
+                <span aria-hidden="true">&gt; </span>
+                {group.title}
+              </h3>
+              <dl className="mt-1 divide-y divide-line text-sm">
+                {group.rows.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-baseline justify-between gap-4 py-1.5"
+                  >
+                    <dt className="text-muted">{label}</dt>
+                    <dd className="text-right font-medium">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
           ))}
-        </ul>
+        </div>
         <button
           type="submit"
           className="mt-6 h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
