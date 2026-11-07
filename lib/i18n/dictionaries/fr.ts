@@ -30,6 +30,22 @@ export const fr = {
     retry: "Réessayer",
     home: "Retour à l'accueil",
   },
+  statsPage: {
+    title: "Statistiques",
+    heading: "Mes statistiques",
+    empty: "tes statistiques apparaîtront après ta première course",
+  },
+  accountPage: {
+    title: "Mon compte",
+    heading: "Mon compte",
+    soon: "photo de profil et nom affiché bientôt modifiables",
+    logout: "Se déconnecter",
+  },
+  roomsPage: {
+    title: "Rejoindre une salle",
+    heading: "Rejoindre une salle",
+    soon: "liste des salles et code d'accès bientôt disponibles",
+  },
   loginPage: {
     title: "Connexion",
     description: "Connecte-toi ou crée ton compte NelumboType.",

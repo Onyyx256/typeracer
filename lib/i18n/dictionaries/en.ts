@@ -28,6 +28,22 @@ export const en: Dictionary = {
     retry: "Try again",
     home: "Back to home",
   },
+  statsPage: {
+    title: "Stats",
+    heading: "My stats",
+    empty: "your stats will show up after your first race",
+  },
+  accountPage: {
+    title: "My account",
+    heading: "My account",
+    soon: "profile photo and display name editing coming soon",
+    logout: "Log out",
+  },
+  roomsPage: {
+    title: "Join a room",
+    heading: "Join a room",
+    soon: "room list and join by code coming soon",
+  },
   loginPage: {
     title: "Log in",
     description: "Log in or create your NelumboType account.",
