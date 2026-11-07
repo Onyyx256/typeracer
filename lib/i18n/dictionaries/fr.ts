@@ -17,6 +17,12 @@ export const fr = {
     guest: "invité",
     login: "Se connecter",
   },
+  notFound: {
+    title: "Page introuvable",
+    heading: "Rien ne pousse ici",
+    lead: "Cette page n'existe pas ou a été déplacée.",
+    home: "Retour à l'accueil",
+  },
   loginPage: {
     title: "Connexion",
     description: "Connecte-toi ou crée ton compte NelumboType.",

@@ -15,6 +15,12 @@ export const en: Dictionary = {
     guest: "guest",
     login: "Log in",
   },
+  notFound: {
+    title: "Page not found",
+    heading: "Nothing grows here",
+    lead: "This page doesn't exist or has moved.",
+    home: "Back to home",
+  },
   loginPage: {
     title: "Log in",
     description: "Log in or create your NelumboType account.",
