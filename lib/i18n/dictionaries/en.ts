@@ -136,7 +136,7 @@ export const en: Dictionary = {
       label: "Catch-up bonuses",
       hint: "Help the last ones, slow down the leader.",
     },
-    botsNote: "Bots are added from the room once it's created.",
+    botsNote: "you can add bots in the room once it's created",
     summary: {
       heading: "At a glance",
       noLimit: "no time limit",

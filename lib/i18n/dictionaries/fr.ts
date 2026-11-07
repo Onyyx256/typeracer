@@ -138,7 +138,7 @@ export const fr = {
       label: "Bonus de rattrapage",
       hint: "Aident les derniers, freinent le premier.",
     },
-    botsNote: "Les bots s'ajoutent depuis la salle, une fois créée.",
+    botsNote: "les bots s'ajoutent depuis la salle, une fois créée",
     summary: {
       heading: "En bref",
       noLimit: "sans limite de temps",
