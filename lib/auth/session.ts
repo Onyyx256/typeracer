@@ -33,7 +33,25 @@ export async function createSession(userId: string): Promise<void> {
 
 /** Returns the signed-in user's id, or null if the cookie is absent, forged or expired. */
 export async function getSessionUserId(): Promise<string | null> {
-  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  return verifySessionToken((await cookies()).get(COOKIE_NAME)?.value);
+}
+
+/**
+ * The same check from a raw Cookie header, for requests that don't go through
+ * Next (the Socket.IO handshake).
+ */
+export async function userIdFromCookieHeader(
+  header: string | undefined,
+): Promise<string | null> {
+  const token = header
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${COOKIE_NAME}=`))
+    ?.slice(COOKIE_NAME.length + 1);
+  return verifySessionToken(token);
+}
+
+async function verifySessionToken(token: string | undefined): Promise<string | null> {
   if (!token) {
     return null;
   }
