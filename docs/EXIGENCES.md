@@ -12,12 +12,12 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | TECH-02 | complet | `tsconfig.json`, `eslint.config.mjs` | — | `strict: true`; `no-explicit-any` est une erreur ESLint (config `eslint-config-next/typescript`); aucun fichier `.js`/`.jsx` et aucun `@ts-ignore`. |
 | TECH-03 | complet | `app/globals.css` | — | Tailwind CSS 4. |
 | TECH-04 | partiel | `db/schema.ts`, `db/migrations/`, `drizzle.config.ts` | — | PostgreSQL avec Drizzle, migrations versionnées. Seulement la table `users` pour l'instant. Pas encore de script de seed. |
-| TECH-05 | partiel | `amplify.yml` | — | J'ai déployé le site avec AWS Amplify plutôt que sur un VPS. Ce sera fait sur un VPS dans le futur. |
+| TECH-05 | complet | `deploy/deploy.sh`, `deploy/typeracer.service`, `docker-compose.prod.yml` | — | VPS AWS EC2 (Ubuntu 26.04, t4g.small) à https://nelumbotype.online. Caddy (`deploy/Caddyfile`) gère le HTTPS avec un certificat Let's Encrypt renouvelé automatiquement. PostgreSQL tourne dans Docker, accessible seulement depuis le serveur. Next.js tourne comme service systemd et redémarre seul. `deploy/deploy.sh` met à jour la production en une commande (pull, migrations, build, redémarrage). |
 | TECH-06 | non fait | — | — | Choix de la technologie décrit dans `docs/ARCHITECTURE.md` (ADR 1). |
 | TECH-07 | partiel | `lib/auth/validation.ts`, `app/login/actions.ts` | — | Les server actions d'inscription et de connexion valident leurs entrées avec Zod. Les autres entrées (salles, temps réel) n'existent pas encore. |
-| TECH-08 | partiel | — | — | Aucun service payant à part l'hébergement. À revérifier quand le VPS sera en place. |
+| TECH-08 | complet | — | — | Le seul coût est le serveur EC2, payé avec les crédits gratuits d'AWS. Aucun autre service payant. L'enseignant n'a rien à payer pour corriger. À revérifier si un service externe est ajouté (ex. stockage des photos de profil). |
 | TECH-09 | non fait | — | — | Pas encore de workflow GitHub Actions. |
-| TECH-10 | complet | `.env.example` | — | Documente `DATABASE_URL` et `SESSION_SECRET`, les deux seules variables utilisées. Aucun secret dans le dépôt. |
+| TECH-10 | complet | `.env.example` | — | Documente `DATABASE_URL`, `SESSION_SECRET` et `POSTGRES_PASSWORD` (production seulement). Aucun secret dans le dépôt : en production, ils sont dans `.env.production.local` sur le serveur. |
 
 ## DES — Identité visuelle et design
 
