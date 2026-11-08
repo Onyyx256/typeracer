@@ -8,8 +8,9 @@ import { kickMemberAction, type KickActionResult } from "../actions";
 
 type KickError = Extract<KickActionResult, { ok: false }>["error"];
 
-const primary =
-  "h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
+/** Red, not the accent pink: removing someone can't be undone. */
+const danger =
+  "h-11 w-full cursor-pointer bg-danger px-6 font-medium text-on-danger transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 
@@ -53,9 +54,10 @@ export function KickMember({
           dialog.current?.showModal();
         }}
         aria-label={interpolate(dict.kickLabel, { name })}
-        className="cursor-pointer font-mono text-xs tracking-wide text-muted uppercase underline-offset-4 hover:text-accent-text hover:underline"
+        title={dict.kick}
+        className="flex size-8 cursor-pointer items-center justify-center border border-danger/40 text-danger transition-colors hover:border-danger hover:bg-danger/10 rounded-leaf"
       >
-        {dict.kick}
+        <RemovePersonIcon />
       </button>
       {/* Same centered native dialog as the join form. */}
       <dialog
@@ -71,7 +73,7 @@ export function KickMember({
             <p className="mt-1 text-sm text-muted">{t.lead}</p>
           </div>
           <div className="grid gap-2">
-            <button type="button" className={primary} disabled={pending} onClick={kick}>
+            <button type="button" className={danger} disabled={pending} onClick={kick}>
               {t.confirm}
             </button>
             <button
@@ -82,11 +84,31 @@ export function KickMember({
               {t.cancel}
             </button>
           </div>
-          <p role="status" className="min-h-5 font-mono text-sm text-accent-text">
+          <p role="status" className="min-h-5 font-mono text-sm text-danger">
             {error && <>&gt; {dict.kickErrors[error]}</>}
           </p>
         </div>
       </dialog>
     </>
+  );
+}
+
+/** A person with a minus sign: removes someone, doesn't delete anything. */
+function RemovePersonIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1" />
+      <path d="M16 11h6" />
+    </svg>
   );
 }
