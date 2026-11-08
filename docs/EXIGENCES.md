@@ -24,7 +24,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | DES-01 | complet | `docs/DEMARCHE-CREATIVE.md` | — | Nom : NelumboType. Démarche décrite dans la section « Nom et logo ». |
-| DES-02 | partiel | `public/logo.png`, `app/components/site-header.tsx` | — | Croquis joints et logo affiché dans l'en-tête. Le favicon est encore celui de Next.js par défaut. |
+| DES-02 | complet | `app/icon.png`, `app/components/site-header.tsx` | — | Croquis joints. Le même fichier `app/icon.png` (fond transparent) sert de favicon et de logo dans l'en-tête; le favicon par défaut de Next.js est supprimé. |
 | DES-03 | complet | `docs/DEMARCHE-CREATIVE.md` | — | Moodboard de 5 références, palette de couleurs et typographie. |
 | DES-04 | partiel | `app/globals.css`, `app/[lang]/login/auth-screen.tsx` | — | Seules les pages d'accueil et de connexion existent. La piste de progression (fleurs qui poussent) n'est pas encore faite. |
 | DES-05 | complet | `app/components/theme-toggle.tsx`, `app/[lang]/layout.tsx` | — | Bouton clair/sombre, préférence du système par défaut, script inline qui applique le thème avant le premier affichage (pas de flash). |
