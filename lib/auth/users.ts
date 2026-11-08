@@ -1,5 +1,5 @@
 import "server-only";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 
@@ -41,6 +41,14 @@ export async function isAccountUsername(
     .where(eq(sql`lower(${users.username})`, name.toLowerCase()))
     .limit(1);
   return found !== undefined && found.id !== exceptUserId;
+}
+
+/** A guest's default name for the next rooms: the last one they got into a room with. */
+export async function setGuestNickname(id: string, nickname: string): Promise<void> {
+  await getDb()
+    .update(users)
+    .set({ displayName: nickname })
+    .where(and(eq(users.id, id), eq(users.isGuest, true)));
 }
 
 export async function findCredentials(

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import * as z from "zod";
 import { createSession, getSessionUserId } from "@/lib/auth/session";
-import { createGuest, findProfile, isAccountUsername } from "@/lib/auth/users";
+import { createGuest, findProfile, isAccountUsername, setGuestNickname } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
 import { startRace, type StartRaceError } from "@/lib/race/manager";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
@@ -157,11 +157,16 @@ export async function joinRoomAction(input: unknown): Promise<RoomActionResult> 
     }
     let userId = user?.id;
     if (!userId) {
-      // The nickname becomes the guest's default name for the next rooms.
       userId = (await createGuest(checked.name)).id;
       await createSession(userId);
     }
-    return joinRoom(userId, code, role, leaveCurrent, checked.name);
+    const result = await joinRoom(userId, code, role, leaveCurrent, checked.name);
+    // The name a guest got in with becomes their default for the next rooms;
+    // a refused one (taken in this room) doesn't.
+    if (result.ok && (!user || user.isGuest)) {
+      await setGuestNickname(userId, checked.name);
+    }
+    return result;
   });
 }
 
