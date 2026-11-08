@@ -43,6 +43,13 @@
       "when": 1794158957560,
       "tag": "0005_create_room_bans",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794163843854,
+      "tag": "0006_create_races",
+      "breakpoints": true
     }
   ]
 }

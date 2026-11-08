@@ -6,11 +6,13 @@ import {
   integer,
   jsonb,
   pgTable,
+  real,
   text,
   timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { ResultStatus, WpmPoint } from "@/lib/race/types";
 import type {
   HostRole,
   RaceConfig,
@@ -206,3 +208,84 @@ export const roomBans = pgTable(
 
 export type RoomBan = typeof roomBans.$inferSelect;
 export type NewRoomBan = typeof roomBans.$inferInsert;
+
+/**
+ * One finished race (RES-05). The progress itself stays in memory during
+ * the race; this row and its results are written once, at the end (PERF-02).
+ */
+export const races = pgTable(
+  "races",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Kept if the room goes away, so the participants' history stays. */
+    roomId: uuid("room_id").references(() => rooms.id, { onDelete: "set null" }),
+    /** The corpus passage, for coherent texts (CONF-03). */
+    textId: uuid("text_id").references(() => texts.id, { onDelete: "set null" }),
+    /** The exact text typed, so the results can be shown again (HIST-02). */
+    content: text("content").notNull(),
+    /** The settings the race ran with. */
+    config: jsonb("config").$type<RaceConfig>().notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    // The results screen shows the room's latest race.
+    index("races_room_ended_idx").on(table.roomId, table.endedAt),
+    check("races_ended_after_start", sql`${table.endedAt} >= ${table.startedAt}`),
+  ],
+);
+
+export type Race = typeof races.$inferSelect;
+export type NewRace = typeof races.$inferInsert;
+
+/**
+ * Every participant's result in a race (RES-02). Guests get a row too, so
+ * the full table can be shown again, but without `user_id`: it never
+ * becomes their history (AUTH-03). Signed-in users' rows are their history
+ * (HIST-01) and keep the WPM time series for the charts (RES-05).
+ */
+export const raceResults = pgTable(
+  "race_results",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    raceId: uuid("race_id")
+      .notNull()
+      .references(() => races.id, { onDelete: "cascade" }),
+    /** Null for a guest, or for an account deleted since. */
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    /** The name shown in the room during that race. */
+    name: text("name").notNull(),
+    isGuest: boolean("is_guest").notNull(),
+    rank: integer("rank").notNull(),
+    status: text("status").$type<ResultStatus>().notNull(),
+    wpm: real("wpm").notNull(),
+    rawWpm: real("raw_wpm").notNull(),
+    accuracy: real("accuracy").notNull(),
+    errors: integer("errors").notNull(),
+    /** Validated characters ÷ text length, between 0 and 1. */
+    progress: real("progress").notNull(),
+    /** From the start to finishing, abandoning or the end of the race. */
+    durationMs: integer("duration_ms").notNull(),
+    wpmSeries: jsonb("wpm_series").$type<WpmPoint[]>().notNull(),
+    /** Wrong presses per expected character (RES-03). */
+    missedKeys: jsonb("missed_keys").$type<Record<string, number>>().notNull(),
+  },
+  (table) => [
+    uniqueIndex("race_results_race_rank_idx").on(table.raceId, table.rank),
+    // One row per account per race; guests (null) aren't constrained.
+    uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
+    // A user's history, newest first (HIST-01).
+    index("race_results_user_idx").on(table.userId),
+    check("race_results_rank", sql`${table.rank} >= 1`),
+    check(
+      "race_results_status",
+      sql`${table.status} in ('finished', 'timeUp', 'abandoned')`,
+    ),
+    check("race_results_progress", sql`${table.progress} between 0 and 1`),
+    check("race_results_accuracy", sql`${table.accuracy} between 0 and 100`),
+    check("race_results_guest_has_no_user", sql`not (${table.isGuest} and ${table.userId} is not null)`),
+  ],
+);
+
+export type RaceResult = typeof raceResults.$inferSelect;
+export type NewRaceResult = typeof raceResults.$inferInsert;
