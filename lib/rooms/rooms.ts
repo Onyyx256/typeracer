@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, count, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomBans, roomMembers, rooms, users } from "@/db/schema";
-import { notifyKicked, notifyRoomChanged } from "@/lib/realtime/notify";
+import { notifyKicked, notifyRoomChanged, notifyRoomClosed } from "@/lib/realtime/notify";
 import { isConnected } from "@/lib/realtime/presence";
 import { generateRoomCode } from "./code";
 import {
@@ -62,13 +62,14 @@ export async function findCurrentRoom(
 }
 
 /**
- * Removes the user from their room. If they were the host, the connected
- * member who has been there longest takes over (SALLE-08). If no connected
- * member is left, the room closes and releases the others, so the one-room
- * rule (SALLE-06) doesn't keep them stuck in it.
+ * Removes the user from their room. If they were the host, the signed-in
+ * connected member who has been there longest takes over (SALLE-08); a
+ * guest never does. If nobody can take over, or no connected member is
+ * left, the room closes and releases the others, so the one-room rule
+ * (SALLE-06) doesn't keep them stuck in it, and their pages are told.
  */
 export async function leaveRoom(userId: string): Promise<void> {
-  const code = await getDb().transaction(async (tx) => {
+  const result = await getDb().transaction(async (tx) => {
     const [membership] = await tx
       .select({ roomId: roomMembers.roomId })
       .from(roomMembers)
@@ -91,24 +92,32 @@ export async function leaveRoom(userId: string): Promise<void> {
     }
 
     const remaining = await tx
-      .select({ userId: roomMembers.userId })
+      .select({ userId: roomMembers.userId, isGuest: users.isGuest })
       .from(roomMembers)
+      .innerJoin(users, eq(users.id, roomMembers.userId))
       .where(eq(roomMembers.roomId, room.id))
       .orderBy(asc(roomMembers.joinedAt));
-    const next = remaining.find((member) => isConnected(member.userId));
-    if (!next) {
+    const connected = remaining.filter((member) => isConnected(member.userId));
+    const wasHost = room.hostId === userId;
+    const next = wasHost ? connected.find((member) => !member.isGuest) : undefined;
+
+    if (connected.length === 0 || (wasHost && !next)) {
       await tx.delete(roomMembers).where(eq(roomMembers.roomId, room.id));
       await tx
         .update(rooms)
         .set({ state: "closed", closedAt: new Date() })
         .where(eq(rooms.id, room.id));
-    } else if (room.hostId === userId) {
+      return { code: room.code, released: remaining.map((member) => member.userId) };
+    }
+    if (next) {
       await tx.update(rooms).set({ hostId: next.userId }).where(eq(rooms.id, room.id));
     }
-    return room.code;
+    return { code: room.code, released: [] };
   });
-  if (code) {
-    notifyRoomChanged(code);
+  if (result) {
+    // Before the room-wide notice, so released pages show why instead of a 404.
+    notifyRoomClosed(result.released, result.code);
+    notifyRoomChanged(result.code);
   }
 }
 
