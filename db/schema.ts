@@ -22,8 +22,16 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /** Login identifier. Unique regardless of case, see the index below. */
-    username: text("username").notNull(),
+    /**
+     * Login identifier. Unique regardless of case, see the index below. Null
+     * for guests, who never log in (AUTH-02).
+     */
+    username: text("username"),
+    /**
+     * A guest only has a nickname (display name) and the session cookie that
+     * points at this row: no password, no history (AUTH-02, AUTH-03).
+     */
+    isGuest: boolean("is_guest").notNull().default(false),
     /** Name shown in rooms and on the profile; the user can change it (AUTH-05). */
     displayName: text("display_name").notNull(),
     /**
@@ -44,6 +52,11 @@ export const users = pgTable(
     check(
       "users_username_length",
       sql`char_length(${table.username}) between 3 and 20`,
+    ),
+    // Accounts always have a username, guests never do.
+    check(
+      "users_guest_has_no_username",
+      sql`${table.isGuest} = (${table.username} is null)`,
     ),
     check(
       "users_display_name_length",

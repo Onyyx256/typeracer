@@ -18,7 +18,9 @@ erDiagram
 
     users {
         uuid id PK
-        text username
+        text username "null pour un invité"
+        text display_name
+        boolean is_guest
         text password_hash
         text avatar_url
     }

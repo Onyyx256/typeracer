@@ -22,6 +22,13 @@
       "when": 1794094212487,
       "tag": "0002_create_rooms",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794099959894,
+      "tag": "0003_add_guest_users",
+      "breakpoints": true
     }
   ]
 }
