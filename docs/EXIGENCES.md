@@ -51,7 +51,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | SALLE-04 | non fait | — | — | |
 | SALLE-05 | complet | `lib/rooms/rooms.ts`, `db/schema.ts` | `lib/rooms/rooms.test.ts`, `lib/rooms/settings.test.ts` | Capacité 2–30 validée par Zod et par un `check` en base. En rejoignant, seuls les coureurs comptent, sous verrou de ligne (`for update`) pour que la dernière place ne soit pas prise deux fois. |
 | SALLE-06 | complet | `db/schema.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/[code]/join-room.tsx` | `lib/rooms/rooms.test.ts` | Index unique sur `room_members.user_id`. Créer ou rejoindre en étant déjà ailleurs propose de retourner dans sa salle ou de la quitter ; un deuxième onglet ne crée pas de doublon. Les invités sont des lignes `users`, donc la même contrainte s'applique à eux. |
-| SALLE-07 | non fait | — | — | |
+| SALLE-07 | complet | `lib/rooms/rooms.ts`, `app/[lang]/rooms/[code]/kick-member.tsx`, `db/schema.ts` | `lib/rooms/rooms.test.ts`, `e2e/kick.e2e.ts` | L'hôte retire un coureur ou un spectateur, à tout moment, avec une confirmation. La personne est inscrite dans `room_bans` et ne peut plus revenir dans cette salle (ni coureur, ni spectateur, sous aucun nom) ; les autres salles restent ouvertes. Sa page l'apprend en direct. Choix : un invité qui efface ses cookies devient un nouvel utilisateur, la base ne peut pas le reconnaître. La révocation des liens d'invitation au moment de l'exclusion fait partie de SALLE-04, pas encore fait. |
 | SALLE-08 | complet | `lib/rooms/rooms.ts`, `lib/realtime/presence.ts` | `lib/rooms/rooms.test.ts`, `lib/realtime/presence.test.ts` | Quand l'hôte quitte, le membre connecté (un onglet ouvert) présent depuis le plus longtemps devient hôte ; s'il n'y a personne de connecté, la salle se ferme. Un membre sans onglet ouvert depuis 30 s est considéré comme parti. Vérifié dans le navigateur. |
 | SALLE-09 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | `lib/rooms/rooms.test.ts` | `joinRoom` refuse hors des états `waiting` et `results`. Testé en forçant l'état de la salle (`countdown`, `racing`, `results`) ; les courses n'existent pas encore, donc pas encore vérifié dans une vraie course. |
 | SALLE-10 | non fait | — | — | |
@@ -170,6 +170,6 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| SEC-01 | non fait | — | — | Aucune action d'hôte n'existe encore. |
+| SEC-01 | partiel | `lib/rooms/rooms.ts`, `app/[lang]/rooms/actions.ts` | `lib/rooms/rooms.test.ts` | Exclure est vérifié sur le serveur : l'hôte vient du cookie de session, jamais du message, et doit être l'hôte actuel d'une salle ouverte (testé avec un membre ordinaire et un ancien hôte). Démarrer, configurer, générer des liens et fermer n'existent pas encore. |
 | SEC-02 | non fait | — | — | |
 | SEC-03 | complet | `lib/auth/password.ts`, `app/[lang]/login/actions.ts` | — | Argon2id avec les paramètres minimaux de l'OWASP. Les erreurs de base de données sont journalisées sans les paramètres de la requête, donc jamais le mot de passe. |
