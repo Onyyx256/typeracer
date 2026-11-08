@@ -14,7 +14,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | TECH-04 | partiel | `db/schema.ts`, `db/migrations/`, `db/seed.ts` | — | PostgreSQL avec Drizzle, migrations versionnées (`users`, `texts`, `rooms`, `room_members`). Le seed (`bun run db:seed`) charge le corpus de 600 passages ; les utilisateurs et l'historique de démo manquent encore. |
 | TECH-05 | complet | `deploy/deploy.sh`, `deploy/typeracer.service`, `docker-compose.prod.yml` | — | VPS AWS EC2 (Ubuntu 26.04, t4g.small) à https://nelumbotype.online. Caddy (`deploy/Caddyfile`) gère le HTTPS avec un certificat Let's Encrypt renouvelé automatiquement. PostgreSQL tourne dans Docker, accessible seulement depuis le serveur. Next.js tourne comme service systemd et redémarre seul. `deploy/deploy.sh` met à jour la production en une commande (pull, migrations, build, redémarrage). |
 | TECH-06 | partiel | `server.ts`, `lib/realtime/handlers.ts`, `lib/realtime/client.ts` | — | Socket.IO sur un serveur personnalisé (ADR 1) : membres, hôte et liste des salles se mettent à jour en direct. La progression des participants pendant la course n'existe pas encore. |
-| TECH-07 | partiel | `lib/auth/validation.ts`, `app/[lang]/rooms/actions.ts`, `lib/rooms/settings.ts` | `lib/rooms/code.test.ts` | Les server actions (inscription, connexion, créer/rejoindre/quitter une salle) valident leurs entrées avec Zod ; la config lue en base est aussi revalidée. Les messages temps réel n'existent pas encore. |
+| TECH-07 | partiel | `lib/auth/validation.ts`, `app/[lang]/rooms/actions.ts`, `lib/rooms/settings.ts` | `lib/rooms/code.test.ts`, `lib/rooms/settings.test.ts`, `lib/auth/validation.test.ts` | Les server actions (inscription, connexion, créer/rejoindre/quitter une salle) valident leurs entrées avec Zod ; la config lue en base est aussi revalidée. Les messages temps réel n'existent pas encore. |
 | TECH-08 | complet | — | — | Le seul coût est le serveur EC2, payé avec les crédits gratuits d'AWS. Aucun autre service payant. L'enseignant n'a rien à payer pour corriger. À revérifier si un service externe est ajouté (ex. stockage des photos de profil). |
 | TECH-09 | non fait | — | — | Pas encore de workflow GitHub Actions. |
 | TECH-10 | complet | `.env.example` | — | Documente `DATABASE_URL`, `SESSION_SECRET` et `POSTGRES_PASSWORD` (production seulement). Aucun secret dans le dépôt : en production, ils sont dans `.env.production.local` sur le serveur. |
@@ -35,7 +35,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | AUTH-01 | partiel | `app/[lang]/login/actions.ts`, `lib/auth/session.ts` | — | Inscription et connexion par nom d'utilisateur et mot de passe faites. OAuth Discord et GitHub pas encore. |
-| AUTH-02 | complet | `app/[lang]/rooms/[code]/join-room.tsx`, `app/[lang]/rooms/actions.ts`, `lib/rooms/rooms.ts` | — | Un visiteur sans session qui clique sur « Entrer » choisit un pseudo (3 à 20 caractères, lettres de toutes langues, chiffres, espaces, `. _ ' -`), validé par Zod côté serveur. L'invité est une ligne `users` avec `is_guest` et sans nom d'utilisateur ni mot de passe; sa session est le même cookie JWT signé que les comptes. Choix : chacun, invité ou compte, choisit son nom en entrant dans une salle (et l'hôte en la créant); le champ part du pseudo de l'invité ou du nom affiché du compte. Ce nom est stocké sur l'appartenance (`room_members.name`) et unique dans la salle sans tenir compte de la casse (index unique en base); s'il est pris, la personne en choisit un autre. Personne ne peut prendre le nom d'utilisateur d'un autre compte. Les noms d'utilisateur des comptes sont uniques en base (index unique sur `lower(username)`). Les lignes d'invités ne sont pas encore nettoyées. |
+| AUTH-02 | complet | `app/[lang]/rooms/[code]/join-room.tsx`, `app/[lang]/rooms/actions.ts`, `lib/rooms/rooms.ts` | `lib/auth/validation.test.ts`, `lib/auth/users.test.ts`, `lib/rooms/rooms.test.ts` | Un visiteur sans session qui clique sur « Entrer » choisit un pseudo (3 à 20 caractères, lettres de toutes langues, chiffres, espaces, `. _ ' -`), validé par Zod côté serveur. L'invité est une ligne `users` avec `is_guest` et sans nom d'utilisateur ni mot de passe; sa session est le même cookie JWT signé que les comptes. Choix : chacun, invité ou compte, choisit son nom en entrant dans une salle (et l'hôte en la créant); le champ part du pseudo de l'invité ou du nom affiché du compte. Ce nom est stocké sur l'appartenance (`room_members.name`) et unique dans la salle sans tenir compte de la casse (index unique en base); s'il est pris, la personne en choisit un autre. Personne ne peut prendre le nom d'utilisateur d'un autre compte. Les noms d'utilisateur des comptes sont uniques en base (index unique sur `lower(username)`). Les lignes d'invités ne sont pas encore nettoyées. |
 | AUTH-03 | partiel | `app/[lang]/rooms/actions.ts`, `lib/auth/current-user.ts` | — | Un invité ne peut pas créer de salle (refusé par l'action, et `/rooms/new` le renvoie à la connexion); il peut toutefois devenir hôte par transfert (SALLE-08). Pas de profil ni de photo pour lui. Reste à faire quand les courses existeront : ne pas garder d'historique pour les invités, et l'avatar généré. |
 | AUTH-04 | non fait | — | — | |
 | AUTH-05 | non fait | `db/schema.ts` | — | La colonne `display_name` existe, mais pas encore de page pour la modifier. |
@@ -45,15 +45,15 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| SALLE-01 | complet | `app/[lang]/rooms/actions.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/new/create-room-form.tsx` | — | Un utilisateur connecté crée la salle et en devient l'hôte, comme coureur ou spectateur. Vérifié dans le navigateur. |
+| SALLE-01 | complet | `app/[lang]/rooms/actions.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/new/create-room-form.tsx` | `lib/rooms/rooms.test.ts` | Un utilisateur connecté crée la salle et en devient l'hôte, comme coureur ou spectateur. Vérifié dans le navigateur. |
 | SALLE-02 | complet | `lib/rooms/code.ts`, `db/schema.ts` | `lib/rooms/code.test.ts` | 6 caractères parmi `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (`crypto.randomInt`), index unique et `check` du format en base ; nouvelle tentative en cas de collision. |
 | SALLE-03 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | — | Les trois visibilités se choisissent et sont enregistrées. Seules les salles publiques sont listées et rejoignables ; une salle par code ou privée répond « introuvable » pour l'instant. |
 | SALLE-04 | non fait | — | — | |
-| SALLE-05 | complet | `lib/rooms/rooms.ts`, `db/schema.ts` | — | Capacité 2–30 validée par Zod et par un `check` en base. En rejoignant, seuls les coureurs comptent, sous verrou de ligne (`for update`) pour que la dernière place ne soit pas prise deux fois. |
-| SALLE-06 | complet | `db/schema.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/[code]/join-room.tsx` | — | Index unique sur `room_members.user_id`. Créer ou rejoindre en étant déjà ailleurs propose de retourner dans sa salle ou de la quitter ; un deuxième onglet ne crée pas de doublon. Les invités n'existent pas encore ; leur colonne `guest_id` aura la même contrainte. |
+| SALLE-05 | complet | `lib/rooms/rooms.ts`, `db/schema.ts` | `lib/rooms/rooms.test.ts`, `lib/rooms/settings.test.ts` | Capacité 2–30 validée par Zod et par un `check` en base. En rejoignant, seuls les coureurs comptent, sous verrou de ligne (`for update`) pour que la dernière place ne soit pas prise deux fois. |
+| SALLE-06 | complet | `db/schema.ts`, `lib/rooms/rooms.ts`, `app/[lang]/rooms/[code]/join-room.tsx` | `lib/rooms/rooms.test.ts` | Index unique sur `room_members.user_id`. Créer ou rejoindre en étant déjà ailleurs propose de retourner dans sa salle ou de la quitter ; un deuxième onglet ne crée pas de doublon. Les invités sont des lignes `users`, donc la même contrainte s'applique à eux. |
 | SALLE-07 | non fait | — | — | |
-| SALLE-08 | complet | `lib/rooms/rooms.ts`, `lib/realtime/presence.ts` | — | Quand l'hôte quitte, le membre connecté (un onglet ouvert) présent depuis le plus longtemps devient hôte ; s'il n'y a personne de connecté, la salle se ferme. Un membre sans onglet ouvert depuis 30 s est considéré comme parti. Vérifié dans le navigateur. |
-| SALLE-09 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | — | `joinRoom` refuse hors des états `waiting` et `results`. Les courses n'existent pas encore, donc ce cas n'a pas pu être exercé. |
+| SALLE-08 | complet | `lib/rooms/rooms.ts`, `lib/realtime/presence.ts` | `lib/rooms/rooms.test.ts`, `lib/realtime/presence.test.ts` | Quand l'hôte quitte, le membre connecté (un onglet ouvert) présent depuis le plus longtemps devient hôte ; s'il n'y a personne de connecté, la salle se ferme. Un membre sans onglet ouvert depuis 30 s est considéré comme parti. Vérifié dans le navigateur. |
+| SALLE-09 | partiel | `lib/rooms/rooms.ts`, `lib/rooms/settings.ts` | `lib/rooms/rooms.test.ts` | `joinRoom` refuse hors des états `waiting` et `results`. Testé en forçant l'état de la salle (`countdown`, `racing`, `results`) ; les courses n'existent pas encore, donc pas encore vérifié dans une vraie course. |
 | SALLE-10 | non fait | — | — | |
 
 ## JOIN — Rejoindre une course
@@ -68,13 +68,13 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| CONF-01 | partiel | `lib/rooms/settings.ts` | — | Aucune limite ou 30 s à 10 min, choisi à la création et enregistré. Pas encore appliqué (pas de course) ni modifiable entre les courses. |
+| CONF-01 | partiel | `lib/rooms/settings.ts` | `lib/rooms/settings.test.ts` | Aucune limite ou 30 s à 10 min, choisi à la création et enregistré. Pas encore appliqué (pas de course) ni modifiable entre les courses. |
 | CONF-02 | partiel | `lib/rooms/settings.ts`, `lib/texts/generate.ts` | `lib/texts/random-text.test.ts` | Langue du texte FR/EN indépendante de l'interface ; le générateur la respecte. Pas encore modifiable entre les courses. |
 | CONF-03 | partiel | `lib/texts/generate.ts`, `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts` | Cohérent : extraits de 600 passages Gutenberg en base ; aléatoire : listes de 10 000 mots par langue. Voir `docs/TEXTES.md`. `generateText` sera appelé au lancement des courses, pas encore codé. |
-| CONF-04 | partiel | `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts` | Aléatoire : nombre exact de mots. Cohérent : phrases entières à ±15 % (choix documenté dans `docs/TEXTES.md`). Pas encore utilisé en course. |
+| CONF-04 | partiel | `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts`, `lib/rooms/settings.test.ts` | Aléatoire : nombre exact de mots. Cohérent : phrases entières à ±15 % (choix documenté dans `docs/TEXTES.md`). Pas encore utilisé en course. |
 | CONF-05 | partiel | `lib/texts/complexity.ts` | `lib/texts/*.test.ts` | Critères mesurables documentés dans `docs/TEXTES.md` : rang de fréquence et longueur (aléatoire), score longueur moyenne + 5 × mots peu courants (cohérent). Pas encore utilisé en course. |
 | CONF-06 | partiel | `lib/texts/random-text.ts`, `lib/texts/passage-text.ts` | `lib/texts/*.test.ts` | Les quatre options agissent sur les deux types de texte (tableau dans `docs/TEXTES.md`) ; en cohérent, « chiffres » ne peut qu'exclure les passages qui en ont. Pas encore utilisé en course. |
-| CONF-07 | partiel | `lib/texts/word-pool.ts`, `lib/rooms/settings.ts` | `lib/texts/random-text.test.ts` | Aléatoire seulement : chaque mot contient au moins une lettre « à inclure », les caractères exclus n'apparaissent jamais. Désactivé et vidé en mode cohérent (choix documenté). Une config sans aucun mot est refusée. Pas encore utilisé en course. |
+| CONF-07 | partiel | `lib/texts/word-pool.ts`, `lib/rooms/settings.ts` | `lib/texts/random-text.test.ts`, `lib/rooms/settings.test.ts` | Aléatoire seulement : chaque mot contient au moins une lettre « à inclure », les caractères exclus n'apparaissent jamais. Désactivé et vidé en mode cohérent (choix documenté). Une config sans aucun mot est refusée. Pas encore utilisé en course. |
 | CONF-08 | partiel | `lib/rooms/settings.ts` | — | Choisi et enregistré ; sera appliqué dans la zone de frappe. |
 | CONF-09 | partiel | `lib/rooms/settings.ts` | — | Activé/désactivé et enregistré ; les bonus ne sont pas encore codés. |
 | CONF-10 | non fait | — | — | |
@@ -92,7 +92,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | COURSE-05 | non fait | — | — | |
 | COURSE-06 | non fait | — | — | |
 | COURSE-07 | non fait | — | — | |
-| COURSE-08 | non fait | — | — | |
+| COURSE-08 | non fait | `lib/realtime/presence.test.ts` | Seul le délai de 30 s existe (un membre sans onglet ouvert depuis 30 s compte comme parti, testé avec de faux minuteurs). La reprise de la course et l'abandon n'existent pas encore. |
 | COURSE-09 | non fait | — | — | |
 | COURSE-10 | non fait | — | — | |
 | COURSE-11 | non fait | — | — | |
@@ -145,7 +145,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| TEST-01 | partiel | `lib/texts/random-text.test.ts`, `lib/texts/passage-text.test.ts`, `lib/rooms/code.test.ts` | idem | `bun test` : génération de textes (filtres, longueur, graine, options), extraits de passages, codes de salle. Formules, classement, machine à états, bots et bonus pas encore testés. |
+| TEST-01 | partiel | `lib/texts/*.test.ts`, `lib/rooms/*.test.ts`, `lib/auth/*.test.ts`, `lib/realtime/presence.test.ts` | idem | `bun test` : génération de textes (filtres, longueur, graine, options), extraits de passages, codes de salle, règles des noms, réglages de salle, délai de présence (faux minuteurs). Les règles des salles (créer, rejoindre, capacité, une salle par personne, passation d'hôte, fermeture) sont testées sur la base `typeracer_test` (`test/setup.ts` la force et refuse toute base dont le nom ne finit pas par `_test`). Formules, classement, machine à états, bots et bonus pas encore testés. |
 | TEST-02 | non fait | — | — | |
 | TEST-03 | non fait | — | — | La connexion par mot de passe existe déjà pour les futurs tests e2e. |
 
