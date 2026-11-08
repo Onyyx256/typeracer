@@ -45,6 +45,7 @@ erDiagram
         uuid room_id FK
         uuid user_id FK,UK
         text role
+        text name "unique dans la salle"
         timestamp joined_at
     }
     invite_links {
