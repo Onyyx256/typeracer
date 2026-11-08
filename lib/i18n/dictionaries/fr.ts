@@ -64,6 +64,14 @@ export const fr = {
       state: "État",
     },
     open: "Voir la salle {code}",
+    filters: {
+      label: "Filtrer les salles",
+      language: "Langue du texte",
+      complexity: "Difficulté",
+      any: "Toutes",
+    },
+    noMatch: "aucune salle publique ne correspond à ces filtres",
+    clearFilters: "Voir toutes les salles",
     codeSoon: "rejoindre avec un code bientôt disponible",
   },
   room: {

@@ -62,6 +62,14 @@ export const en: Dictionary = {
       state: "State",
     },
     open: "Open room {code}",
+    filters: {
+      label: "Filter rooms",
+      language: "Text language",
+      complexity: "Difficulty",
+      any: "Any",
+    },
+    noMatch: "no public room matches these filters",
+    clearFilters: "Show all rooms",
     codeSoon: "joining with a code coming soon",
   },
   room: {

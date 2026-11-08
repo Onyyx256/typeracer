@@ -3,17 +3,20 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { LiveLobby } from "@/app/components/live-updates";
 import { getViewer } from "@/lib/auth/current-user";
-import { LOCALE_NAMES, localePath } from "@/lib/i18n/config";
+import { LOCALES, LOCALE_NAMES, localePath, type Locale } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
+import { filterQuery, parseRoomFilters, type RoomFilters } from "@/lib/rooms/filters";
 import { findCurrentRoom, listPublicRooms } from "@/lib/rooms/rooms";
+import { COMPLEXITIES } from "@/lib/rooms/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dict = await getDictionary();
   return { title: dict.roomsPage.title };
 }
 
-export default async function RoomsPage() {
+export default async function RoomsPage({ searchParams }: PageProps<"/[lang]/rooms">) {
   const dict = await getDictionary();
 
   return (
@@ -28,7 +31,7 @@ export default async function RoomsPage() {
       </div>
       {/* The list changes all the time, so it renders on each request. */}
       <Suspense fallback={null}>
-        <RoomList />
+        <RoomList searchParams={searchParams} />
       </Suspense>
       <p className="mt-6 font-mono text-sm text-muted">
         &gt; {dict.roomsPage.codeSoon}
@@ -37,12 +40,18 @@ export default async function RoomsPage() {
   );
 }
 
-async function RoomList() {
+async function RoomList({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filters = parseRoomFilters(await searchParams);
+  const filtered = filters.lang !== undefined || filters.complexity !== undefined;
   const [dict, locale, viewer, rooms] = await Promise.all([
     getDictionary(),
     getLocale(),
     getViewer(),
-    listPublicRooms(),
+    listPublicRooms(filters),
   ]);
   const current = viewer ? await findCurrentRoom(viewer.id) : null;
   // Guests can't create rooms (AUTH-03).
@@ -65,9 +74,20 @@ async function RoomList() {
         </p>
       )}
 
+      <Filters dict={dict} locale={locale} filters={filters} />
+
       {rooms.length === 0 ? (
         <div className="mt-8 flex flex-wrap items-center gap-4">
-          <p className="font-mono text-sm text-muted">&gt; {t.empty}</p>
+          <p className="font-mono text-sm text-muted">&gt; {filtered ? t.noMatch : t.empty}</p>
+          {filtered && (
+            <Link
+              href={localePath(locale, "/rooms")}
+              scroll={false}
+              className="font-medium text-primary-text underline underline-offset-4"
+            >
+              {t.clearFilters}
+            </Link>
+          )}
           {canCreate && (
             <Link
               href={localePath(locale, "/rooms/new")}
@@ -119,5 +139,63 @@ async function RoomList() {
         </div>
       )}
     </>
+  );
+}
+
+type FiltersProps = { dict: Dictionary; locale: Locale; filters: RoomFilters };
+
+/**
+ * JOIN-02: plain links that set the URL's search params, so filtering works
+ * without JavaScript and the live refresh keeps the current filters.
+ */
+function Filters({ dict, locale, filters }: FiltersProps) {
+  const t = dict.roomsPage.filters;
+  const groups = [
+    {
+      key: "lang",
+      label: t.language,
+      options: LOCALES.map((value) => ({ value, label: LOCALE_NAMES[value] })),
+    },
+    {
+      key: "complexity",
+      label: t.complexity,
+      options: COMPLEXITIES.map((value) => ({ value, label: dict.createRoom.complexity[value] })),
+    },
+  ] as const;
+
+  return (
+    <nav aria-label={t.label} className="mt-8 grid gap-3">
+      {groups.map((group) => (
+        <div key={group.key} className="flex flex-wrap items-center gap-2">
+          <span
+            id={`filter-${group.key}`}
+            className="w-36 font-mono text-xs tracking-wide text-accent-text uppercase"
+          >
+            {group.label}
+          </span>
+          <ul aria-labelledby={`filter-${group.key}`} className="flex flex-wrap gap-2">
+            {[{ value: undefined, label: t.any }, ...group.options].map((option) => {
+              const active = filters[group.key] === option.value;
+              return (
+                <li key={option.value ?? "any"}>
+                  <Link
+                    href={localePath(locale, "/rooms") + filterQuery(filters, group.key, option.value)}
+                    scroll={false}
+                    aria-current={active ? "true" : undefined}
+                    className={`flex h-9 items-center border px-3 text-sm transition-colors rounded-leaf ${
+                      active
+                        ? "border-primary-text bg-surface font-medium text-primary-text"
+                        : "border-line hover:border-primary-text"
+                    }`}
+                  >
+                    {option.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
   );
 }
