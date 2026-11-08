@@ -93,6 +93,25 @@ export const en: Dictionary = {
     goBack: "Go back to {code}",
     leaveAndJoin: "Leave it and join this one",
     guestBadge: "guest",
+    kick: "Remove",
+    kickLabel: "Remove {name} from the room",
+    kickDialog: {
+      title: "Remove {name}?",
+      lead: "They leave the room and can't come back.",
+      confirm: "Remove from the room",
+      cancel: "Cancel",
+    },
+    kickErrors: {
+      notHost: "only the host can remove someone",
+      notMember: "this person isn't in the room anymore",
+      invalid: "invalid request",
+      unavailable: "not possible right now, try again later",
+    },
+    kicked: {
+      title: "You were removed from this room",
+      lead: "The host removed you. You can't join this room again, but you can join another one.",
+      back: "Browse rooms",
+    },
     nameDialog: {
       title: "Your name in this room",
       lead: "It's the name others will see in this room.",
@@ -108,6 +127,7 @@ export const en: Dictionary = {
       nameChars: "letters, numbers, spaces and . _ ' - only",
       nameReserved: "this name belongs to another account, pick another one",
       nameTaken: "someone in this room already goes by that name",
+      banned: "the host removed you from this room, you can't join it again",
       notSignedIn: "log in to join a room",
       notFound: "this room doesn't exist anymore",
       notJoinable: "a race is on, you can join when it ends",
@@ -232,6 +252,7 @@ export const en: Dictionary = {
       nameChars: "letters, numbers, spaces and . _ ' - only",
       nameReserved: "this name belongs to another account, pick another one",
       nameTaken: "someone in this room already goes by that name",
+      banned: "you were removed from this room",
     },
   },
   loginPage: {

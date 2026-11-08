@@ -95,6 +95,25 @@ export const fr = {
     goBack: "Retourner dans {code}",
     leaveAndJoin: "La quitter et entrer ici",
     guestBadge: "invité",
+    kick: "Retirer",
+    kickLabel: "Retirer {name} de la salle",
+    kickDialog: {
+      title: "Retirer {name} ?",
+      lead: "Cette personne quitte la salle et ne pourra plus y revenir.",
+      confirm: "Retirer de la salle",
+      cancel: "Annuler",
+    },
+    kickErrors: {
+      notHost: "seul l'hôte peut retirer quelqu'un",
+      notMember: "cette personne n'est plus dans la salle",
+      invalid: "demande invalide",
+      unavailable: "impossible pour le moment, réessaie plus tard",
+    },
+    kicked: {
+      title: "Tu as été retiré de cette salle",
+      lead: "L'hôte t'a retiré. Tu ne peux plus entrer dans cette salle, mais tu peux en rejoindre une autre.",
+      back: "Voir les salles",
+    },
     nameDialog: {
       title: "Ton nom dans la salle",
       lead: "C'est le nom que les autres verront dans cette salle.",
@@ -110,6 +129,7 @@ export const fr = {
       nameChars: "lettres, chiffres, espaces et . _ ' - seulement",
       nameReserved: "ce nom appartient à un autre compte, choisis-en un autre",
       nameTaken: "quelqu'un dans cette salle porte déjà ce nom",
+      banned: "l'hôte t'a retiré de cette salle, tu ne peux plus y entrer",
       notSignedIn: "connecte-toi pour entrer dans une salle",
       notFound: "cette salle n'existe plus",
       notJoinable: "une course est en cours, tu pourras entrer à la fin",
@@ -234,6 +254,7 @@ export const fr = {
       nameChars: "lettres, chiffres, espaces et . _ ' - seulement",
       nameReserved: "ce nom appartient à un autre compte, choisis-en un autre",
       nameTaken: "quelqu'un dans cette salle porte déjà ce nom",
+      banned: "tu as été retiré de cette salle",
     },
   },
   loginPage: {
