@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import * as z from "zod";
 import { createSession, getSessionUserId } from "@/lib/auth/session";
-import { createGuest, findProfile, isAccountUsername, setGuestNickname } from "@/lib/auth/users";
+import { createGuest, findProfile, setGuestNickname } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
 import { startRace, type StartRaceError } from "@/lib/race/manager";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
@@ -59,21 +59,16 @@ async function sessionProfile() {
 }
 
 /**
- * The name someone picked for a room (3 to 20 characters, AUTH-02). Another
- * account's username is never available, so nobody can pass for that
- * account; your own always is.
+ * The name someone picked for a room (3 to 20 characters, AUTH-02). Any name
+ * is allowed, an account's username included; only a name already used in
+ * the same room is refused, by the database (nameTaken). The guest badge
+ * tells a guest apart from an account of the same name.
  */
-async function checkName(
-  input: string,
-  userId: string | null,
-): Promise<{ name: string } | { error: NameError }> {
+function checkName(input: string): { name: string } | { error: NameError } {
   const parsed = nicknameSchema.safeParse(input);
   if (!parsed.success) {
     const chars = parsed.error.issues.some((issue) => issue.message === "nicknameChars");
     return { error: chars ? "nameChars" : "nameLength" };
-  }
-  if (await isAccountUsername(parsed.data, userId)) {
-    return { error: "nameReserved" };
   }
   return { name: parsed.data };
 }
@@ -125,7 +120,7 @@ export async function createRoomAction(input: unknown): Promise<RoomActionResult
     if (!user || user.isGuest) {
       return { ok: false, error: "notSignedIn" };
     }
-    const checked = await checkName(parsed.data.name, user.id);
+    const checked = checkName(parsed.data.name);
     if ("error" in checked) {
       return { ok: false, error: checked.error };
     }
@@ -151,7 +146,7 @@ export async function joinRoomAction(input: unknown): Promise<RoomActionResult> 
 
   return enterRoom("joinRoom", lang, async () => {
     const user = await sessionProfile();
-    const checked = await checkName(name, user?.id ?? null);
+    const checked = checkName(name);
     if ("error" in checked) {
       return { ok: false, error: checked.error };
     }

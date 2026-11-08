@@ -27,22 +27,6 @@ export async function createGuest(nickname: string): Promise<{ id: string }> {
   return created;
 }
 
-/**
- * True when an account other than `exceptUserId` uses this name as its
- * username, whatever its case.
- */
-export async function isAccountUsername(
-  name: string,
-  exceptUserId: string | null,
-): Promise<boolean> {
-  const [found] = await getDb()
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(sql`lower(${users.username})`, name.toLowerCase()))
-    .limit(1);
-  return found !== undefined && found.id !== exceptUserId;
-}
-
 /** A guest's default name for the next rooms: the last one they got into a room with. */
 export async function setGuestNickname(id: string, nickname: string): Promise<void> {
   await getDb()

@@ -57,6 +57,8 @@ test("a guest joins a public room under a nickname, then leaves", async ({ brows
 
   // The host signs in through the login form, in their own browser.
   await createAccount(browser, hostName);
+  // An account that never enters the room: its username stays free there.
+  await createAccount(browser, nickname);
   const hostContext = await browser.newContext();
   const host = await hostContext.newPage();
   await logIn(host, hostName);
@@ -91,14 +93,13 @@ test("a guest joins a public room under a nickname, then leaves", async ({ brows
   await submit.click();
   await expect(dialog.getByText("letters, numbers, spaces and . _ ' - only")).toBeVisible();
 
-  // The host's username, in other letter case: it belongs to their account.
+  // The host's name, in other letter case: someone in the room already uses it.
   await nameField.fill(hostName.toUpperCase());
   await submit.click();
-  await expect(
-    dialog.getByText("this name belongs to another account, pick another one"),
-  ).toBeVisible();
+  await expect(dialog.getByText("someone in this room already goes by that name")).toBeVisible();
 
-  // A free nickname gets them in, as a guest.
+  // The nickname is also another account's username, but that account isn't
+  // in the room, so the guest gets in under it.
   await nameField.fill(nickname);
   await submit.click();
   await expect(dialog).toBeHidden();
