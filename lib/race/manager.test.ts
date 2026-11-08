@@ -107,8 +107,9 @@ describe("during the race", () => {
   test("keys during the countdown are refused and the browser is resynced (COURSE-06)", async () => {
     const { hostId, code } = await roomWithRunners(2);
     await startRace(hostId);
-    expect(handleKeys(hostId, ["a", BACKSPACE])).toEqual({
+    expect(handleKeys(hostId, 7, ["a", BACKSPACE])).toEqual({
       code,
+      seq: 7,
       you: { input: "", keystrokes: 0, correctKeystrokes: 0 },
     });
   });

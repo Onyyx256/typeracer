@@ -244,7 +244,11 @@ function runtimeOf(userId: string): Runtime | null {
  * A batch of a runner's keys (COURSE-06). Returns what to send back to
  * that browser when the batch was refused, so it shows the server's state.
  */
-export function handleKeys(userId: string, keys: readonly string[]): RaceResyncPayload | null {
+export function handleKeys(
+  userId: string,
+  seq: number,
+  keys: readonly string[],
+): RaceResyncPayload | null {
   const runtime = runtimeOf(userId);
   if (!runtime || runtime.finishing) {
     return null;
@@ -253,7 +257,7 @@ export function handleKeys(userId: string, keys: readonly string[]): RaceResyncP
   const result = runtime.race.applyKeys(userId, keys, now);
   if (!result.ok) {
     const you = runtime.race.playerState(userId);
-    return you ? { code: runtime.code, you } : null;
+    return you ? { code: runtime.code, seq, you } : null;
   }
   if (result.finished && runtime.race.isOver(now)) {
     void finish(runtime);

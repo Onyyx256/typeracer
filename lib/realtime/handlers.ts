@@ -88,7 +88,7 @@ function onConnection(socket: Socket): void {
     if (!userId || !parsed.success) {
       return;
     }
-    const resync = handleKeys(userId, parsed.data.keys);
+    const resync = handleKeys(userId, parsed.data.seq, parsed.data.keys);
     if (resync) {
       socket.emit(EVENTS.raceResync, resync);
     }

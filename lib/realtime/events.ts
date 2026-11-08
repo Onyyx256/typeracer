@@ -43,6 +43,8 @@ export const raceSyncSchema = z.object({ code: roomCodeSchema });
 
 /** One character or "\b" (backspace) per key; the engine also limits the pace. */
 export const raceKeysSchema = z.object({
+  /** Numbers the batches, so a refused one can be replayed around (race:resync). */
+  seq: z.int().min(0).max(Number.MAX_SAFE_INTEGER),
   keys: z.array(z.string().length(1)).min(1).max(MAX_KEYS_PER_BATCH),
 });
 
@@ -61,7 +63,12 @@ export type RaceStatePayload = {
 };
 
 export type RaceTrackPayload = { code: string; track: TrackEntry[] };
-export type RaceResyncPayload = { code: string; you: PlayerState };
+/**
+ * The server's state right after refusing batch `seq`: the browser takes
+ * it and replays the batches it sent after that one, which the server
+ * handled on top of this state.
+ */
+export type RaceResyncPayload = { code: string; seq: number; you: PlayerState };
 
 export type RoomChanged = { code: string };
 export type RoomClosed = { code: string };
