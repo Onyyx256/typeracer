@@ -92,8 +92,20 @@ export const en: Dictionary = {
     elsewhere: "You're already in room {code}.",
     goBack: "Go back to {code}",
     leaveAndJoin: "Leave it and join this one",
+    guestBadge: "guest",
+    guest: {
+      title: "Pick a nickname",
+      lead: "It's the name others will see in the room. No account needed.",
+      label: "Nickname",
+      hint: "{min} to {max} characters",
+      submit: "Join",
+      cancel: "Cancel",
+      login: "I have an account: log in",
+    },
     errors: {
       invalid: "this room code isn't valid",
+      nicknameLength: "your nickname must be {min} to {max} characters",
+      nicknameChars: "letters, numbers, spaces and . _ ' - only",
       notSignedIn: "log in to join a room",
       notFound: "this room doesn't exist anymore",
       notJoinable: "a race is on, you can join when it ends",
@@ -256,6 +268,7 @@ export const en: Dictionary = {
     errors: {
       usernameLength: "Enter {usernameMin} to {usernameMax} characters.",
       usernameChars: "Letters, numbers, . _ - only.",
+      nicknameChars: "Letters, numbers, spaces and . _ ' - only.",
       required: "Required.",
       passwordMin: "At least {passwordMin} characters.",
       passwordMax: "At most {passwordMax} characters.",

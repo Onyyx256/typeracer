@@ -94,8 +94,20 @@ export const fr = {
     elsewhere: "Tu es déjà dans la salle {code}.",
     goBack: "Retourner dans {code}",
     leaveAndJoin: "La quitter et entrer ici",
+    guestBadge: "invité",
+    guest: {
+      title: "Choisis ton pseudo",
+      lead: "C'est le nom que les autres verront dans la salle. Pas besoin de compte.",
+      label: "Pseudo",
+      hint: "{min} à {max} caractères",
+      submit: "Entrer",
+      cancel: "Annuler",
+      login: "J'ai un compte : me connecter",
+    },
     errors: {
       invalid: "ce code de salle n'est pas valide",
+      nicknameLength: "ton pseudo doit faire de {min} à {max} caractères",
+      nicknameChars: "lettres, chiffres, espaces et . _ ' - seulement",
       notSignedIn: "connecte-toi pour entrer dans une salle",
       notFound: "cette salle n'existe plus",
       notJoinable: "une course est en cours, tu pourras entrer à la fin",
@@ -258,6 +270,7 @@ export const fr = {
     errors: {
       usernameLength: "Entre {usernameMin} à {usernameMax} caractères.",
       usernameChars: "Lettres, chiffres, . _ - seulement.",
+      nicknameChars: "Lettres, chiffres, espaces et . _ ' - seulement.",
       required: "Requis.",
       passwordMin: "Au moins {passwordMin} caractères.",
       passwordMax: "Au plus {passwordMax} caractères.",

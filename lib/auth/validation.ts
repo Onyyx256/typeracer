@@ -20,6 +20,7 @@ export const AUTH_LIMITS = {
 export const AUTH_ERRORS = [
   "usernameLength",
   "usernameChars",
+  "nicknameChars",
   "required",
   "passwordMin",
   "passwordMax",
@@ -63,6 +64,22 @@ export const signupSchema = z
     path: ["confirm"],
     error: "confirmMismatch",
   });
+
+/**
+ * AUTH-02: a guest's nickname, shown in rooms. Letters of any language,
+ * digits, spaces and a few separators; inner runs of spaces count as one.
+ */
+export const nicknameSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(/\s+/g, " "))
+  .pipe(
+    z
+      .string()
+      .min(USERNAME_MIN, usernameLength)
+      .max(USERNAME_MAX, usernameLength)
+      .regex(/^[\p{L}\p{N} ._'-]+$/u, { error: "nicknameChars" }),
+  );
 
 // Deliberately loose: login only needs enough to look the account up, and
 // stricter rules here would lock out accounts created under older ones.

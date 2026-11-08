@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import * as z from "zod";
-import { getSessionUserId } from "@/lib/auth/session";
+import { createSession, getSessionUserId } from "@/lib/auth/session";
+import { createGuest, findProfile } from "@/lib/auth/users";
+import { nicknameSchema } from "@/lib/auth/validation";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import {
@@ -44,6 +46,13 @@ function logFailure(action: string, error: unknown): void {
   );
 }
 
+/** Joining can also fail on the nickname a guest typed (AUTH-02). */
+export type JoinRoomActionError = RoomActionError | "nicknameLength" | "nicknameChars";
+
+export type JoinRoomActionResult = Omit<RoomActionResult, "error"> & {
+  error: JoinRoomActionError;
+};
+
 /** Runs the database call; on success, sends the user to the room page. */
 async function enterRoom(
   action: string,
@@ -70,16 +79,26 @@ const createRoomInput = z.object({
   leaveCurrent: z.boolean().default(false),
 });
 
-/** SALLE-01: only signed-in users create rooms (AUTH-03). */
+/** The session's user, if the row still exists. */
+async function sessionProfile() {
+  const userId = await getSessionUserId();
+  return userId ? findProfile(userId) : null;
+}
+
+/** SALLE-01: only signed-in users create rooms, never guests (AUTH-03). */
 export async function createRoomAction(input: unknown): Promise<RoomActionResult> {
   const parsed = createRoomInput.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "invalid" };
   }
-  const userId = await getSessionUserId();
-  if (!userId) {
+  const user = await sessionProfile().catch((error: unknown) => {
+    logFailure("createRoom", error);
+    return null;
+  });
+  if (!user || user.isGuest) {
     return { ok: false, error: "notSignedIn" };
   }
+  const userId = user.id;
   const settings = normalizeSettings(parsed.data.settings);
   // Checked now so the room never reaches a race it can't give a text to.
   if (textConfigProblem(raceConfigSchema.parse(settings))) {
@@ -96,18 +115,48 @@ const joinRoomInput = z.object({
   code: roomCodeSchema,
   role: z.enum(HOST_ROLES),
   leaveCurrent: z.boolean().default(false),
+  /** Only read when the visitor has no session yet: they join as a guest (AUTH-02). */
+  nickname: z.string().max(200).optional(),
 });
 
-export async function joinRoomAction(input: unknown): Promise<RoomActionResult> {
+/** A visitor without a session gets a guest account under the nickname they chose. */
+async function joiningUserId(
+  nickname: string | undefined,
+): Promise<{ userId: string } | { error: JoinRoomActionError }> {
+  const existing = await sessionProfile();
+  if (existing) {
+    return { userId: existing.id };
+  }
+  if (nickname === undefined) {
+    return { error: "notSignedIn" };
+  }
+  const parsed = nicknameSchema.safeParse(nickname);
+  if (!parsed.success) {
+    const chars = parsed.error.issues.some((issue) => issue.message === "nicknameChars");
+    return { error: chars ? "nicknameChars" : "nicknameLength" };
+  }
+  const guest = await createGuest(parsed.data);
+  await createSession(guest.id);
+  return { userId: guest.id };
+}
+
+export async function joinRoomAction(input: unknown): Promise<JoinRoomActionResult> {
   const parsed = joinRoomInput.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "invalid" };
   }
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return { ok: false, error: "notSignedIn" };
+  const { lang, code, role, leaveCurrent, nickname } = parsed.data;
+  let joining: Awaited<ReturnType<typeof joiningUserId>>;
+  try {
+    joining = await joiningUserId(nickname);
+  } catch (error) {
+    logFailure("joinRoom", error);
+    return { ok: false, error: "unavailable" };
   }
-  const { lang, code, role, leaveCurrent } = parsed.data;
+  if ("error" in joining) {
+    return { ok: false, error: joining.error };
+  }
+  const { userId } = joining;
 
   return enterRoom("joinRoom", lang, () => joinRoom(userId, code, role, leaveCurrent));
 }

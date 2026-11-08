@@ -18,6 +18,15 @@ export async function createUser(
   return created ?? null;
 }
 
+/** AUTH-02: a guest is a user row with only a nickname. */
+export async function createGuest(nickname: string): Promise<{ id: string }> {
+  const [created] = await getDb()
+    .insert(users)
+    .values({ displayName: nickname, isGuest: true })
+    .returning({ id: users.id });
+  return created;
+}
+
 export async function findCredentials(
   username: string,
 ): Promise<{ id: string; passwordHash: string | null } | null> {
@@ -32,9 +41,9 @@ export async function findCredentials(
 /** What the interface may show of a user; never the password hash. */
 export async function findProfile(
   id: string,
-): Promise<{ id: string; displayName: string } | null> {
+): Promise<{ id: string; displayName: string; isGuest: boolean } | null> {
   const [found] = await getDb()
-    .select({ id: users.id, displayName: users.displayName })
+    .select({ id: users.id, displayName: users.displayName, isGuest: users.isGuest })
     .from(users)
     .where(eq(users.id, id))
     .limit(1);

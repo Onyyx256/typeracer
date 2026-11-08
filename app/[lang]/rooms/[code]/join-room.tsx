@@ -6,7 +6,7 @@ import { localePath, type Locale } from "@/lib/i18n/config";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 import type { HostRole } from "@/lib/rooms/settings";
-import { joinRoomAction, type RoomActionError } from "../actions";
+import { joinRoomAction, type JoinRoomActionError } from "../actions";
 
 type JoinRoomProps = {
   dict: RoomDictionary;
@@ -24,7 +24,7 @@ const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 
 export function JoinRoom({ dict, locale, code, full, elsewhere }: JoinRoomProps) {
-  const [error, setError] = useState<RoomActionError | null>(null);
+  const [error, setError] = useState<JoinRoomActionError | null>(null);
   const [pending, startTransition] = useTransition();
 
   function join(role: HostRole) {
