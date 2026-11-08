@@ -179,3 +179,30 @@ export const roomMembers = pgTable(
 
 export type RoomMember = typeof roomMembers.$inferSelect;
 export type NewRoomMember = typeof roomMembers.$inferInsert;
+
+/**
+ * SALLE-07: people the host kicked out. They can't join that room again;
+ * the row goes away with the room or the user.
+ */
+export const roomBans = pgTable(
+  "room_bans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => rooms.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Also the index joinRoom looks the ban up with.
+    uniqueIndex("room_bans_room_user_idx").on(table.roomId, table.userId),
+  ],
+);
+
+export type RoomBan = typeof roomBans.$inferSelect;
+export type NewRoomBan = typeof roomBans.$inferInsert;
