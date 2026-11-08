@@ -27,12 +27,14 @@ export default async function CreateRoomPage() {
 }
 
 async function SignedInForm() {
-  const [, dict, locale] = await Promise.all([
+  const [user, dict, locale] = await Promise.all([
     requireUser(),
     getDictionary(),
     getLocale(),
   ]);
 
   // Only the form's strings are sent to the browser, not the whole dictionary.
-  return <CreateRoomForm dict={dict.createRoom} locale={locale} />;
+  return (
+    <CreateRoomForm dict={dict.createRoom} locale={locale} defaultName={user.displayName} />
+  );
 }

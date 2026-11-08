@@ -122,8 +122,8 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               code={room.code}
               full={runners.length >= room.capacity}
               elsewhere={current?.code ?? null}
-              needsNickname={!user}
-              isGuest={user?.isGuest ?? false}
+              defaultName={user?.displayName ?? ""}
+              hasSession={user !== null}
             />
           </div>
         )}

@@ -156,6 +156,11 @@ export const roomMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     role: text("role").$type<HostRole>().notNull(),
+    /**
+     * The name shown in this room, chosen on entry (it defaults to the
+     * user's display name). Unique within the room, see the index below.
+     */
+    name: text("name").notNull(),
     /** The longest-present member becomes host when the host leaves (SALLE-08). */
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
@@ -165,6 +170,9 @@ export const roomMembers = pgTable(
     // SALLE-06: one room per person at a time, whatever the interface does.
     uniqueIndex("room_members_user_idx").on(table.userId),
     index("room_members_room_idx").on(table.roomId, table.joinedAt),
+    // Two members of a room never share a name, whatever its case.
+    uniqueIndex("room_members_room_name_idx").on(table.roomId, sql`lower(${table.name})`),
+    check("room_members_name_length", sql`char_length(${table.name}) between 3 and 20`),
     check("room_members_role", sql`${table.role} in ('participant', 'spectator')`),
   ],
 );

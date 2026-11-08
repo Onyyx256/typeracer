@@ -11,6 +11,7 @@ import {
   localePath,
   type Locale,
 } from "@/lib/i18n/config";
+import { USERNAME_MAX, USERNAME_MIN } from "@/lib/auth/validation";
 import type { CreateRoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import {
@@ -30,14 +31,20 @@ import {
   roomSettingsSchema,
   type RoomSettings,
 } from "@/lib/rooms/settings";
+import { isNameError } from "@/lib/rooms/names";
 import { createRoomAction, type RoomActionError } from "../actions";
 
 type CreateRoomFormProps = {
   dict: CreateRoomDictionary;
   locale: Locale;
+  /** The account's display name, the default name in the room. */
+  defaultName: string;
 };
 
-export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
+const NAME_LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
+
+export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProps) {
+  const [name, setName] = useState(defaultName);
   const [settings, setSettings] = useState<RoomSettings>(() =>
     defaultRoomSettings(locale),
   );
@@ -59,7 +66,7 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
     setError(null);
     startTransition(async () => {
       // On success the action redirects to the new room.
-      const result = await createRoomAction({ lang: locale, settings, leaveCurrent });
+      const result = await createRoomAction({ lang: locale, settings, name, leaveCurrent });
       setError(result.error);
       setCurrentCode(result.error === "alreadyInRoom" ? (result.currentCode ?? null) : null);
     });
@@ -82,6 +89,21 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
     >
       <div className="grid gap-10">
         <Section title={dict.sections.room}>
+          <div className="max-w-sm">
+            <TextField
+              label={dict.name.label}
+              name="name"
+              value={name}
+              onChange={(value) => {
+                setName(value);
+                setError(null);
+              }}
+              autoComplete="nickname"
+              maxLength={USERNAME_MAX}
+              hint={interpolate(dict.name.hint, NAME_LIMITS)}
+              error={isNameError(error) ? interpolate(dict.errors[error], NAME_LIMITS) : undefined}
+            />
+          </div>
           <ChoiceGroup
             legend={dict.role.legend}
             name="hostRole"
@@ -290,7 +312,7 @@ export function CreateRoomForm({ dict, locale }: CreateRoomFormProps) {
         <p role="status" className="mt-3 min-h-5 font-mono text-sm text-accent-text">
           {(pending || (error && !elsewhere)) && (
             <>
-              &gt; {pending ? dict.submitting : error && dict.errors[error]}
+              &gt; {pending ? dict.submitting : error && interpolate(dict.errors[error], NAME_LIMITS)}
               <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">
                 _
               </span>

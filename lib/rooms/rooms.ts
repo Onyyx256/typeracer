@@ -156,10 +156,12 @@ async function checkCurrentRoom(
 }
 
 /** SALLE-01: the creator is the host, as a runner or a spectator. */
+/** `name` is the host's name in this room, already validated. */
 export async function createRoom(
   userId: string,
   settings: RoomSettings,
   leaveCurrent: boolean,
+  name: string,
 ): Promise<RoomResult> {
   const blocked = await checkCurrentRoom(userId, leaveCurrent);
   if (blocked) {
@@ -171,7 +173,9 @@ export async function createRoom(
   try {
     const result = await getDb().transaction(async (tx) => {
       const room = await insertRoom(tx, { userId, visibility, capacity, config });
-      await tx.insert(roomMembers).values({ roomId: room.id, userId, role: hostRole });
+      await tx
+        .insert(roomMembers)
+        .values({ roomId: room.id, userId, role: hostRole, name });
       return { ok: true as const, code: room.code };
     });
     notifyRoomChanged(result.code);
@@ -210,42 +214,17 @@ async function insertRoom(
 }
 
 /**
- * Joins a public room as a runner or a spectator. Only public rooms for now:
- * code-only and private rooms will need their own checks (SALLE-03, SALLE-04),
- * and until then they answer "not found" so a code reveals nothing.
- */
-/** True when another member of the room goes by this name, whatever its case. */
-async function nameTakenInRoom(
-  tx: Transaction,
-  roomId: string,
-  userId: string,
-  name: string,
-): Promise<boolean> {
-  const [clash] = await tx
-    .select({ id: roomMembers.id })
-    .from(roomMembers)
-    .innerJoin(users, eq(users.id, roomMembers.userId))
-    .where(
-      and(
-        eq(roomMembers.roomId, roomId),
-        ne(roomMembers.userId, userId),
-        eq(sql`lower(${users.displayName})`, name.toLowerCase()),
-      ),
-    )
-    .limit(1);
-  return clash !== undefined;
-}
-
-/**
- * `rename` is a guest's new nickname, applied only if the join succeeds
- * (a guest whose nickname was taken in this room picks another).
+ * Joins a public room as a runner or a spectator, under `name` (already
+ * validated). Only public rooms for now: code-only and private rooms will
+ * need their own checks (SALLE-03, SALLE-04), and until then they answer
+ * "not found" so a code reveals nothing.
  */
 export async function joinRoom(
   userId: string,
   code: string,
   role: HostRole,
   leaveCurrent: boolean,
-  rename?: string,
+  name: string,
 ): Promise<RoomResult> {
   const blocked = await checkCurrentRoom(userId, leaveCurrent, code);
   if (blocked) {
@@ -293,23 +272,8 @@ export async function joinRoom(
           return { ok: false, error: "full" };
         }
       }
-      // Two members of a room never share a name. The room row lock above
-      // makes this check and the insert atomic for joins to the same room.
-      const [me] = await tx
-        .select({ displayName: users.displayName, isGuest: users.isGuest })
-        .from(users)
-        .where(eq(users.id, userId));
-      const name = rename !== undefined && me?.isGuest ? rename : me?.displayName;
-      if (!me || name === undefined) {
-        return { ok: false, error: "notFound" };
-      }
-      if (await nameTakenInRoom(tx, room.id, userId, name)) {
-        return { ok: false, error: "nameTaken" };
-      }
-      if (name !== me.displayName) {
-        await tx.update(users).set({ displayName: name }).where(eq(users.id, userId));
-      }
-      await tx.insert(roomMembers).values({ roomId: room.id, userId, role });
+      // A name already used in the room is refused by room_members_room_name_idx.
+      await tx.insert(roomMembers).values({ roomId: room.id, userId, role, name });
       return { ok: true, code };
     });
     if (result.ok) {
@@ -320,6 +284,9 @@ export async function joinRoom(
     if (isUniqueViolation(error, "room_members_user_idx")) {
       const current = await findCurrentRoom(userId);
       return { ok: false, error: "alreadyInRoom", currentCode: current?.code };
+    }
+    if (isUniqueViolation(error, "room_members_room_name_idx")) {
+      return { ok: false, error: "nameTaken" };
     }
     throw error;
   }
@@ -366,7 +333,8 @@ export async function getRoom(code: string): Promise<RoomView | null> {
   const members = await db
     .select({
       userId: roomMembers.userId,
-      displayName: users.displayName,
+      // The name chosen for this room, not the account's display name.
+      displayName: roomMembers.name,
       isGuest: users.isGuest,
       role: roomMembers.role,
     })
@@ -407,17 +375,17 @@ export async function listPublicRooms(limit = 50): Promise<PublicRoomSummary[]> 
   const rows = await getDb()
     .select({
       code: rooms.code,
-      hostName: users.displayName,
+      // The host's name in this room.
+      hostName: sql<string>`(select ${roomMembers.name} from ${roomMembers} where ${roomMembers.roomId} = ${rooms.id} and ${roomMembers.userId} = ${rooms.hostId})`,
       participants,
       capacity: rooms.capacity,
       state: rooms.state,
       config: rooms.config,
     })
     .from(rooms)
-    .innerJoin(users, eq(users.id, rooms.hostId))
     .leftJoin(roomMembers, eq(roomMembers.roomId, rooms.id))
     .where(and(eq(rooms.visibility, "public"), ne(rooms.state, "closed")))
-    .groupBy(rooms.id, users.displayName)
+    .groupBy(rooms.id)
     .orderBy(desc(rooms.createdAt))
     .limit(limit);
 

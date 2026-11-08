@@ -7,6 +7,7 @@ import { createGuest, findProfile, isAccountUsername } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
 import { roomCodeSchema } from "@/lib/rooms/code";
+import type { NameError } from "@/lib/rooms/names";
 import {
   createRoom,
   joinRoom,
@@ -22,9 +23,11 @@ import {
 } from "@/lib/rooms/settings";
 import { textConfigProblem } from "@/lib/texts/generate";
 
+
 /** Error codes; the forms show them in the visitor's language. */
 export type RoomActionError =
   | RoomError
+  | NameError
   | "invalid"
   | "noWords"
   | "notSignedIn"
@@ -46,24 +49,39 @@ function logFailure(action: string, error: unknown): void {
   );
 }
 
-/** Joining can also fail on the nickname a guest typed (AUTH-02). */
-export type JoinRoomActionError =
-  | RoomActionError
-  | "nicknameLength"
-  | "nicknameChars"
-  | "nicknameReserved";
+/** The session's user, if the row still exists. */
+async function sessionProfile() {
+  const userId = await getSessionUserId();
+  return userId ? findProfile(userId) : null;
+}
 
-export type JoinRoomActionResult = Omit<RoomActionResult, "error"> & {
-  error: JoinRoomActionError;
-};
+/**
+ * The name someone picked for a room (3 to 20 characters, AUTH-02). Another
+ * account's username is never available, so nobody can pass for that
+ * account; your own always is.
+ */
+async function checkName(
+  input: string,
+  userId: string | null,
+): Promise<{ name: string } | { error: NameError }> {
+  const parsed = nicknameSchema.safeParse(input);
+  if (!parsed.success) {
+    const chars = parsed.error.issues.some((issue) => issue.message === "nicknameChars");
+    return { error: chars ? "nameChars" : "nameLength" };
+  }
+  if (await isAccountUsername(parsed.data, userId)) {
+    return { error: "nameReserved" };
+  }
+  return { name: parsed.data };
+}
 
-/** Runs the database call; on success, sends the user to the room page. */
+/** Checks the name, runs the database call; on success, sends the user to the room page. */
 async function enterRoom(
   action: string,
   lang: Locale,
-  run: () => Promise<RoomResult>,
+  run: () => Promise<RoomResult | RoomActionResult>,
 ): Promise<RoomActionResult> {
-  let result: RoomResult;
+  let result: RoomResult | RoomActionResult;
   try {
     result = await run();
   } catch (error) {
@@ -77,17 +95,15 @@ async function enterRoom(
   redirect(localePath(lang, `/rooms/${result.code}`));
 }
 
+const nameInput = z.string().max(200);
+
 const createRoomInput = z.object({
   lang: localeSchema,
   settings: roomSettingsSchema,
+  /** The host's name in this room. */
+  name: nameInput,
   leaveCurrent: z.boolean().default(false),
 });
-
-/** The session's user, if the row still exists. */
-async function sessionProfile() {
-  const userId = await getSessionUserId();
-  return userId ? findProfile(userId) : null;
-}
 
 /** SALLE-01: only signed-in users create rooms, never guests (AUTH-03). */
 export async function createRoomAction(input: unknown): Promise<RoomActionResult> {
@@ -95,97 +111,55 @@ export async function createRoomAction(input: unknown): Promise<RoomActionResult
   if (!parsed.success) {
     return { ok: false, error: "invalid" };
   }
-  const user = await sessionProfile().catch((error: unknown) => {
-    logFailure("createRoom", error);
-    return null;
-  });
-  if (!user || user.isGuest) {
-    return { ok: false, error: "notSignedIn" };
-  }
-  const userId = user.id;
   const settings = normalizeSettings(parsed.data.settings);
   // Checked now so the room never reaches a race it can't give a text to.
   if (textConfigProblem(raceConfigSchema.parse(settings))) {
     return { ok: false, error: "noWords" };
   }
 
-  return enterRoom("createRoom", parsed.data.lang, () =>
-    createRoom(userId, settings, parsed.data.leaveCurrent),
-  );
+  return enterRoom("createRoom", parsed.data.lang, async () => {
+    const user = await sessionProfile();
+    if (!user || user.isGuest) {
+      return { ok: false, error: "notSignedIn" };
+    }
+    const checked = await checkName(parsed.data.name, user.id);
+    if ("error" in checked) {
+      return { ok: false, error: checked.error };
+    }
+    return createRoom(user.id, settings, parsed.data.leaveCurrent, checked.name);
+  });
 }
 
 const joinRoomInput = z.object({
   lang: localeSchema,
   code: roomCodeSchema,
   role: z.enum(HOST_ROLES),
+  /** The name in this room; a visitor without a session also becomes a guest under it (AUTH-02). */
+  name: nameInput,
   leaveCurrent: z.boolean().default(false),
-  /** Only read when the visitor has no session yet: they join as a guest (AUTH-02). */
-  nickname: z.string().max(200).optional(),
 });
 
-/** Validates a guest's nickname; an account's username is never available (AUTH-02). */
-async function checkNickname(
-  nickname: string,
-): Promise<{ nickname: string } | { error: JoinRoomActionError }> {
-  const parsed = nicknameSchema.safeParse(nickname);
-  if (!parsed.success) {
-    const chars = parsed.error.issues.some((issue) => issue.message === "nicknameChars");
-    return { error: chars ? "nicknameChars" : "nicknameLength" };
-  }
-  if (await isAccountUsername(parsed.data)) {
-    return { error: "nicknameReserved" };
-  }
-  return { nickname: parsed.data };
-}
-
-/**
- * A visitor without a session gets a guest account under the nickname they
- * chose. A guest who sends a nickname (theirs was taken in this room) is
- * renamed when the join succeeds; an account's name never changes here.
- */
-async function joiningUser(
-  nickname: string | undefined,
-): Promise<{ userId: string; rename?: string } | { error: JoinRoomActionError }> {
-  const existing = await sessionProfile();
-  if (existing && (!existing.isGuest || nickname === undefined)) {
-    return { userId: existing.id };
-  }
-  if (nickname === undefined) {
-    return { error: "notSignedIn" };
-  }
-  const checked = await checkNickname(nickname);
-  if ("error" in checked) {
-    return checked;
-  }
-  if (existing) {
-    return { userId: existing.id, rename: checked.nickname };
-  }
-  const guest = await createGuest(checked.nickname);
-  await createSession(guest.id);
-  return { userId: guest.id };
-}
-
-export async function joinRoomAction(input: unknown): Promise<JoinRoomActionResult> {
+export async function joinRoomAction(input: unknown): Promise<RoomActionResult> {
   const parsed = joinRoomInput.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "invalid" };
   }
-  const { lang, code, role, leaveCurrent, nickname } = parsed.data;
-  let joining: Awaited<ReturnType<typeof joiningUser>>;
-  try {
-    joining = await joiningUser(nickname);
-  } catch (error) {
-    logFailure("joinRoom", error);
-    return { ok: false, error: "unavailable" };
-  }
-  if ("error" in joining) {
-    return { ok: false, error: joining.error };
-  }
-  const { userId, rename } = joining;
+  const { lang, code, role, name, leaveCurrent } = parsed.data;
 
-  return enterRoom("joinRoom", lang, () =>
-    joinRoom(userId, code, role, leaveCurrent, rename),
-  );
+  return enterRoom("joinRoom", lang, async () => {
+    const user = await sessionProfile();
+    const checked = await checkName(name, user?.id ?? null);
+    if ("error" in checked) {
+      return { ok: false, error: checked.error };
+    }
+    let userId = user?.id;
+    if (!userId) {
+      // The nickname becomes the guest's default name for the next rooms.
+      userId = (await createGuest(checked.name)).id;
+      await createSession(userId);
+    }
+    return joinRoom(userId, code, role, leaveCurrent, checked.name);
+  });
 }
 
 const leaveRoomInput = z.object({ lang: localeSchema });
