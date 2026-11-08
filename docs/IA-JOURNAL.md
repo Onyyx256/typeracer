@@ -23,5 +23,5 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Outil / agent :** Claude Code (session principale), panneau navigateur intégré.
 - **Ce que l'IA a fait :** pour vérifier la course dans le navigateur, elle a relancé la configuration `prod-3001` (base de développement) au lieu de `prod-3001-testdb`, alors que l'entrée précédente du journal décrivait déjà ce piège. 30 s après le démarrage, la salle SSX2T5 d'Onyx (ouverte sur l'autre serveur de dev) a été jugée abandonnée et fermée.
 - **Comment je l'ai détecté :** l'IA a relu le journal en y ajoutant une entrée, puis a vérifié les salles fermées dans la base (fermeture à 19 h 03 min 38 s, 30 s après le démarrage du serveur de test).
-- **Correction :** serveur de test arrêté. La salle reste fermée, à la demande de l'utilisatrice.
+- **Correction :** serveur de test arrêté. La salle reste fermée, à ma demande.
 - **Leçon :** relire le journal avant de lancer un serveur; un serveur de test ne doit jamais démarrer sur la base de développement.
