@@ -5,6 +5,7 @@ import { roomBans, roomMembers, rooms, users } from "@/db/schema";
 import { notifyKicked, notifyRoomChanged, notifyRoomClosed } from "@/lib/realtime/notify";
 import { isConnected } from "@/lib/realtime/presence";
 import { generateRoomCode } from "./code";
+import type { RoomFilters } from "./filters";
 import {
   JOINABLE_STATES,
   raceConfigSchema,
@@ -455,8 +456,14 @@ export type PublicRoomSummary = {
   textType: RaceConfig["textType"];
 };
 
-/** The room browser's list (JOIN-02): open public rooms, newest first. */
-export async function listPublicRooms(limit = 50): Promise<PublicRoomSummary[]> {
+/**
+ * The room browser's list (JOIN-02): open public rooms, newest first,
+ * optionally only one text language and/or one complexity.
+ */
+export async function listPublicRooms(
+  filters: RoomFilters = {},
+  limit = 50,
+): Promise<PublicRoomSummary[]> {
   const participants = sql<number>`count(${roomMembers.id}) filter (where ${roomMembers.role} = 'participant')`.mapWith(Number);
   const rows = await getDb()
     .select({
@@ -470,7 +477,17 @@ export async function listPublicRooms(limit = 50): Promise<PublicRoomSummary[]> 
     })
     .from(rooms)
     .leftJoin(roomMembers, eq(roomMembers.roomId, rooms.id))
-    .where(and(eq(rooms.visibility, "public"), ne(rooms.state, "closed")))
+    .where(
+      and(
+        eq(rooms.visibility, "public"),
+        ne(rooms.state, "closed"),
+        // Validated values, sent as bound parameters.
+        filters.lang ? sql`${rooms.config}->>'language' = ${filters.lang}` : undefined,
+        filters.complexity
+          ? sql`${rooms.config}->>'complexity' = ${filters.complexity}`
+          : undefined,
+      ),
+    )
     .groupBy(rooms.id)
     .orderBy(desc(rooms.createdAt))
     .limit(limit);
