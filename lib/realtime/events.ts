@@ -15,6 +15,8 @@ export const EVENTS = {
   unwatchLobby: "lobby:unwatch",
   /** Server → client: the room's members, host, state or settings changed. */
   roomChanged: "room:changed",
+  /** Server → client, to each member released when their room closes (SALLE-08). */
+  roomClosed: "room:closed",
   /** Server → client: a public room was created, changed or closed. */
   lobbyChanged: "lobby:changed",
 } as const;
@@ -23,6 +25,7 @@ export const EVENTS = {
 export const watchRoomSchema = z.object({ code: roomCodeSchema });
 
 export type RoomChanged = { code: string };
+export type RoomClosed = { code: string };
 
 /** Socket.IO channel names. */
 export const roomChannel = (code: string) => `room:${code}`;
