@@ -1,6 +1,6 @@
 # Architecture
 
-Les tables `users`, `texts`, `rooms` et `room_members` existent. Les autres (`accounts`, `invite_links`, `races`, `race_results`) sont ce que je prévois faire.
+Les tables `users`, `texts`, `rooms`, `room_members` et `room_bans` existent. Les autres (`accounts`, `invite_links`, `races`, `race_results`) sont ce que je prévois faire.
 
 ## Modèle de données
 
@@ -10,6 +10,8 @@ erDiagram
     users ||--o{ rooms : "est hôte de"
     rooms ||--o{ room_members : "contient"
     users |o--o{ room_members : "est"
+    rooms ||--o{ room_bans : "exclut"
+    users ||--o{ room_bans : "est exclu de"
     rooms ||--o{ invite_links : "a"
     rooms ||--o{ races : "enchaîne"
     texts |o--o{ races : "utilisé dans"
@@ -47,6 +49,12 @@ erDiagram
         text role
         text name "unique dans la salle"
         timestamp joined_at
+    }
+    room_bans {
+        uuid id PK
+        uuid room_id FK
+        uuid user_id FK
+        timestamp created_at
     }
     invite_links {
         uuid id PK
@@ -95,6 +103,7 @@ Quelques précisions :
 - Le code de salle a un index unique et une contrainte `check` sur son format (6 caractères sans 0/O ni 1/I/L, SALLE-02). La capacité est vérifiée entre 2 et 30 par la base aussi (SALLE-05).
 - La visibilité et la capacité ont leur propre colonne parce que la liste des salles filtre dessus. Le reste de la configuration (texte, temps, mode d'erreur, bonus) est dans la colonne `jsonb` `config`, parce que ce sont beaucoup d'options qui sont toujours lues ensemble. Elle est relue avec le schéma Zod `raceConfigSchema`.
 - Quand l'hôte quitte, le membre présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il ne reste personne, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
+- Quand l'hôte exclut quelqu'un (SALLE-07), son départ est enregistré dans `room_bans`, avec un index unique sur (`room_id`, `user_id`). Rejoindre la salle vérifie cette table, donc la personne ne peut plus revenir. Un invité qui efface ses cookies devient un nouvel utilisateur : la base ne peut pas le reconnaître.
 - `texts` contient les passages des textes cohérents. Leur provenance et le calcul de la difficulté sont expliqués dans [TEXTES.md](TEXTES.md).
 - `race_results` est seulement pour les utilisateurs connectés (RES-05). `wpm_series` garde le MPM dans le temps pour pouvoir réafficher les graphiques.
 - La progression pendant la course n'est pas dans la base de données. Elle reste en mémoire sur le serveur et les résultats sont écrits une seule fois à la fin (PERF-02).
