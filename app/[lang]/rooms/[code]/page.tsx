@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRoom } from "@/app/components/live-updates";
 import { RoomSummary } from "@/app/components/room-summary";
-import { requireUser } from "@/lib/auth/current-user";
+import { getViewer } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { interpolate, plural } from "@/lib/i18n/format";
@@ -34,7 +34,8 @@ export default function RoomPage({ params }: PageProps<"/[lang]/rooms/[code]">) 
 async function Room({ params }: { params: Promise<{ code: string }> }) {
   const [{ code: raw }, user, dict, locale] = await Promise.all([
     params,
-    requireUser(),
+    // Anyone may look at a public room; a visitor without a session joins as a guest (AUTH-02).
+    getViewer(),
     getDictionary(),
     getLocale(),
   ]);
@@ -47,12 +48,12 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   }
 
   const room = await getRoom(parsed.data);
-  const member = room?.members.find((entry) => entry.userId === user.id);
+  const member = user ? room?.members.find((entry) => entry.userId === user.id) : undefined;
   // Code-only and private rooms can't be joined yet, so only their members see them.
   if (!room || (!member && room.visibility !== "public")) {
     notFound();
   }
-  const current = member ? null : await findCurrentRoom(user.id);
+  const current = member || !user ? null : await findCurrentRoom(user.id);
 
   const runners = room.members.filter((entry) => entry.role === "participant");
   const spectators = room.members.filter((entry) => entry.role === "spectator");
@@ -99,7 +100,8 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           empty={t.noRunners}
           you={t.you}
           host={t.host}
-          userId={user.id}
+          guest={t.guestBadge}
+          userId={user?.id ?? null}
         />
         <MemberList
           title={t.spectators}
@@ -108,7 +110,8 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           empty={t.noSpectators}
           you={t.you}
           host={t.host}
-          userId={user.id}
+          guest={t.guestBadge}
+          userId={user?.id ?? null}
         />
 
         {!member && joinable && (
@@ -119,6 +122,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               code={room.code}
               full={runners.length >= room.capacity}
               elsewhere={current?.code ?? null}
+              needsNickname={!user}
             />
           </div>
         )}
@@ -148,6 +152,7 @@ function MemberList({
   empty,
   you,
   host,
+  guest,
   userId,
 }: {
   title: string;
@@ -156,7 +161,8 @@ function MemberList({
   empty: string;
   you: string;
   host: string;
-  userId: string;
+  guest: string;
+  userId: string | null;
 }) {
   return (
     <section>
@@ -176,17 +182,16 @@ function MemberList({
                 entry.userId === userId ? "border-primary-text" : "border-line"
               }`}
             >
-              <span className="font-medium">
+              <span className="min-w-0 font-medium break-words">
                 {entry.displayName}
                 {entry.userId === userId && (
                   <span className="text-muted"> ({you})</span>
                 )}
               </span>
-              {entry.isHost && (
-                <span className="font-mono text-xs tracking-wide text-accent-text uppercase">
-                  {host}
-                </span>
-              )}
+              <span className="flex shrink-0 gap-2 font-mono text-xs tracking-wide uppercase">
+                {entry.isGuest && <span className="text-muted">{guest}</span>}
+                {entry.isHost && <span className="text-accent-text">{host}</span>}
+              </span>
             </li>
           ))}
         </ul>

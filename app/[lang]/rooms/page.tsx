@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LiveLobby } from "@/app/components/live-updates";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getViewer } from "@/lib/auth/current-user";
 import { LOCALE_NAMES, localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/format";
@@ -38,13 +38,15 @@ export default async function RoomsPage() {
 }
 
 async function RoomList() {
-  const [dict, locale, user, rooms] = await Promise.all([
+  const [dict, locale, viewer, rooms] = await Promise.all([
     getDictionary(),
     getLocale(),
-    getCurrentUser(),
+    getViewer(),
     listPublicRooms(),
   ]);
-  const current = user ? await findCurrentRoom(user.id) : null;
+  const current = viewer ? await findCurrentRoom(viewer.id) : null;
+  // Guests can't create rooms (AUTH-03).
+  const canCreate = viewer !== null && !viewer.isGuest;
   const t = dict.roomsPage;
 
   return (
@@ -66,7 +68,7 @@ async function RoomList() {
       {rooms.length === 0 ? (
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <p className="font-mono text-sm text-muted">&gt; {t.empty}</p>
-          {user && (
+          {canCreate && (
             <Link
               href={localePath(locale, "/rooms/new")}
               className="flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"

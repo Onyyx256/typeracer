@@ -285,6 +285,8 @@ export type RoomMemberView = {
   displayName: string;
   role: HostRole;
   isHost: boolean;
+  /** Shown with a badge, so a guest can't pass for an account of the same name. */
+  isGuest: boolean;
 };
 
 export type RoomView = {
@@ -320,6 +322,7 @@ export async function getRoom(code: string): Promise<RoomView | null> {
     .select({
       userId: roomMembers.userId,
       displayName: users.displayName,
+      isGuest: users.isGuest,
       role: roomMembers.role,
     })
     .from(roomMembers)

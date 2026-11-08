@@ -3,7 +3,7 @@ import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { Presence } from "@/app/components/live-updates";
 import { SiteHeader } from "@/app/components/site-header";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getViewer } from "@/lib/auth/current-user";
 import { ThemeScript } from "@/app/components/theme-script";
 import { LOCALES } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
@@ -25,8 +25,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 async function SessionPresence() {
-  const user = await getCurrentUser();
-  return <Presence userId={user?.id ?? null} />;
+  // Guests count too: their seat is freed when they close the page (SALLE-08).
+  const viewer = await getViewer();
+  return <Presence userId={viewer?.id ?? null} />;
 }
 
 // One prerendered shell per language (required by Cache Components for root params).
