@@ -15,10 +15,9 @@ import { getLatestRaceResults } from "./results";
 
 const codes: string[] = [];
 
-afterEach(() => {
-  for (const code of codes) {
-    closeRace(code);
-  }
+afterEach(async () => {
+  // Waits for the results to be saved, so afterAll can delete them.
+  await Promise.all(codes.map(closeRace));
   resetRealtime();
 });
 

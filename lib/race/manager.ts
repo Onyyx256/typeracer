@@ -283,8 +283,11 @@ export function abandonRace(userId: string): void {
   }
 }
 
-/** The room closed mid-race: whoever is still racing abandons, and it ends now. */
-export function closeRace(code: string): void {
+/**
+ * The room closed mid-race: whoever is still racing abandons, and it ends
+ * now. Resolves once the results are saved.
+ */
+export async function closeRace(code: string): Promise<void> {
   const runtime = store().byCode.get(code);
   if (!runtime || runtime.finishing) {
     return;
@@ -293,7 +296,7 @@ export function closeRace(code: string): void {
   for (const entry of runtime.race.track(now)) {
     runtime.race.abandon(entry.userId, now);
   }
-  void finish(runtime);
+  await finish(runtime);
 }
 
 /**

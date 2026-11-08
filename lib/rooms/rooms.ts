@@ -124,7 +124,7 @@ export async function leaveRoom(userId: string): Promise<void> {
     // Leaving mid-race counts as abandoning it (COURSE-07, COURSE-08).
     abandonRace(userId);
     if (result.closed) {
-      closeRace(result.code);
+      void closeRace(result.code);
     }
     // Before the room-wide notice, so released pages show why instead of a 404.
     notifyRoomClosed(result.released, result.code);
