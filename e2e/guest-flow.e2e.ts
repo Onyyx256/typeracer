@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import { e2eName } from "./database";
 
 // TEST-02: a visitor with no account finds a public room, joins it as a
@@ -19,6 +19,29 @@ async function signUp(page: Page, username: string): Promise<void> {
   await expect(page).toHaveURL(/\/en$/);
 }
 
+/** Signs in through the login form, first with a wrong password, which is refused. */
+async function logIn(page: Page, username: string): Promise<void> {
+  await page.goto("/en/login");
+  await page.getByLabel("Username").fill(username);
+  const password = page.getByLabel("Password", { exact: true });
+  await password.fill(`${PASSWORD}-wrong`);
+  // Enter submits: the mode tab is also a "Log in" button.
+  await password.press("Enter");
+  await expect(page.getByText("incorrect username or password")).toBeVisible();
+  await expect(page).toHaveURL(/\/en\/login$/);
+
+  await password.fill(PASSWORD);
+  await password.press("Enter");
+  await expect(page).toHaveURL(/\/en$/);
+}
+
+/** An account made in a browser of its own, so the test then signs in from scratch. */
+async function createAccount(browser: Browser, username: string): Promise<void> {
+  const context = await browser.newContext();
+  await signUp(await context.newPage(), username);
+  await context.close();
+}
+
 /** Creates a public room with the default settings and returns its code. */
 async function createRoom(page: Page, name: string): Promise<string> {
   await page.goto("/en/rooms/new");
@@ -32,10 +55,11 @@ test("a guest joins a public room under a nickname, then leaves", async ({ brows
   const hostName = e2eName();
   const nickname = e2eName();
 
-  // The host, signed in, in their own browser.
+  // The host signs in through the login form, in their own browser.
+  await createAccount(browser, hostName);
   const hostContext = await browser.newContext();
   const host = await hostContext.newPage();
-  await signUp(host, hostName);
+  await logIn(host, hostName);
   const code = await createRoom(host, hostName);
   const hostRunners = host.locator("section", { has: host.getByRole("heading", { name: /Runners/ }) });
   await expect(hostRunners.getByRole("listitem")).toHaveCount(1);
