@@ -5,6 +5,7 @@ import * as z from "zod";
 import { createSession, getSessionUserId } from "@/lib/auth/session";
 import { createGuest, findProfile, isAccountUsername } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
+import { startRace, type StartRaceError } from "@/lib/race/manager";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import type { NameError } from "@/lib/rooms/names";
@@ -199,6 +200,27 @@ export async function kickMemberAction(input: unknown): Promise<KickActionResult
     return await kickMember(hostId, parsed.data.userId);
   } catch (error) {
     logFailure("kickMember", error);
+    return { ok: false, error: "unavailable" };
+  }
+}
+
+export type StartRaceActionResult =
+  | { ok: true }
+  | { ok: false; error: StartRaceError | "unavailable" };
+
+/**
+ * COURSE-02: the host starts the race, from the waiting room or the
+ * results. startRace checks that the session's user hosts the room (SEC-01).
+ */
+export async function startRaceAction(): Promise<StartRaceActionResult> {
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    return await startRace(hostId);
+  } catch (error) {
+    logFailure("startRace", error);
     return { ok: false, error: "unavailable" };
   }
 }

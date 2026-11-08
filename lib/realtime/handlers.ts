@@ -1,8 +1,17 @@
 import "server-only";
 import type { Server, Socket } from "socket.io";
 import { userIdFromCookieHeader } from "@/lib/auth/session";
+import { abandonRace, handleKeys, raceStateFor, resetInterruptedRaces } from "@/lib/race/manager";
 import { canWatchRoom, leaveRoom, listRoomMemberIds } from "@/lib/rooms/rooms";
-import { EVENTS, LOBBY_CHANNEL, roomChannel, userChannel, watchRoomSchema } from "./events";
+import {
+  EVENTS,
+  LOBBY_CHANNEL,
+  raceKeysSchema,
+  raceSyncSchema,
+  roomChannel,
+  userChannel,
+  watchRoomSchema,
+} from "./events";
 import { scheduleGone, socketClosed, socketOpened } from "./presence";
 import { realtimeState } from "./state";
 
@@ -55,6 +64,40 @@ function onConnection(socket: Socket): void {
   socket.on(EVENTS.unwatchRoom, () => leaveRoomChannels(socket));
   socket.on(EVENTS.watchLobby, () => void socket.join(LOBBY_CHANNEL));
   socket.on(EVENTS.unwatchLobby, () => void socket.leave(LOBBY_CHANNEL));
+
+  // Whoever may watch the room gets the race; a runner also gets their own typing back.
+  socket.on(EVENTS.raceSync, async (payload: unknown) => {
+    const parsed = raceSyncSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    try {
+      if (await canWatchRoom(userId, parsed.data.code)) {
+        const state = raceStateFor(parsed.data.code, userId);
+        if (state) {
+          socket.emit(EVENTS.raceState, state);
+        }
+      }
+    } catch (error) {
+      logFailure("race:sync", error);
+    }
+  });
+  // The runner is the socket's user, never someone named in the message.
+  socket.on(EVENTS.raceKeys, (payload: unknown) => {
+    const parsed = raceKeysSchema.safeParse(payload);
+    if (!userId || !parsed.success) {
+      return;
+    }
+    const resync = handleKeys(userId, parsed.data.keys);
+    if (resync) {
+      socket.emit(EVENTS.raceResync, resync);
+    }
+  });
+  socket.on(EVENTS.raceAbandon, () => {
+    if (userId) {
+      abandonRace(userId);
+    }
+  });
 }
 
 /**
@@ -77,6 +120,12 @@ export async function attachHandlers(io: Server): Promise<void> {
       .catch(() => next(new Error("unauthorized")));
   });
   io.on("connection", onConnection);
+
+  try {
+    await resetInterruptedRaces();
+  } catch (error) {
+    logFailure("reset interrupted races", error);
+  }
 
   // After a restart nobody is connected yet: members whose browser doesn't
   // reconnect within the grace delay count as gone, like a disconnect.

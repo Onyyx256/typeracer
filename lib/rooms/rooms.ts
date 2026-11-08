@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, count, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomBans, roomMembers, rooms, users } from "@/db/schema";
+import { abandonRace, closeRace } from "@/lib/race/manager";
 import { notifyKicked, notifyRoomChanged, notifyRoomClosed } from "@/lib/realtime/notify";
 import { isConnected } from "@/lib/realtime/presence";
 import { generateRoomCode } from "./code";
@@ -108,14 +109,23 @@ export async function leaveRoom(userId: string): Promise<void> {
         .update(rooms)
         .set({ state: "closed", closedAt: new Date() })
         .where(eq(rooms.id, room.id));
-      return { code: room.code, released: remaining.map((member) => member.userId) };
+      return {
+        code: room.code,
+        released: remaining.map((member) => member.userId),
+        closed: true,
+      };
     }
     if (next) {
       await tx.update(rooms).set({ hostId: next.userId }).where(eq(rooms.id, room.id));
     }
-    return { code: room.code, released: [] };
+    return { code: room.code, released: [], closed: false };
   });
   if (result) {
+    // Leaving mid-race counts as abandoning it (COURSE-07, COURSE-08).
+    abandonRace(userId);
+    if (result.closed) {
+      closeRace(result.code);
+    }
     // Before the room-wide notice, so released pages show why instead of a 404.
     notifyRoomClosed(result.released, result.code);
     notifyRoomChanged(result.code);
@@ -374,6 +384,7 @@ export async function kickMember(hostId: string, targetId: string): Promise<Kick
   if (!result.ok || !result.code) {
     return result;
   }
+  abandonRace(targetId);
   notifyKicked(targetId, result.code);
   notifyRoomChanged(result.code);
   return { ok: true };
