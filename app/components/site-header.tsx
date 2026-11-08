@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import logo from "@/app/icon.png";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
@@ -16,17 +17,8 @@ export async function SiteHeader() {
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-3 border-b border-line px-5 py-3 sm:px-8">
       <Link href={localePath(locale, "/")} className="flex items-center gap-2">
-        {/* The logo file has an opaque white background, hence the white badge. */}
-        <span className="grid size-11 place-items-center overflow-hidden rounded-full bg-white">
-          <Image
-            src="/logo.png"
-            alt=""
-            width={320}
-            height={265}
-            priority
-            className="h-9 w-auto"
-          />
-        </span>
+        {/* Same file as the favicon (DES-02). */}
+        <Image src={logo} alt="" width={44} height={44} priority className="size-11" />
         <span className="font-display text-xl font-semibold tracking-tight">
           Nelumbo<span className="text-accent-text">Type</span>
         </span>
