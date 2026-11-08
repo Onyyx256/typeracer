@@ -61,7 +61,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | JOIN-01 | non fait | — | — | |
-| JOIN-02 | partiel | `app/[lang]/rooms/page.tsx`, `lib/rooms/rooms.ts`, `app/components/live-updates.tsx` | — | Liste des salles publiques ouvertes : coureurs/capacité, langue, type, difficulté, hôte, état ; mise à jour en direct sans recharger. Manquent les filtres par langue et difficulté. |
+| JOIN-02 | complet | `app/[lang]/rooms/page.tsx`, `lib/rooms/rooms.ts`, `lib/rooms/filters.ts` | `lib/rooms/filters.test.ts`, `lib/rooms/rooms.test.ts` | Liste des salles publiques ouvertes : coureurs/capacité, langue, type, difficulté, hôte, état ; mise à jour en direct sans recharger. Filtres par langue du texte et difficulté dans l'URL (`?lang=fr&complexity=hard`), validés avec Zod : une valeur inconnue est ignorée plutôt que refusée. Ce sont de simples liens, donc ils marchent sans JavaScript et la mise à jour en direct garde les filtres. |
 | JOIN-03 | non fait | — | — | |
 
 ## CONF — Configuration de la course
