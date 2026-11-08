@@ -112,11 +112,12 @@ export function JoinRoom({
         {message && !nameError ? <>&gt; {message}</> : full && <>&gt; {dict.errors.full}</>}
       </p>
 
-      {/* A native modal dialog: focus moves in, Escape closes it, the page behind is inert. */}
+      {/* A native modal dialog: focus moves in, Escape closes it, the page behind is inert.
+          Centered explicitly: Safari doesn't center it with the default styles. */}
       <dialog
         ref={dialog}
         aria-labelledby={titleId}
-        className="m-auto w-[min(26rem,calc(100%-2rem))] border border-line bg-background p-6 text-foreground rounded-leaf backdrop:bg-black/50"
+        className="fixed top-1/2 left-1/2 m-0 max-h-[calc(100dvh-2rem)] w-[min(26rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto border border-line bg-background p-6 text-foreground rounded-leaf backdrop:bg-black/50"
       >
         <form
           onSubmit={(event) => {
