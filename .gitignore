@@ -43,3 +43,8 @@ next-env.d.ts
 
 # downloaded text sources (scripts/build-texts.ts)
 /.cache/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
