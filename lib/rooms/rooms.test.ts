@@ -14,6 +14,7 @@ import {
   joinRoom,
   kickMember,
   leaveRoom,
+  listPublicRooms,
 } from "./rooms";
 import {
   defaultRoomSettings,
@@ -446,5 +447,34 @@ describe("kickMember (SALLE-07)", () => {
     await leaveRoom(hostId);
     expect(await kickMember(hostId, runner.userId)).toEqual({ ok: false, error: "notHost" });
     expect(await kickMember(next.userId, runner.userId)).toEqual({ ok: true });
+  });
+});
+
+describe("listPublicRooms filters (JOIN-02)", () => {
+  /** Codes from `codes` that the filtered list shows; other tests' rooms are ignored. */
+  async function shown(codes: string[], filters: Parameters<typeof listPublicRooms>[0]) {
+    const listed = new Set((await listPublicRooms(filters, 1000)).map((room) => room.code));
+    return codes.filter((code) => listed.has(code));
+  }
+
+  test("by language, by complexity, or both", async () => {
+    const frEasy = (await hostRoom({ language: "fr", complexity: "easy" })).code;
+    const frHard = (await hostRoom({ language: "fr", complexity: "hard" })).code;
+    const enHard = (await hostRoom({ language: "en", complexity: "hard" })).code;
+    const all = [frEasy, frHard, enHard];
+
+    expect(await shown(all, {})).toEqual(all);
+    expect(await shown(all, { lang: "fr" })).toEqual([frEasy, frHard]);
+    expect(await shown(all, { complexity: "hard" })).toEqual([frHard, enHard]);
+    expect(await shown(all, { lang: "en", complexity: "hard" })).toEqual([enHard]);
+    expect(await shown(all, { lang: "en", complexity: "easy" })).toEqual([]);
+  });
+
+  test("filters never bring back closed or unlisted rooms", async () => {
+    const closed = (await hostRoom({ language: "fr" })).code;
+    await setState(closed, "closed");
+    const unlisted = (await hostRoom({ language: "fr", visibility: "code" })).code;
+
+    expect(await shown([closed, unlisted], { lang: "fr" })).toEqual([]);
   });
 });
