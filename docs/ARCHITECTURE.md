@@ -1,6 +1,6 @@
 # Architecture
 
-Les tables `users`, `texts`, `rooms`, `room_members` et `room_bans` existent. Les autres (`accounts`, `invite_links`, `races`, `race_results`) sont ce que je prévois faire.
+Les tables `users`, `texts`, `rooms`, `room_members`, `room_bans`, `races` et `race_results` existent. Les autres (`accounts`, `invite_links`) sont ce que je prévois faire.
 
 ## Modèle de données
 
@@ -76,22 +76,29 @@ erDiagram
     }
     races {
         uuid id PK
-        uuid room_id FK
-        uuid text_id FK
+        uuid room_id FK "null si la salle disparaît"
+        uuid text_id FK "passage, texte cohérent"
+        text content
+        jsonb config
         timestamp started_at
         timestamp ended_at
     }
     race_results {
         uuid id PK
         uuid race_id FK
-        uuid user_id FK
+        uuid user_id FK "null pour un invité"
+        text name
+        boolean is_guest
         int rank
+        text status
         real wpm
         real raw_wpm
         real accuracy
         int errors
-        text status
+        real progress
+        int duration_ms
         jsonb wpm_series
+        jsonb missed_keys
     }
 ```
 
@@ -105,7 +112,8 @@ Quelques précisions :
 - Quand l'hôte quitte, le membre présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il ne reste personne, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
 - Quand l'hôte exclut quelqu'un (SALLE-07), son départ est enregistré dans `room_bans`, avec un index unique sur (`room_id`, `user_id`). Rejoindre la salle vérifie cette table, donc la personne ne peut plus revenir. Un invité qui efface ses cookies devient un nouvel utilisateur : la base ne peut pas le reconnaître.
 - `texts` contient les passages des textes cohérents. Leur provenance et le calcul de la difficulté sont expliqués dans [TEXTES.md](TEXTES.md).
-- `race_results` est seulement pour les utilisateurs connectés (RES-05). `wpm_series` garde le MPM dans le temps pour pouvoir réafficher les graphiques.
+- `races` garde le texte exact et la configuration de la course, pour réafficher les résultats plus tard (HIST-02).
+- `race_results` a une ligne par participant, invités compris, pour que le tableau complet puisse être réaffiché. Mais la ligne d'un invité n'a pas de `user_id` : elle ne devient jamais son historique (AUTH-03, RES-05). `wpm_series` garde le MPM échantillonné chaque seconde et `missed_keys` les touches ratées, pour les graphiques (RES-03).
 - La progression pendant la course n'est pas dans la base de données. Elle reste en mémoire sur le serveur et les résultats sont écrits une seule fois à la fin (PERF-02).
 
 ## Machine à états d'une course
@@ -167,3 +175,13 @@ Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le
 - Chaque niveau a une plage de MPM et un taux d'erreur, selon le tableau de BOT-01.
 - La vitesse n'est pas constante : elle varie un peu au hasard autour du MPM visé, et le bot ralentit sur les mots longs ou avec des caractères spéciaux (BOT-02).
 - Quand le bot fait une erreur, il perd du temps pour la corriger, selon le mode d'erreur de la salle (BOT-03).
+
+## Mise en œuvre de la course
+
+- **Logique pure, partagée.** `lib/race/typing.ts` est un réducteur : il prend une touche (un caractère ou un retour arrière) et donne le nouvel état de frappe. Le navigateur l'utilise pour afficher tout de suite le résultat de chaque touche, et le serveur rejoue les mêmes touches avec lui. Les deux sont donc toujours d'accord, et les chiffres officiels sont ceux du serveur (COURSE-06). Les formules de l'annexe A sont dans `lib/race/stats.ts`.
+- **Mode d'erreur (CONF-08).** Correction obligatoire : les lettres fausses restent en rouge et le texte n'avance plus tant qu'elles ne sont pas effacées (au plus 8 de suite). Libre : on avance quand même et l'erreur est comptée. Dans les deux modes, un mot est gardé une fois l'espace qui le suit tapé (en correction obligatoire, seulement s'il est juste).
+- **Moteur (`lib/race/engine.ts`).** Une classe pure : chaque méthode reçoit l'heure, donc les tests contrôlent le temps. Elle refuse les touches pendant le décompte, après la limite de temps et d'une personne qui ne court pas. Contre la triche, un « seau » de touches se remplit à 25 touches/s (300 MPM soutenus, au-dessus des meilleurs humains) jusqu'à 40; un lot qui en demande plus est refusé en entier. Elle échantillonne le MPM chaque seconde et calcule le classement final (COURSE-10, `lib/race/ranking.ts`).
+- **Gestionnaire (`lib/race/manager.ts`).** Il fait toutes les transitions avec de vraies minuteries : l'hôte lance (vérifié sur le serveur sous verrou de ligne, au moins 2 coureurs), le texte est généré à ce moment, le décompte dure 3 s, la piste est envoyée 5 fois par seconde, et la course se termine quand tout le monde a fini ou abandonné, ou à la limite de temps. Les résultats sont écrits en une seule transaction avec le passage de la salle à `results`. Si le serveur redémarre, les salles restées en course reviennent en attente.
+- **Messages.** `race:sync` (le navigateur demande la course : texte, piste, et sa propre frappe), `race:keys` (un lot numéroté de touches, toutes les 150 ms au plus, PERF-02), `race:abandon`; le serveur envoie `race:state`, `race:track` et `race:resync`. Tous les messages reçus sont validés avec Zod, et les touches appartiennent toujours à l'utilisateur du socket. Si un lot est refusé, `race:resync` renvoie l'état du serveur et le navigateur rejoue les lots envoyés après celui-là.
+- **Départ et reconnexion.** Quitter la salle ou en être retiré pendant une course compte comme un abandon. Après un rechargement, `race:sync` rend sa frappe au coureur ; sans onglet ouvert pendant 30 s, la présence le retire de la salle, ce qui compte comme un abandon (COURSE-08).
+- **Piste (COURSE-05).** Chaque coureur est une fleur (`GrowingStem`) qui pousse avec sa progression et fleurit à l'arrivée. Entre deux mises à jour, la progression affichée rejoint la vraie image par image, pour que les fleurs poussent sans saccades.
