@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { Suspense } from "react";
 import { LiveRoom } from "@/app/components/live-updates";
 import { RoomSummary } from "@/app/components/room-summary";
 import { getViewer } from "@/lib/auth/current-user";
-import { localePath } from "@/lib/i18n/config";
+import { localePath, type Locale } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import { roomCodeSchema } from "@/lib/rooms/code";
-import { findCurrentRoom, getRoom, type RoomMemberView } from "@/lib/rooms/rooms";
+import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { leaveRoomAction } from "../actions";
 import { JoinRoom } from "./join-room";
+import { KickMember } from "./kick-member";
 
 export async function generateMetadata({
   params,
@@ -49,6 +52,10 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
 
   const room = await getRoom(parsed.data);
   const member = user ? room?.members.find((entry) => entry.userId === user.id) : undefined;
+  // SALLE-07: someone the host removed sees why, whatever the room's visibility.
+  if (room && user && !member && (await isBanned(user.id, room.code))) {
+    return <Kicked dict={dict.room} locale={locale} />;
+  }
   // Code-only and private rooms can't be joined yet, so only their members see them.
   if (!room || (!member && room.visibility !== "public")) {
     notFound();
@@ -59,6 +66,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   const spectators = room.members.filter((entry) => entry.role === "spectator");
   const joinable = JOINABLE_STATES.includes(room.state);
   const t = dict.room;
+  const isHost = user !== null && room.hostId === user.id;
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
@@ -102,6 +110,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           host={t.host}
           guest={t.guestBadge}
           userId={user?.id ?? null}
+          kickDict={isHost ? t : null}
         />
         <MemberList
           title={t.spectators}
@@ -112,6 +121,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           host={t.host}
           guest={t.guestBadge}
           userId={user?.id ?? null}
+          kickDict={isHost ? t : null}
         />
 
         {!member && joinable && (
@@ -155,6 +165,7 @@ function MemberList({
   host,
   guest,
   userId,
+  kickDict,
 }: {
   title: string;
   count: string;
@@ -164,6 +175,8 @@ function MemberList({
   host: string;
   guest: string;
   userId: string | null;
+  /** Only for the host, who may remove the other members (SALLE-07). */
+  kickDict: RoomDictionary | null;
 }) {
   return (
     <section>
@@ -189,14 +202,32 @@ function MemberList({
                   <span className="text-muted"> ({you})</span>
                 )}
               </span>
-              <span className="flex shrink-0 gap-2 font-mono text-xs tracking-wide uppercase">
+              <span className="flex shrink-0 items-center gap-3 font-mono text-xs tracking-wide uppercase">
                 {entry.isGuest && <span className="text-muted">{guest}</span>}
                 {entry.isHost && <span className="text-accent-text">{host}</span>}
+                {kickDict && entry.userId !== userId && (
+                  <KickMember dict={kickDict} userId={entry.userId} name={entry.displayName} />
+                )}
               </span>
             </li>
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+function Kicked({ dict, locale }: { dict: RoomDictionary; locale: Locale }) {
+  return (
+    <div className="mx-auto max-w-lg border border-line bg-surface p-8 rounded-leaf">
+      <h1 className="font-display text-3xl leading-tight font-semibold">{dict.kicked.title}</h1>
+      <p className="mt-3 text-muted">{dict.kicked.lead}</p>
+      <Link
+        href={localePath(locale, "/rooms")}
+        className="mt-6 inline-flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
+      >
+        {dict.kicked.back}
+      </Link>
+    </div>
   );
 }
