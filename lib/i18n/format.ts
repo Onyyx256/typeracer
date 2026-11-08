@@ -30,3 +30,11 @@ export function formatPercent(locale: Locale, ratio: number): string {
     maximumFractionDigits: 0,
   }).format(ratio);
 }
+
+/** A number with a fixed count of decimals, in the language's format (I18N-03). */
+export function formatNumber(locale: Locale, value: number, decimals = 0): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
