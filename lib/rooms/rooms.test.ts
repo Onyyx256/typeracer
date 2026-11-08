@@ -49,6 +49,13 @@ async function guestJoins(code: string, role: HostRole = "participant", name = u
   return { userId: guest.id, name, result };
 }
 
+/** A new signed-in user joining the room; returns their id and the result. */
+async function accountJoins(code: string, role: HostRole = "participant", name = uniqueName("a")) {
+  const account = await createTestAccount();
+  const result = await joinRoom(account.id, code, role, false, name);
+  return { userId: account.id, name, result };
+}
+
 async function setState(code: string, state: RoomState): Promise<void> {
   await getDb().update(rooms).set({ state }).where(eq(rooms.code, code));
 }
@@ -260,10 +267,10 @@ describe("one room per person (SALLE-06)", () => {
 });
 
 describe("leaveRoom (SALLE-08)", () => {
-  test("the member who has been there longest becomes host", async () => {
+  test("the signed-in member who has been there longest becomes host", async () => {
     const { hostId, code } = await hostRoom({ capacity: 5 });
-    const second = await guestJoins(code);
-    const third = await guestJoins(code);
+    const second = await accountJoins(code);
+    const third = await accountJoins(code);
     await leaveRoom(hostId);
 
     const room = await getRoom(code);
@@ -273,6 +280,36 @@ describe("leaveRoom (SALLE-08)", () => {
       [third.userId, false],
     ]);
     expect(await findCurrentRoom(hostId)).toBeNull();
+  });
+
+  test("a guest never becomes host, even after being there longest", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const guest = await guestJoins(code);
+    const account = await accountJoins(code);
+    await leaveRoom(hostId);
+
+    const room = await getRoom(code);
+    expect(room?.hostId).toBe(account.userId);
+    expect(room?.members.find((member) => member.userId === guest.userId)?.isHost).toBe(false);
+  });
+
+  test("with only guests left, the room closes and tells them", async () => {
+    const emitted = installFakeIo();
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const first = await guestJoins(code);
+    const second = await guestJoins(code);
+    socketOpened(first.userId);
+    socketOpened(second.userId);
+    await leaveRoom(hostId);
+
+    expect(await getRoom(code)).toBeNull();
+    expect(await findCurrentRoom(first.userId)).toBeNull();
+    expect(await findCurrentRoom(second.userId)).toBeNull();
+    const closed = emitted.filter((entry) => entry.event === "room:closed");
+    expect(closed.map((entry) => entry.target).sort()).toEqual(
+      [`user:${first.userId}`, `user:${second.userId}`].sort(),
+    );
+    expect(closed.every((entry) => (entry.payload as { code: string }).code === code)).toBe(true);
   });
 
   test("a member other than the host leaving keeps the host", async () => {
@@ -299,8 +336,8 @@ describe("leaveRoom (SALLE-08)", () => {
   test("the role skips members who are disconnected", async () => {
     installFakeIo();
     const { hostId, code } = await hostRoom({ capacity: 5 });
-    const gone = await guestJoins(code);
-    const here = await guestJoins(code);
+    const gone = await accountJoins(code);
+    const here = await accountJoins(code);
     socketOpened(here.userId);
     await leaveRoom(hostId);
     const room = await getRoom(code);
@@ -312,11 +349,20 @@ describe("leaveRoom (SALLE-08)", () => {
   test("with nobody connected left, the room closes and releases everyone", async () => {
     installFakeIo();
     const { hostId, code } = await hostRoom({ capacity: 5 });
-    const gone = await guestJoins(code);
+    const gone = await accountJoins(code);
     await leaveRoom(hostId);
     expect(await getRoom(code)).toBeNull();
     // Free to join or create another room (SALLE-06).
     expect(await findCurrentRoom(gone.userId)).toBeNull();
+  });
+
+  test("an open room doesn't notify anyone that it closed", async () => {
+    const emitted = installFakeIo();
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const account = await accountJoins(code);
+    socketOpened(account.userId);
+    await leaveRoom(hostId);
+    expect(emitted.some((entry) => entry.event === "room:closed")).toBe(false);
   });
 
   test("leaving when in no room does nothing", async () => {
@@ -395,7 +441,7 @@ describe("kickMember (SALLE-07)", () => {
 
   test("a former host loses the right to kick", async () => {
     const { hostId, code } = await hostRoom({ capacity: 5 });
-    const next = await guestJoins(code);
+    const next = await accountJoins(code);
     const runner = await guestJoins(code);
     await leaveRoom(hostId);
     expect(await kickMember(hostId, runner.userId)).toEqual({ ok: false, error: "notHost" });
