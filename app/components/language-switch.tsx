@@ -42,7 +42,13 @@ export function LanguageSwitch({ current, label }: LanguageSwitchProps) {
             lang={locale}
             title={LOCALE_NAMES[locale]}
             aria-current={active ? "true" : undefined}
-            onClick={() => remember(locale)}
+            onClick={(event) => {
+              remember(locale);
+              // Keeps the page's search params, such as the room browser's filters
+              // (JOIN-02). Read at click time: useSearchParams would make the whole
+              // header wait for the request instead of being prerendered.
+              event.currentTarget.search = window.location.search;
+            }}
             className={`grid h-full min-w-8 place-items-center rounded-full px-2 font-medium uppercase transition-colors ${
               active
                 ? "bg-accent text-on-accent"
