@@ -2,7 +2,7 @@ import "server-only";
 import type { Server, Socket } from "socket.io";
 import { userIdFromCookieHeader } from "@/lib/auth/session";
 import { canWatchRoom, leaveRoom, listRoomMemberIds } from "@/lib/rooms/rooms";
-import { EVENTS, LOBBY_CHANNEL, roomChannel, watchRoomSchema } from "./events";
+import { EVENTS, LOBBY_CHANNEL, roomChannel, userChannel, watchRoomSchema } from "./events";
 import { scheduleGone, socketClosed, socketOpened } from "./presence";
 import { realtimeState } from "./state";
 
@@ -31,6 +31,8 @@ function onConnection(socket: Socket): void {
   const { userId } = socket.data as SocketData;
   if (userId) {
     socketOpened(userId);
+    // Lets the server reach this user's tabs, e.g. when they are kicked (SALLE-07).
+    void socket.join(userChannel(userId));
     socket.on("disconnect", () => socketClosed(userId, memberGone));
   }
 

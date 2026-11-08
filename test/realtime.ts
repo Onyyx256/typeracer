@@ -9,8 +9,8 @@ const IO_KEY = Symbol.for("nelumbotype.io");
  * nowhere.
  */
 export function installFakeIo(): void {
-  const room = { emit: () => true };
-  const fake = { to: () => room };
+  const room = { emit: () => true, socketsLeave: () => undefined };
+  const fake = { to: () => room, in: () => room };
   (globalThis as Record<symbol, unknown>)[IO_KEY] = fake as unknown as Server;
 }
 

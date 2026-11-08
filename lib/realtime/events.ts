@@ -26,4 +26,6 @@ export type RoomChanged = { code: string };
 
 /** Socket.IO channel names. */
 export const roomChannel = (code: string) => `room:${code}`;
+/** Every socket of one signed-in user (or guest with a session). */
+export const userChannel = (userId: string) => `user:${userId}`;
 export const LOBBY_CHANNEL = "lobby";
