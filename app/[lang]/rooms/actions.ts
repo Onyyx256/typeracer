@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import * as z from "zod";
 import { createSession, getSessionUserId } from "@/lib/auth/session";
-import { createGuest, findProfile } from "@/lib/auth/users";
+import { createGuest, findProfile, isAccountUsername } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
 import { roomCodeSchema } from "@/lib/rooms/code";
@@ -47,7 +47,11 @@ function logFailure(action: string, error: unknown): void {
 }
 
 /** Joining can also fail on the nickname a guest typed (AUTH-02). */
-export type JoinRoomActionError = RoomActionError | "nicknameLength" | "nicknameChars";
+export type JoinRoomActionError =
+  | RoomActionError
+  | "nicknameLength"
+  | "nicknameChars"
+  | "nicknameReserved";
 
 export type JoinRoomActionResult = Omit<RoomActionResult, "error"> & {
   error: JoinRoomActionError;
@@ -119,23 +123,44 @@ const joinRoomInput = z.object({
   nickname: z.string().max(200).optional(),
 });
 
-/** A visitor without a session gets a guest account under the nickname they chose. */
-async function joiningUserId(
-  nickname: string | undefined,
-): Promise<{ userId: string } | { error: JoinRoomActionError }> {
-  const existing = await sessionProfile();
-  if (existing) {
-    return { userId: existing.id };
-  }
-  if (nickname === undefined) {
-    return { error: "notSignedIn" };
-  }
+/** Validates a guest's nickname; an account's username is never available (AUTH-02). */
+async function checkNickname(
+  nickname: string,
+): Promise<{ nickname: string } | { error: JoinRoomActionError }> {
   const parsed = nicknameSchema.safeParse(nickname);
   if (!parsed.success) {
     const chars = parsed.error.issues.some((issue) => issue.message === "nicknameChars");
     return { error: chars ? "nicknameChars" : "nicknameLength" };
   }
-  const guest = await createGuest(parsed.data);
+  if (await isAccountUsername(parsed.data)) {
+    return { error: "nicknameReserved" };
+  }
+  return { nickname: parsed.data };
+}
+
+/**
+ * A visitor without a session gets a guest account under the nickname they
+ * chose. A guest who sends a nickname (theirs was taken in this room) is
+ * renamed when the join succeeds; an account's name never changes here.
+ */
+async function joiningUser(
+  nickname: string | undefined,
+): Promise<{ userId: string; rename?: string } | { error: JoinRoomActionError }> {
+  const existing = await sessionProfile();
+  if (existing && (!existing.isGuest || nickname === undefined)) {
+    return { userId: existing.id };
+  }
+  if (nickname === undefined) {
+    return { error: "notSignedIn" };
+  }
+  const checked = await checkNickname(nickname);
+  if ("error" in checked) {
+    return checked;
+  }
+  if (existing) {
+    return { userId: existing.id, rename: checked.nickname };
+  }
+  const guest = await createGuest(checked.nickname);
   await createSession(guest.id);
   return { userId: guest.id };
 }
@@ -146,9 +171,9 @@ export async function joinRoomAction(input: unknown): Promise<JoinRoomActionResu
     return { ok: false, error: "invalid" };
   }
   const { lang, code, role, leaveCurrent, nickname } = parsed.data;
-  let joining: Awaited<ReturnType<typeof joiningUserId>>;
+  let joining: Awaited<ReturnType<typeof joiningUser>>;
   try {
-    joining = await joiningUserId(nickname);
+    joining = await joiningUser(nickname);
   } catch (error) {
     logFailure("joinRoom", error);
     return { ok: false, error: "unavailable" };
@@ -156,9 +181,11 @@ export async function joinRoomAction(input: unknown): Promise<JoinRoomActionResu
   if ("error" in joining) {
     return { ok: false, error: joining.error };
   }
-  const { userId } = joining;
+  const { userId, rename } = joining;
 
-  return enterRoom("joinRoom", lang, () => joinRoom(userId, code, role, leaveCurrent));
+  return enterRoom("joinRoom", lang, () =>
+    joinRoom(userId, code, role, leaveCurrent, rename),
+  );
 }
 
 const leaveRoomInput = z.object({ lang: localeSchema });

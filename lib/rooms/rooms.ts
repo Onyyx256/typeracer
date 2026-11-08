@@ -22,7 +22,9 @@ export type RoomError =
   | "alreadyInRoom"
   | "notFound"
   | "notJoinable"
-  | "full";
+  | "full"
+  /** Someone in the room already goes by that name. */
+  | "nameTaken";
 
 export type RoomResult =
   | { ok: true; code: string }
@@ -212,11 +214,38 @@ async function insertRoom(
  * code-only and private rooms will need their own checks (SALLE-03, SALLE-04),
  * and until then they answer "not found" so a code reveals nothing.
  */
+/** True when another member of the room goes by this name, whatever its case. */
+async function nameTakenInRoom(
+  tx: Transaction,
+  roomId: string,
+  userId: string,
+  name: string,
+): Promise<boolean> {
+  const [clash] = await tx
+    .select({ id: roomMembers.id })
+    .from(roomMembers)
+    .innerJoin(users, eq(users.id, roomMembers.userId))
+    .where(
+      and(
+        eq(roomMembers.roomId, roomId),
+        ne(roomMembers.userId, userId),
+        eq(sql`lower(${users.displayName})`, name.toLowerCase()),
+      ),
+    )
+    .limit(1);
+  return clash !== undefined;
+}
+
+/**
+ * `rename` is a guest's new nickname, applied only if the join succeeds
+ * (a guest whose nickname was taken in this room picks another).
+ */
 export async function joinRoom(
   userId: string,
   code: string,
   role: HostRole,
   leaveCurrent: boolean,
+  rename?: string,
 ): Promise<RoomResult> {
   const blocked = await checkCurrentRoom(userId, leaveCurrent, code);
   if (blocked) {
@@ -263,6 +292,22 @@ export async function joinRoom(
         if (participants >= room.capacity) {
           return { ok: false, error: "full" };
         }
+      }
+      // Two members of a room never share a name. The room row lock above
+      // makes this check and the insert atomic for joins to the same room.
+      const [me] = await tx
+        .select({ displayName: users.displayName, isGuest: users.isGuest })
+        .from(users)
+        .where(eq(users.id, userId));
+      const name = rename !== undefined && me?.isGuest ? rename : me?.displayName;
+      if (!me || name === undefined) {
+        return { ok: false, error: "notFound" };
+      }
+      if (await nameTakenInRoom(tx, room.id, userId, name)) {
+        return { ok: false, error: "nameTaken" };
+      }
+      if (name !== me.displayName) {
+        await tx.update(users).set({ displayName: name }).where(eq(users.id, userId));
       }
       await tx.insert(roomMembers).values({ roomId: room.id, userId, role });
       return { ok: true, code };

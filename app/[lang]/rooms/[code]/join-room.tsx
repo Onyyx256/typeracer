@@ -20,6 +20,8 @@ type JoinRoomProps = {
   elsewhere: string | null;
   /** The visitor has no session: they pick a nickname and join as a guest (AUTH-02). */
   needsNickname: boolean;
+  /** A guest can pick another nickname if theirs is taken in this room. */
+  isGuest: boolean;
 };
 
 const primary =
@@ -28,7 +30,13 @@ const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 
 const LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
-const NICKNAME_ERRORS: JoinRoomActionError[] = ["nicknameLength", "nicknameChars"];
+/** Errors the nickname popup shows; the visitor fixes them by typing another name. */
+const NICKNAME_ERRORS: JoinRoomActionError[] = [
+  "nicknameLength",
+  "nicknameChars",
+  "nicknameReserved",
+  "nameTaken",
+];
 
 export function JoinRoom({
   dict,
@@ -37,7 +45,9 @@ export function JoinRoom({
   full,
   elsewhere,
   needsNickname,
+  isGuest,
 }: JoinRoomProps) {
+  const canPickNickname = needsNickname || isGuest;
   const [error, setError] = useState<JoinRoomActionError | null>(null);
   const [pending, startTransition] = useTransition();
   const [nickname, setNickname] = useState("");
@@ -56,8 +66,14 @@ export function JoinRoom({
         nickname: guestNickname,
       });
       setError(result.error);
-      // Once the guest exists, other errors (full room...) show beside the buttons.
-      if (!NICKNAME_ERRORS.includes(result.error)) {
+      if (canPickNickname && NICKNAME_ERRORS.includes(result.error)) {
+        // Taken in this room: a guest picks another nickname right there.
+        if (!dialog.current?.open) {
+          setRole(chosen);
+          dialog.current?.showModal();
+        }
+      } else {
+        // Other errors (full room...) show beside the buttons.
         dialog.current?.close();
       }
     });
@@ -74,7 +90,8 @@ export function JoinRoom({
   }
 
   const message = error ? interpolate(dict.errors[error], LIMITS) : null;
-  const nicknameError = error && NICKNAME_ERRORS.includes(error) ? message : null;
+  const nicknameError =
+    canPickNickname && error && NICKNAME_ERRORS.includes(error) ? message : null;
   const g = dict.guest;
 
   return (
@@ -112,7 +129,7 @@ export function JoinRoom({
         )}
       </p>
 
-      {needsNickname && (
+      {canPickNickname && (
         // A native modal dialog: focus moves in, Escape closes it, the page behind is inert.
         <dialog
           ref={dialog}

@@ -108,6 +108,8 @@ export const fr = {
       invalid: "ce code de salle n'est pas valide",
       nicknameLength: "ton pseudo doit faire de {min} à {max} caractères",
       nicknameChars: "lettres, chiffres, espaces et . _ ' - seulement",
+      nicknameReserved: "ce nom appartient à un compte, choisis-en un autre",
+      nameTaken: "quelqu'un dans cette salle porte déjà ce nom",
       notSignedIn: "connecte-toi pour entrer dans une salle",
       notFound: "cette salle n'existe plus",
       notJoinable: "une course est en cours, tu pourras entrer à la fin",
@@ -224,6 +226,7 @@ export const fr = {
       notJoinable: "impossible d'entrer pendant une course",
       full: "la salle est pleine",
       unavailable: "création impossible pour le moment, réessaie plus tard",
+      nameTaken: "quelqu'un dans cette salle porte déjà ce nom",
     },
   },
   loginPage: {

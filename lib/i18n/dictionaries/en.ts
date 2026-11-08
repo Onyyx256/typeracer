@@ -106,6 +106,8 @@ export const en: Dictionary = {
       invalid: "this room code isn't valid",
       nicknameLength: "your nickname must be {min} to {max} characters",
       nicknameChars: "letters, numbers, spaces and . _ ' - only",
+      nicknameReserved: "this name belongs to an account, pick another one",
+      nameTaken: "someone in this room already goes by that name",
       notSignedIn: "log in to join a room",
       notFound: "this room doesn't exist anymore",
       notJoinable: "a race is on, you can join when it ends",
@@ -222,6 +224,7 @@ export const en: Dictionary = {
       notJoinable: "you can't join during a race",
       full: "the room is full",
       unavailable: "can't create the room right now, try again later",
+      nameTaken: "someone in this room already goes by that name",
     },
   },
   loginPage: {

@@ -27,6 +27,16 @@ export async function createGuest(nickname: string): Promise<{ id: string }> {
   return created;
 }
 
+/** True when an account uses this name as its username, whatever its case. */
+export async function isAccountUsername(name: string): Promise<boolean> {
+  const [found] = await getDb()
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(sql`lower(${users.username})`, name.toLowerCase()))
+    .limit(1);
+  return found !== undefined;
+}
+
 export async function findCredentials(
   username: string,
 ): Promise<{ id: string; passwordHash: string | null } | null> {
