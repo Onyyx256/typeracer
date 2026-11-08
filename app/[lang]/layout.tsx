@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { Presence } from "@/app/components/live-updates";
+import { RoomClosed } from "@/app/components/room-closed";
 import { SiteHeader } from "@/app/components/site-header";
 import { getViewer } from "@/lib/auth/current-user";
 import { ThemeScript } from "@/app/components/theme-script";
@@ -26,8 +27,14 @@ const jetbrainsMono = JetBrains_Mono({
 
 async function SessionPresence() {
   // Guests count too: their seat is freed when they close the page (SALLE-08).
-  const viewer = await getViewer();
-  return <Presence userId={viewer?.id ?? null} />;
+  const [viewer, dict, locale] = await Promise.all([getViewer(), getDictionary(), getLocale()]);
+  return (
+    <>
+      <Presence userId={viewer?.id ?? null} />
+      {/* Only a member can be told their room was deleted (SALLE-08). */}
+      {viewer && <RoomClosed dict={dict.room.closed} locale={locale} />}
+    </>
+  );
 }
 
 // One prerendered shell per language (required by Cache Components for root params).

@@ -112,6 +112,11 @@ export const en: Dictionary = {
       lead: "The host removed you. You can't join this room again, but you can join another one.",
       back: "Browse rooms",
     },
+    closed: {
+      title: "Your room has been deleted",
+      lead: "The host left and nobody signed in could take over, so the room closed. You can join another one.",
+      back: "Browse rooms",
+    },
     nameDialog: {
       title: "Your name in this room",
       lead: "It's the name others will see in this room.",

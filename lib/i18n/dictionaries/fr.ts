@@ -114,6 +114,11 @@ export const fr = {
       lead: "L'hôte t'a retiré. Tu ne peux plus entrer dans cette salle, mais tu peux en rejoindre une autre.",
       back: "Voir les salles",
     },
+    closed: {
+      title: "Ta salle a été supprimée",
+      lead: "L'hôte est parti et aucun membre connecté avec un compte ne pouvait le remplacer, donc la salle a fermé. Tu peux en rejoindre une autre.",
+      back: "Voir les salles",
+    },
     nameDialog: {
       title: "Ton nom dans la salle",
       lead: "C'est le nom que les autres verront dans cette salle.",
