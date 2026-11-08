@@ -6,7 +6,15 @@ import { socketOpened } from "@/lib/realtime/presence";
 import { createTestAccount, createTestGuest, deleteTestUsers, uniqueName } from "@/test/db";
 import { installFakeIo, resetRealtime } from "@/test/realtime";
 import { ROOM_CODE_PATTERN } from "./code";
-import { createRoom, findCurrentRoom, getRoom, joinRoom, leaveRoom } from "./rooms";
+import {
+  createRoom,
+  findCurrentRoom,
+  getRoom,
+  isBanned,
+  joinRoom,
+  kickMember,
+  leaveRoom,
+} from "./rooms";
 import {
   defaultRoomSettings,
   type HostRole,
@@ -314,5 +322,83 @@ describe("leaveRoom (SALLE-08)", () => {
   test("leaving when in no room does nothing", async () => {
     const guest = await createTestGuest();
     await expect(leaveRoom(guest.id)).resolves.toBeUndefined();
+  });
+});
+
+describe("kickMember (SALLE-07)", () => {
+  test("the host removes a runner, who can't join again", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const runner = await guestJoins(code);
+    expect(await kickMember(hostId, runner.userId)).toEqual({ ok: true });
+
+    expect((await membersOf(code)).map((member) => member.userId)).toEqual([hostId]);
+    expect(await findCurrentRoom(runner.userId)).toBeNull();
+    expect(await isBanned(runner.userId, code)).toBe(true);
+    // Neither as a runner nor as a spectator, under any name.
+    expect(await joinRoom(runner.userId, code, "participant", false, runner.name)).toEqual({
+      ok: false,
+      error: "banned",
+    });
+    expect(await joinRoom(runner.userId, code, "spectator", false, uniqueName("g"))).toEqual({
+      ok: false,
+      error: "banned",
+    });
+  });
+
+  test("the host removes a spectator", async () => {
+    const { hostId, code } = await hostRoom();
+    const spectator = await guestJoins(code, "spectator");
+    expect(await kickMember(hostId, spectator.userId)).toEqual({ ok: true });
+    expect(await membersOf(code)).toHaveLength(1);
+  });
+
+  test("works during a race too", async () => {
+    const { hostId, code } = await hostRoom();
+    const runner = await guestJoins(code);
+    await setState(code, "racing");
+    expect(await kickMember(hostId, runner.userId)).toEqual({ ok: true });
+  });
+
+  test("the ban only covers that room", async () => {
+    const { hostId, code } = await hostRoom();
+    const runner = await guestJoins(code);
+    await kickMember(hostId, runner.userId);
+    const other = await hostRoom();
+    const result = await joinRoom(runner.userId, other.code, "participant", false, runner.name);
+    expect(result).toEqual({ ok: true, code: other.code });
+  });
+
+  test("a member who isn't the host can't kick anyone (SEC-01)", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const first = await guestJoins(code);
+    const second = await guestJoins(code);
+    expect(await kickMember(first.userId, second.userId)).toEqual({
+      ok: false,
+      error: "notHost",
+    });
+    expect(await kickMember(first.userId, hostId)).toEqual({ ok: false, error: "notHost" });
+    expect(await membersOf(code)).toHaveLength(3);
+  });
+
+  test("the host can't kick someone from another room, or themself", async () => {
+    const { hostId, code } = await hostRoom();
+    const other = await hostRoom();
+    const elsewhere = await guestJoins(other.code);
+    expect(await kickMember(hostId, elsewhere.userId)).toEqual({
+      ok: false,
+      error: "notMember",
+    });
+    expect(await kickMember(hostId, hostId)).toEqual({ ok: false, error: "notMember" });
+    expect(await membersOf(code)).toHaveLength(1);
+    expect(await membersOf(other.code)).toHaveLength(2);
+  });
+
+  test("a former host loses the right to kick", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const next = await guestJoins(code);
+    const runner = await guestJoins(code);
+    await leaveRoom(hostId);
+    expect(await kickMember(hostId, runner.userId)).toEqual({ ok: false, error: "notHost" });
+    expect(await kickMember(next.userId, runner.userId)).toEqual({ ok: true });
   });
 });

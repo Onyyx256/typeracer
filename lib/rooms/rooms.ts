@@ -1,8 +1,8 @@
 import "server-only";
 import { and, asc, count, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { roomMembers, rooms, users } from "@/db/schema";
-import { notifyRoomChanged } from "@/lib/realtime/notify";
+import { roomBans, roomMembers, rooms, users } from "@/db/schema";
+import { notifyKicked, notifyRoomChanged } from "@/lib/realtime/notify";
 import { isConnected } from "@/lib/realtime/presence";
 import { generateRoomCode } from "./code";
 import {
@@ -24,7 +24,9 @@ export type RoomError =
   | "notJoinable"
   | "full"
   /** Someone in the room already goes by that name. */
-  | "nameTaken";
+  | "nameTaken"
+  /** The host kicked this person out of the room (SALLE-07). */
+  | "banned";
 
 export type RoomResult =
   | { ok: true; code: string }
@@ -247,6 +249,10 @@ export async function joinRoom(
       if (!room || room.state === "closed" || room.visibility !== "public") {
         return { ok: false, error: "notFound" };
       }
+      // SALLE-07: whoever the host kicked out stays out.
+      if (await isBannedFrom(tx, room.id, userId)) {
+        return { ok: false, error: "banned" };
+      }
 
       const [already] = await tx
         .select({ id: roomMembers.id })
@@ -290,6 +296,77 @@ export async function joinRoom(
     }
     throw error;
   }
+}
+
+async function isBannedFrom(db: Database | Transaction, roomId: string, userId: string) {
+  const [ban] = await db
+    .select({ id: roomBans.id })
+    .from(roomBans)
+    .where(and(eq(roomBans.roomId, roomId), eq(roomBans.userId, userId)));
+  return ban !== undefined;
+}
+
+/** Whether the host kicked the user out of this room (SALLE-07), for the room page. */
+export async function isBanned(userId: string, code: string): Promise<boolean> {
+  const db = getDb();
+  const [room] = await db.select({ id: rooms.id }).from(rooms).where(eq(rooms.code, code));
+  return room ? isBannedFrom(db, room.id, userId) : false;
+}
+
+export type KickError =
+  /** The user isn't the host of an open room. */
+  | "notHost"
+  /** The target isn't in the host's room, or is the host. */
+  | "notMember";
+
+export type KickResult = { ok: true } | { ok: false; error: KickError };
+
+/**
+ * SALLE-07: the host removes a runner or spectator from their room, at any
+ * point, and bans them from it. Checked here, not in the interface (SEC-01).
+ */
+export async function kickMember(hostId: string, targetId: string): Promise<KickResult> {
+  if (hostId === targetId) {
+    return { ok: false, error: "notMember" };
+  }
+  const result = await getDb().transaction(
+    async (tx): Promise<KickResult & { code?: string }> => {
+      const [membership] = await tx
+        .select({ roomId: roomMembers.roomId })
+        .from(roomMembers)
+        .where(eq(roomMembers.userId, hostId));
+      if (!membership) {
+        return { ok: false, error: "notHost" };
+      }
+      // Locked like leaveRoom, so the host role can't move away mid-kick.
+      const [room] = await tx
+        .select({ id: rooms.id, code: rooms.code, hostId: rooms.hostId, state: rooms.state })
+        .from(rooms)
+        .where(eq(rooms.id, membership.roomId))
+        .for("update");
+      if (!room || room.hostId !== hostId || room.state === "closed") {
+        return { ok: false, error: "notHost" };
+      }
+      const deleted = await tx
+        .delete(roomMembers)
+        .where(and(eq(roomMembers.roomId, room.id), eq(roomMembers.userId, targetId)))
+        .returning({ id: roomMembers.id });
+      if (deleted.length === 0) {
+        return { ok: false, error: "notMember" };
+      }
+      await tx
+        .insert(roomBans)
+        .values({ roomId: room.id, userId: targetId })
+        .onConflictDoNothing();
+      return { ok: true, code: room.code };
+    },
+  );
+  if (!result.ok || !result.code) {
+    return result;
+  }
+  notifyKicked(targetId, result.code);
+  notifyRoomChanged(result.code);
+  return { ok: true };
 }
 
 export type RoomMemberView = {
