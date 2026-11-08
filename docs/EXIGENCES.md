@@ -35,8 +35,8 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
 | AUTH-01 | partiel | `app/[lang]/login/actions.ts`, `lib/auth/session.ts` | — | Inscription et connexion par nom d'utilisateur et mot de passe faites. OAuth Discord et GitHub pas encore. |
-| AUTH-02 | non fait | — | — | |
-| AUTH-03 | non fait | — | — | |
+| AUTH-02 | complet | `app/[lang]/rooms/[code]/join-room.tsx`, `app/[lang]/rooms/actions.ts`, `lib/auth/validation.ts` | — | Un visiteur sans session qui clique sur « Entrer » choisit un pseudo (3 à 20 caractères, lettres de toutes langues, chiffres, espaces, `. _ ' -`), validé par Zod côté serveur. L'invité est une ligne `users` avec `is_guest` et sans nom d'utilisateur ni mot de passe; sa session est le même cookie JWT signé que les comptes. Un badge « invité » le distingue d'un compte du même nom. Choix : les lignes d'invités ne sont pas encore nettoyées. |
+| AUTH-03 | partiel | `app/[lang]/rooms/actions.ts`, `lib/auth/current-user.ts` | — | Un invité ne peut pas créer de salle (refusé par l'action, et `/rooms/new` le renvoie à la connexion); il peut toutefois devenir hôte par transfert (SALLE-08). Pas de profil ni de photo pour lui. Reste à faire quand les courses existeront : ne pas garder d'historique pour les invités, et l'avatar généré. |
 | AUTH-04 | non fait | — | — | |
 | AUTH-05 | non fait | `db/schema.ts` | — | La colonne `display_name` existe, mais pas encore de page pour la modifier. |
 | AUTH-06 | non fait | — | — | |
