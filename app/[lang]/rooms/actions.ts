@@ -11,7 +11,9 @@ import type { NameError } from "@/lib/rooms/names";
 import {
   createRoom,
   joinRoom,
+  kickMember,
   leaveRoom,
+  type KickError,
   type RoomError,
   type RoomResult,
 } from "@/lib/rooms/rooms";
@@ -177,4 +179,26 @@ export async function leaveRoomAction(formData: FormData): Promise<void> {
     }
   }
   redirect(localePath(lang, "/rooms"));
+}
+
+const kickMemberInput = z.object({ userId: z.uuid() });
+
+export type KickActionResult = { ok: true } | { ok: false; error: KickError | "invalid" | "unavailable" };
+
+/** SALLE-07: kickMember checks that the session's user hosts the room (SEC-01). */
+export async function kickMemberAction(input: unknown): Promise<KickActionResult> {
+  const parsed = kickMemberInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid" };
+  }
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    return await kickMember(hostId, parsed.data.userId);
+  } catch (error) {
+    logFailure("kickMember", error);
+    return { ok: false, error: "unavailable" };
+  }
 }
