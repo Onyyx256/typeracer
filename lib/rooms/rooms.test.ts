@@ -1,0 +1,318 @@
+import { afterAll, afterEach, describe, expect, test } from "bun:test";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/db";
+import { roomMembers, rooms } from "@/db/schema";
+import { socketOpened } from "@/lib/realtime/presence";
+import { createTestAccount, createTestGuest, deleteTestUsers, uniqueName } from "@/test/db";
+import { installFakeIo, resetRealtime } from "@/test/realtime";
+import { ROOM_CODE_PATTERN } from "./code";
+import { createRoom, findCurrentRoom, getRoom, joinRoom, leaveRoom } from "./rooms";
+import {
+  defaultRoomSettings,
+  type HostRole,
+  type RoomSettings,
+  type RoomState,
+} from "./settings";
+
+// Runs against the typeracer_test database (see test/setup.ts).
+
+afterEach(resetRealtime);
+afterAll(deleteTestUsers);
+
+const settings: RoomSettings = { ...defaultRoomSettings("en"), capacity: 2 };
+
+/** A signed-in user hosting a new room; returns its code. */
+async function hostRoom(
+  changes: Partial<RoomSettings> = {},
+): Promise<{ hostId: string; hostName: string; code: string }> {
+  const host = await createTestAccount();
+  const hostName = uniqueName("h");
+  const result = await createRoom(host.id, { ...settings, ...changes }, false, hostName);
+  if (!result.ok) {
+    throw new Error(`createRoom failed: ${result.error}`);
+  }
+  return { hostId: host.id, hostName, code: result.code };
+}
+
+/** A new guest joining the room; returns their id and the result. */
+async function guestJoins(code: string, role: HostRole = "participant", name = uniqueName("g")) {
+  const guest = await createTestGuest(name);
+  const result = await joinRoom(guest.id, code, role, false, name);
+  return { userId: guest.id, name, result };
+}
+
+async function setState(code: string, state: RoomState): Promise<void> {
+  await getDb().update(rooms).set({ state }).where(eq(rooms.code, code));
+}
+
+async function membersOf(code: string) {
+  return (await getRoom(code))?.members ?? [];
+}
+
+describe("createRoom (SALLE-01)", () => {
+  test("the creator becomes host and first member, under the chosen name", async () => {
+    const { hostId, hostName, code } = await hostRoom();
+    expect(code).toMatch(ROOM_CODE_PATTERN);
+
+    const room = await getRoom(code);
+    expect(room?.state).toBe("waiting");
+    expect(room?.hostId).toBe(hostId);
+    expect(room?.members).toEqual([
+      { userId: hostId, displayName: hostName, role: "participant", isHost: true, isGuest: false },
+    ]);
+  });
+
+  test("the host can watch as a spectator", async () => {
+    const { code } = await hostRoom({ hostRole: "spectator" });
+    expect((await membersOf(code))[0].role).toBe("spectator");
+  });
+
+  test("the race settings are stored without the column fields", async () => {
+    const { code } = await hostRoom({ length: 80, complexity: "hard" });
+    const room = await getRoom(code);
+    expect(room?.config.length).toBe(80);
+    expect(room?.config.complexity).toBe("hard");
+    expect(room?.config).not.toHaveProperty("capacity");
+  });
+});
+
+describe("joinRoom", () => {
+  test("joins a public room as a runner, after the host", async () => {
+    const { hostId, code } = await hostRoom();
+    const { userId, name, result } = await guestJoins(code);
+    expect(result).toEqual({ ok: true, code });
+
+    const members = await membersOf(code);
+    expect(members.map((member) => member.userId)).toEqual([hostId, userId]);
+    expect(members[1]).toMatchObject({ displayName: name, isHost: false, isGuest: true });
+  });
+
+  test("joining the same room twice changes nothing", async () => {
+    const { code } = await hostRoom();
+    const { userId, name } = await guestJoins(code);
+    expect(await joinRoom(userId, code, "participant", false, name)).toEqual({ ok: true, code });
+    expect(await membersOf(code)).toHaveLength(2);
+  });
+
+  test("an unknown code is not found", async () => {
+    const { result } = await guestJoins("ZZZZZZ");
+    expect(result).toEqual({ ok: false, error: "notFound" });
+  });
+
+  test("a closed room is not found", async () => {
+    const { code } = await hostRoom();
+    await setState(code, "closed");
+    expect((await guestJoins(code)).result).toEqual({ ok: false, error: "notFound" });
+  });
+
+  test("code-only and private rooms answer not found for now", async () => {
+    for (const visibility of ["code", "private"] as const) {
+      const { code } = await hostRoom({ visibility });
+      expect((await guestJoins(code)).result).toEqual({ ok: false, error: "notFound" });
+    }
+  });
+});
+
+describe("capacity (SALLE-05)", () => {
+  test("a full room refuses runners", async () => {
+    const { code } = await hostRoom({ capacity: 2 });
+    expect((await guestJoins(code)).result.ok).toBe(true);
+    expect((await guestJoins(code)).result).toEqual({ ok: false, error: "full" });
+  });
+
+  test("a full room still lets spectators in", async () => {
+    const { code } = await hostRoom({ capacity: 2 });
+    await guestJoins(code);
+    expect((await guestJoins(code, "spectator")).result).toEqual({ ok: true, code });
+    expect((await guestJoins(code, "spectator")).result).toEqual({ ok: true, code });
+    expect(await membersOf(code)).toHaveLength(4);
+  });
+
+  test("a spectator host doesn't take a seat", async () => {
+    const { code } = await hostRoom({ capacity: 2, hostRole: "spectator" });
+    expect((await guestJoins(code)).result.ok).toBe(true);
+    expect((await guestJoins(code)).result.ok).toBe(true);
+    expect((await guestJoins(code)).result).toEqual({ ok: false, error: "full" });
+  });
+});
+
+describe("joining between races only (SALLE-09)", () => {
+  test("no joining during the countdown or the race, even as a spectator", async () => {
+    const { code } = await hostRoom();
+    for (const state of ["countdown", "racing"] as const) {
+      await setState(code, state);
+      expect((await guestJoins(code)).result).toEqual({ ok: false, error: "notJoinable" });
+      expect((await guestJoins(code, "spectator")).result).toEqual({
+        ok: false,
+        error: "notJoinable",
+      });
+    }
+  });
+
+  test("joining is open again on the results screen", async () => {
+    const { code } = await hostRoom();
+    await setState(code, "results");
+    expect((await guestJoins(code)).result).toEqual({ ok: true, code });
+  });
+
+  test("a member already in the room is not turned away during the race", async () => {
+    const { code } = await hostRoom();
+    const { userId, name } = await guestJoins(code);
+    await setState(code, "racing");
+    expect(await joinRoom(userId, code, "participant", false, name)).toEqual({ ok: true, code });
+  });
+});
+
+describe("names within a room", () => {
+  test("a name already used in the room is refused, whatever its case", async () => {
+    const { code, hostName } = await hostRoom({ capacity: 5 });
+    for (const name of [hostName, hostName.toUpperCase()]) {
+      expect((await guestJoins(code, "participant", name)).result).toEqual({
+        ok: false,
+        error: "nameTaken",
+      });
+    }
+    expect(await membersOf(code)).toHaveLength(1);
+  });
+
+  test("the same name is fine in another room", async () => {
+    const first = await hostRoom();
+    const second = await hostRoom();
+    const name = uniqueName("n");
+    expect((await guestJoins(first.code, "participant", name)).result.ok).toBe(true);
+    expect((await guestJoins(second.code, "participant", name)).result.ok).toBe(true);
+  });
+
+  test("a name frees up when its owner leaves", async () => {
+    const { code } = await hostRoom({ capacity: 5 });
+    const { userId, name } = await guestJoins(code);
+    await leaveRoom(userId);
+    expect((await guestJoins(code, "participant", name)).result.ok).toBe(true);
+  });
+});
+
+describe("one room per person (SALLE-06)", () => {
+  test("joining another room is refused, with the current room's code", async () => {
+    const first = await hostRoom();
+    const second = await hostRoom();
+    const { userId, name } = await guestJoins(first.code);
+    expect(await joinRoom(userId, second.code, "participant", false, name)).toEqual({
+      ok: false,
+      error: "alreadyInRoom",
+      currentCode: first.code,
+    });
+    expect((await findCurrentRoom(userId))?.code).toBe(first.code);
+  });
+
+  test("creating a room while in one is refused", async () => {
+    const first = await hostRoom();
+    expect(await createRoom(first.hostId, settings, false, uniqueName("h"))).toEqual({
+      ok: false,
+      error: "alreadyInRoom",
+      currentCode: first.code,
+    });
+  });
+
+  test("leave and join moves the user to the new room", async () => {
+    const first = await hostRoom({ capacity: 5 });
+    const second = await hostRoom();
+    const { userId, name } = await guestJoins(first.code);
+    expect(await joinRoom(userId, second.code, "participant", true, name)).toEqual({
+      ok: true,
+      code: second.code,
+    });
+    expect((await findCurrentRoom(userId))?.code).toBe(second.code);
+    expect((await membersOf(first.code)).some((member) => member.userId === userId)).toBe(false);
+  });
+
+  test("leave and create moves the host to the new room", async () => {
+    const first = await hostRoom();
+    const result = await createRoom(first.hostId, settings, true, uniqueName("h"));
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect((await findCurrentRoom(first.hostId))?.code).toBe(result.code);
+    }
+    // They were alone, so the old room closed.
+    expect(await getRoom(first.code)).toBeNull();
+  });
+
+  test("the database refuses a second membership whatever the code does", async () => {
+    const first = await hostRoom();
+    const second = await hostRoom();
+    const [room] = await getDb()
+      .select({ id: rooms.id })
+      .from(rooms)
+      .where(eq(rooms.code, second.code));
+    const insert = getDb()
+      .insert(roomMembers)
+      .values({ roomId: room.id, userId: first.hostId, role: "participant", name: "dup" });
+    // Drizzle queries are thenables, not promises, so `rejects` needs a real one.
+    await expect(Promise.resolve(insert)).rejects.toThrow();
+  });
+});
+
+describe("leaveRoom (SALLE-08)", () => {
+  test("the member who has been there longest becomes host", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const second = await guestJoins(code);
+    const third = await guestJoins(code);
+    await leaveRoom(hostId);
+
+    const room = await getRoom(code);
+    expect(room?.hostId).toBe(second.userId);
+    expect(room?.members.map((member) => [member.userId, member.isHost])).toEqual([
+      [second.userId, true],
+      [third.userId, false],
+    ]);
+    expect(await findCurrentRoom(hostId)).toBeNull();
+  });
+
+  test("a member other than the host leaving keeps the host", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const second = await guestJoins(code);
+    await leaveRoom(second.userId);
+    expect((await getRoom(code))?.hostId).toBe(hostId);
+    expect(await membersOf(code)).toHaveLength(1);
+  });
+
+  test("the room closes when the last member leaves", async () => {
+    const { hostId, code } = await hostRoom();
+    await leaveRoom(hostId);
+    expect(await getRoom(code)).toBeNull();
+
+    const [row] = await getDb()
+      .select({ state: rooms.state, closedAt: rooms.closedAt })
+      .from(rooms)
+      .where(eq(rooms.code, code));
+    expect(row.state).toBe("closed");
+    expect(row.closedAt).toBeInstanceOf(Date);
+  });
+
+  test("the role skips members who are disconnected", async () => {
+    installFakeIo();
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const gone = await guestJoins(code);
+    const here = await guestJoins(code);
+    socketOpened(here.userId);
+    await leaveRoom(hostId);
+    const room = await getRoom(code);
+    expect(room?.hostId).toBe(here.userId);
+    // Still a member: only the grace period's end takes them out.
+    expect(room?.members.some((member) => member.userId === gone.userId)).toBe(true);
+  });
+
+  test("with nobody connected left, the room closes and releases everyone", async () => {
+    installFakeIo();
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const gone = await guestJoins(code);
+    await leaveRoom(hostId);
+    expect(await getRoom(code)).toBeNull();
+    // Free to join or create another room (SALLE-06).
+    expect(await findCurrentRoom(gone.userId)).toBeNull();
+  });
+
+  test("leaving when in no room does nothing", async () => {
+    const guest = await createTestGuest();
+    await expect(leaveRoom(guest.id)).resolves.toBeUndefined();
+  });
+});
