@@ -24,10 +24,11 @@ export function plural(
 }
 
 /** 0.42 → "42 %" in French, "42%" in English. */
-export function formatPercent(locale: Locale, ratio: number): string {
+export function formatPercent(locale: Locale, ratio: number, decimals = 0): string {
   return new Intl.NumberFormat(locale, {
     style: "percent",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(ratio);
 }
 
