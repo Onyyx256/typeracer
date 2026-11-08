@@ -9,12 +9,17 @@ import { localePath, type Locale } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
+import { MIN_RUNNERS } from "@/lib/race/manager";
+import { getLatestRaceResults } from "@/lib/race/results";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { leaveRoomAction } from "../actions";
 import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
+import { RaceResults } from "./race/race-results";
+import { RaceView } from "./race/race-view";
+import { StartRace } from "./race/start-race";
 
 export async function generateMetadata({
   params,
@@ -67,6 +72,9 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   const joinable = JOINABLE_STATES.includes(room.state);
   const t = dict.room;
   const isHost = user !== null && room.hostId === user.id;
+  // COURSE-01: the page follows the room's state, which only the server changes.
+  const inRace = room.state === "countdown" || room.state === "racing";
+  const results = room.state === "results" ? await getLatestRaceResults(room.code) : null;
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
@@ -99,30 +107,64 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           )}
         </header>
 
-        <MemberList
-          title={t.runners}
-          count={plural(locale, t.runnerCount, runners.length, {
-            capacity: room.capacity,
-          })}
-          members={runners}
-          empty={t.noRunners}
-          you={t.you}
-          host={t.host}
-          guest={t.guestBadge}
-          userId={user?.id ?? null}
-          kickDict={isHost ? t : null}
-        />
-        <MemberList
-          title={t.spectators}
-          count={String(spectators.length)}
-          members={spectators}
-          empty={t.noSpectators}
-          you={t.you}
-          host={t.host}
-          guest={t.guestBadge}
-          userId={user?.id ?? null}
-          kickDict={isHost ? t : null}
-        />
+        {inRace && (
+          <RaceView
+            code={room.code}
+            userId={user?.id ?? null}
+            dict={dict.race}
+            roomDict={t}
+            locale={locale}
+          />
+        )}
+        {results && (
+          <RaceResults
+            view={results}
+            userId={user?.id ?? null}
+            dict={dict.results}
+            roomDict={t}
+            locale={locale}
+          />
+        )}
+        {!inRace && isHost && (
+          <StartRace
+            dict={dict.race}
+            label={results ? dict.race.restart : dict.race.start}
+            runners={runners.length}
+            minRunners={MIN_RUNNERS}
+          />
+        )}
+        {results && member && !isHost && (
+          <p className="font-mono text-sm text-muted">&gt; {dict.results.waitingHost}</p>
+        )}
+
+        {!inRace && (
+          <>
+            <MemberList
+              title={t.runners}
+              count={plural(locale, t.runnerCount, runners.length, {
+                capacity: room.capacity,
+              })}
+              members={runners}
+              empty={t.noRunners}
+              you={t.you}
+              host={t.host}
+              guest={t.guestBadge}
+              userId={user?.id ?? null}
+              kickDict={isHost ? t : null}
+            />
+            <MemberList
+              title={t.spectators}
+              count={String(spectators.length)}
+              members={spectators}
+              empty={t.noSpectators}
+              you={t.you}
+              host={t.host}
+              guest={t.guestBadge}
+              userId={user?.id ?? null}
+              kickDict={isHost ? t : null}
+            />
+          </>
+        )}
 
         {!member && joinable && (
           <div className="max-w-sm">
