@@ -14,6 +14,7 @@ import { getLatestRaceResults } from "@/lib/race/results";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
+import { EditSettings } from "./edit-settings";
 import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
 import { LeaveRoom } from "./leave-room";
@@ -76,6 +77,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   // COURSE-01: the page follows the room's state, which only the server changes.
   const inRace = room.state === "countdown" || room.state === "racing";
   const results = room.state === "results" ? await getLatestRaceResults(room.code) : null;
+  const settings = { ...room.config, visibility: room.visibility, capacity: room.capacity };
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
@@ -180,12 +182,17 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
       <aside className="border border-line bg-surface p-6 rounded-leaf lg:sticky lg:top-6">
         <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
         <div className="mt-4">
-          <RoomSummary
-            dict={dict.createRoom}
-            locale={locale}
-            settings={{ ...room.config, visibility: room.visibility, capacity: room.capacity }}
-          />
+          <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
         </div>
+        {/* CONF: the host changes the settings between races, never during one. */}
+        {isHost && !inRace && (
+          <EditSettings
+            dict={t}
+            fieldsDict={dict.createRoom}
+            locale={locale}
+            settings={settings}
+          />
+        )}
       </aside>
     </div>
   );

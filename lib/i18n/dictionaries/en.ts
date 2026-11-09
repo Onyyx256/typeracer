@@ -121,6 +121,22 @@ export const en: Dictionary = {
       invalid: "invalid request",
       unavailable: "not possible right now, try again later",
     },
+    editSettings: "Change settings",
+    editSettingsDialog: {
+      title: "Room settings",
+      lead: "Changes apply from the next race. Everyone in the room sees them right away.",
+      save: "Save",
+      saving: "saving",
+      cancel: "Cancel",
+    },
+    editSettingsErrors: {
+      notHost: "only the host can change the settings",
+      notBetweenRaces: "settings can't change during a race",
+      belowRunners: "the capacity can't be below the runners already here",
+      invalid: "a setting isn't valid",
+      noWords: "no word matches these letter filters",
+      unavailable: "not possible right now, try again later",
+    },
     makeHost: "Make host",
     makeHostLabel: "Make {name} the room's host",
     makeHostDialog: {

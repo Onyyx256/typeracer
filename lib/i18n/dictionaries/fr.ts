@@ -123,6 +123,22 @@ export const fr = {
       invalid: "demande invalide",
       unavailable: "impossible pour le moment, réessaie plus tard",
     },
+    editSettings: "Modifier les réglages",
+    editSettingsDialog: {
+      title: "Réglages de la salle",
+      lead: "Les changements s'appliquent dès la prochaine course. Tout le monde dans la salle les voit tout de suite.",
+      save: "Enregistrer",
+      saving: "enregistrement",
+      cancel: "Annuler",
+    },
+    editSettingsErrors: {
+      notHost: "seul l'hôte peut modifier les réglages",
+      notBetweenRaces: "impossible de modifier les réglages pendant une course",
+      belowRunners: "la capacité ne peut pas être sous le nombre de coureurs déjà là",
+      invalid: "un réglage n'est pas valide",
+      noWords: "aucun mot ne correspond à ces filtres de lettres",
+      unavailable: "pas possible pour le moment, réessaie plus tard",
+    },
     makeHost: "Nommer hôte",
     makeHostLabel: "Nommer {name} hôte de la salle",
     makeHostDialog: {
