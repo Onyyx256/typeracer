@@ -84,21 +84,25 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
       {/* Members, host and settings re-render as soon as they change. */}
       <LiveRoom code={room.code} />
       <div className="grid gap-8">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+        <header className="grid gap-2">
+          {/* The leave button lines up with the title, not the state below it. */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-display text-4xl leading-tight font-semibold">
               {t.heading}{" "}
               <span className="font-mono tracking-widest text-accent-text">
                 {room.code}
               </span>
             </h1>
-            <p className="mt-2 font-mono text-sm text-muted">
+            {member && (
+              <LeaveRoom dict={t} locale={locale} />
+            )}
+          </div>
+          {/* On the results, the "Results" heading already says it. */}
+          {!results && (
+            <p className="font-mono text-sm text-muted">
               &gt; {t.states[room.state]}
               {room.state === "waiting" && <> · {t.waitingNote}</>}
             </p>
-          </div>
-          {member && (
-            <LeaveRoom dict={t} locale={locale} />
           )}
         </header>
 
