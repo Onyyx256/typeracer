@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import type { FormEvent } from "react";
 import { ChoiceGroup, RoomSettingsFields } from "@/app/components/room-settings-fields";
 import { RoomSummary } from "@/app/components/room-summary";
@@ -28,6 +28,13 @@ type CreateRoomFormProps = {
 
 const NAME_LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
 
+const noSubscribe = () => () => {};
+
+/** False in the server HTML and until React has taken over the page, then true. */
+function useHydrated(): boolean {
+  return useSyncExternalStore(noSubscribe, () => true, () => false);
+}
+
 export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProps) {
   const [name, setName] = useState(defaultName);
   const [settings, setSettings] = useState<RoomSettings>(() =>
@@ -37,6 +44,7 @@ export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProp
   // The room the user is already in, when the server refused for that reason.
   const [currentCode, setCurrentCode] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const hydrated = useHydrated();
 
   function update(changes: Partial<RoomSettings>) {
     setSettings((current) => ({ ...current, ...changes }));
@@ -136,9 +144,12 @@ export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProp
             </button>
           </div>
         ) : (
+          // Disabled until the page's JavaScript runs: clicked earlier (a cold
+          // cache in a private window), the browser would send the form itself
+          // as a GET with every setting in the URL, and no room would be made.
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || !hydrated}
             className="mt-6 h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-wait disabled:opacity-70 rounded-leaf"
           >
             {dict.submit}
