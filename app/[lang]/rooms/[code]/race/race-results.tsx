@@ -34,7 +34,8 @@ export function RaceResults({
 
   return (
     <section aria-labelledby="results-heading" className="grid gap-8">
-      <h2 id="results-heading" className="font-display text-3xl font-semibold">
+      {/* The "> Results" state under the room title shows it; this keeps the outline. */}
+      <h2 id="results-heading" className="sr-only">
         {dict.heading}
       </h2>
 

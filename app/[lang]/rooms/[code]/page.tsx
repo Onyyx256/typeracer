@@ -97,13 +97,10 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               <LeaveRoom dict={t} locale={locale} />
             )}
           </div>
-          {/* On the results, the "Results" heading already says it. */}
-          {!results && (
-            <p className="font-mono text-sm text-muted">
-              &gt; {t.states[room.state]}
-              {room.state === "waiting" && <> · {t.waitingNote}</>}
-            </p>
-          )}
+          <p className="font-mono text-sm text-muted">
+            &gt; {t.states[room.state]}
+            {room.state === "waiting" && <> · {t.waitingNote}</>}
+          </p>
         </header>
 
         {inRace && (
