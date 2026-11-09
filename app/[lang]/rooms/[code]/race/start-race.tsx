@@ -39,12 +39,12 @@ export function StartRace({
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid justify-items-center gap-2 text-center">
       <button
         type="button"
         onClick={start}
         disabled={!enough || pending}
-        className="h-12 w-full cursor-pointer bg-primary px-8 text-lg font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
+        className="h-12 cursor-pointer bg-primary px-8 text-lg font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
       >
         {label}
       </button>
