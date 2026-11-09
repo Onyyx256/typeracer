@@ -188,7 +188,12 @@ export const en: Dictionary = {
   },
   race: {
     start: "Start the race",
-    restart: "New race",
+    newGame: "New game",
+    newGameErrors: {
+      notHost: "only the host can start a new game",
+      notOnResults: "the room is already back to waiting",
+      unavailable: "not possible right now, try again later",
+    },
     needRunners: "at least {min} runners are needed to start the race",
     startErrors: {
       notHost: "only the host can start the race",
@@ -248,7 +253,7 @@ export const en: Dictionary = {
     noAccuracy: "no accuracy, gave up",
     source: "From “{title}”, {author}",
     seconds: "{value} s",
-    waitingHost: "the host can start a new race",
+    waitingHost: "the host can start a new game",
   },
   createRoom: {
     title: "Create a room",

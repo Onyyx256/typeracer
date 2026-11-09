@@ -5,7 +5,12 @@ import * as z from "zod";
 import { createSession, getSessionUserId } from "@/lib/auth/session";
 import { createGuest, findProfile, setGuestNickname } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
-import { startRace, type StartRaceError } from "@/lib/race/manager";
+import {
+  backToLobby,
+  startRace,
+  type BackToLobbyError,
+  type StartRaceError,
+} from "@/lib/race/manager";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import type { NameError } from "@/lib/rooms/names";
@@ -285,8 +290,8 @@ export type StartRaceActionResult =
   | { ok: false; error: StartRaceError | "unavailable" };
 
 /**
- * COURSE-02: the host starts the race, from the waiting room or the
- * results. startRace checks that the session's user hosts the room (SEC-01).
+ * COURSE-02: the host starts the race from the waiting room. startRace
+ * checks that the session's user hosts the room (SEC-01).
  */
 export async function startRaceAction(): Promise<StartRaceActionResult> {
   const hostId = await getSessionUserId();
@@ -297,6 +302,27 @@ export async function startRaceAction(): Promise<StartRaceActionResult> {
     return await startRace(hostId);
   } catch (error) {
     logFailure("startRace", error);
+    return { ok: false, error: "unavailable" };
+  }
+}
+
+export type BackToLobbyActionResult =
+  | { ok: true }
+  | { ok: false; error: BackToLobbyError | "unavailable" };
+
+/**
+ * COURSE-11: "New game" on the results brings the room back to the waiting
+ * room. No input; backToLobby checks that the session's user hosts the room (SEC-01).
+ */
+export async function backToLobbyAction(): Promise<BackToLobbyActionResult> {
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    return await backToLobby(hostId);
+  } catch (error) {
+    logFailure("backToLobby", error);
     return { ok: false, error: "unavailable" };
   }
 }

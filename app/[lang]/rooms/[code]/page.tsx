@@ -21,6 +21,7 @@ import { LeaveRoom } from "./leave-room";
 import { MakeHost } from "./make-host";
 import { RaceResults } from "./race/race-results";
 import { RaceView } from "./race/race-view";
+import { NewGame } from "./race/new-game";
 import { StartRace } from "./race/start-race";
 
 export async function generateMetadata({
@@ -172,14 +173,11 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             />
           )}
         </aside>
-        {!inRace && isHost && (
-          <StartRace
-            dict={dict.race}
-            label={results ? dict.race.restart : dict.race.start}
-            runners={runners.length}
-            minRunners={MIN_RUNNERS}
-          />
+        {/* COURSE-11: the results go back to the waiting room, where the next race starts. */}
+        {isHost && room.state === "waiting" && (
+          <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
         )}
+        {isHost && results && <NewGame dict={dict.race} />}
         {!member && joinable && (
           <JoinRoom
             dict={t}

@@ -190,7 +190,12 @@ export const fr = {
   },
   race: {
     start: "Lancer la course",
-    restart: "Nouvelle course",
+    newGame: "Nouvelle partie",
+    newGameErrors: {
+      notHost: "seul l'hôte peut lancer une nouvelle partie",
+      notOnResults: "la salle est déjà revenue en attente",
+      unavailable: "impossible pour le moment, réessaie plus tard",
+    },
     needRunners: "il faut au moins {min} coureurs pour lancer la course",
     startErrors: {
       notHost: "seul l'hôte peut lancer la course",
@@ -250,7 +255,7 @@ export const fr = {
     noAccuracy: "pas de précision, abandon",
     source: "Extrait de « {title} », {author}",
     seconds: "{value} s",
-    waitingHost: "l'hôte peut lancer une nouvelle course",
+    waitingHost: "l'hôte peut lancer une nouvelle partie",
   },
   createRoom: {
     title: "Créer une salle",

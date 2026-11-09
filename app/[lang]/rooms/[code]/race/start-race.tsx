@@ -8,15 +8,13 @@ import { startRaceAction, type StartRaceActionResult } from "../../actions";
 
 type StartError = Extract<StartRaceActionResult, { ok: false }>["error"];
 
-/** COURSE-02, COURSE-11: the host's button, under the room settings, in the waiting room and on the results. */
+/** COURSE-02: the host's button, under the room settings, in the waiting room. */
 export function StartRace({
   dict,
-  label,
   runners,
   minRunners,
 }: {
   dict: RaceDictionary;
-  label: string;
   runners: number;
   minRunners: number;
 }) {
@@ -46,7 +44,7 @@ export function StartRace({
         disabled={!enough || pending}
         className="h-12 cursor-pointer bg-primary px-8 text-lg font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
       >
-        {label}
+        {dict.start}
       </button>
       <p role="status" className="min-h-5 font-mono text-sm text-muted">
         {error ? (
