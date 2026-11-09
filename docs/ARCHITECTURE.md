@@ -93,7 +93,7 @@ erDiagram
         text status
         real wpm
         real raw_wpm
-        real accuracy
+        real accuracy "null après un abandon"
         int errors
         real progress
         int duration_ms
