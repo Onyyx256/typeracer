@@ -124,7 +124,7 @@ stateDiagram-v2
     EN_ATTENTE --> DECOMPTE : l'hôte lance (min. 2 participants, dont 1 humain)
     DECOMPTE --> EN_COURSE : fin du décompte 3, 2, 1
     EN_COURSE --> RESULTATS : tous ont terminé ou abandonné, ou temps écoulé
-    RESULTATS --> EN_ATTENTE : l'hôte relance une course
+    RESULTATS --> EN_ATTENTE : l'hôte clique « Nouvelle partie »
     RESULTATS --> FERMEE : l'hôte ferme la salle
     EN_ATTENTE --> FERMEE : plus aucun humain dans la salle
     FERMEE --> [*]
