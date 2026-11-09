@@ -25,3 +25,11 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** l'IA a relu le journal en y ajoutant une entrée, puis a vérifié les salles fermées dans la base (fermeture à 19 h 03 min 38 s, 30 s après le démarrage du serveur de test).
 - **Correction :** serveur de test arrêté. La salle reste fermée, à ma demande.
 - **Leçon :** relire le journal avant de lancer un serveur; un serveur de test ne doit jamais démarrer sur la base de développement.
+
+## 2026-11-08 — Formulaire de création envoyé avant le chargement du JavaScript
+
+- **Outil / agent :** Claude Code (session principale), Playwright pour la vérification.
+- **Ce que l'IA a fait :** dans `app/[lang]/rooms/new/create-room-form.tsx`, le formulaire ne passait que par `onSubmit`. Un clic sur « Create the room » avant l'hydratation faisait envoyer le formulaire par le navigateur, en GET avec tous les réglages dans l'URL, et aucune salle n'était créée. Première correction de l'IA : une action de formulaire React (qui rejoue les envois précoces), mais la réinitialisation automatique du formulaire décochait les boutons radio contrôlés après un refus.
+- **Comment je l'ai détecté :** dans une fenêtre privée (cache vide, donc hydratation lente en dev), le bouton ne fonctionnait pas et l'URL contenait `?name=…&hostRole=…`. L'IA a reproduit le bug avec un script Playwright qui ralentit le JavaScript, et a repéré le défaut de sa première correction avec un second script avant le commit.
+- **Correction :** le bouton reste désactivé tant que la page n'est pas hydratée (`useSyncExternalStore`), et le formulaire garde `onSubmit` (commit c26c63f).
+- **Leçon :** tester un formulaire avec un JavaScript lent ou un cache vide, et vérifier le chemin d'erreur après chaque correction, pas seulement le cas qui marche.
