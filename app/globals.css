@@ -93,6 +93,11 @@ body {
   }
 }
 
+/* While a modal dialog is open, only the dialog scrolls, never the page behind it. */
+html:has(dialog:modal) {
+  overflow: hidden;
+}
+
 @keyframes caret-blink {
   50% {
     opacity: 0;
