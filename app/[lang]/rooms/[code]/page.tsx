@@ -84,7 +84,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
       {/* Members, host and settings re-render as soon as they change. */}
       <LiveRoom code={room.code} />
       <div className="grid gap-8">
-        <header className="grid gap-2">
+        <header className="grid gap-4">
           {/* The leave button lines up with the title, not the state below it. */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-display text-4xl leading-tight font-semibold">
