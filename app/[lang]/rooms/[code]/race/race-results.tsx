@@ -1,4 +1,4 @@
-import { Avatar } from "@/app/components/avatar";
+import { PodiumFlower } from "@/app/components/podium-flower";
 import type { RaceResultsView, ResultRow } from "@/lib/race/results";
 import type { Locale } from "@/lib/i18n/config";
 import type { RoomDictionary, ResultsDictionary } from "@/lib/i18n/dictionaries/fr";
@@ -6,12 +6,13 @@ import { formatNumber, formatPercent, interpolate } from "@/lib/i18n/format";
 
 /**
  * In rank order in the page, so screen readers start with the winner;
- * shown 2nd, 1st, 3rd with the winner tallest.
+ * shown 2nd, 1st, 3rd with the winner tallest. The flowers bloom from
+ * 3rd to 1st, so the winner's opens last.
  */
 const PODIUM = [
-  { index: 0, order: "order-2", height: "h-28" },
-  { index: 1, order: "order-1", height: "h-20" },
-  { index: 2, order: "order-3", height: "h-14" },
+  { index: 0, order: "order-2", height: "h-28", stem: 130, delay: 0.8 },
+  { index: 1, order: "order-1", height: "h-20", stem: 100, delay: 0.4 },
+  { index: 2, order: "order-3", height: "h-14", stem: 75, delay: 0 },
 ] as const;
 
 /** RÉSULTATS: the top 3 (RES-01) and the full table (RES-02). */
@@ -40,14 +41,14 @@ export function RaceResults({
       <div>
         <h3 className="sr-only">{dict.podium}</h3>
         <ol className="grid max-w-xl grid-cols-3 items-end gap-3">
-          {PODIUM.map(({ index, order, height }) => {
+          {PODIUM.map(({ index, order, height, stem, delay }) => {
             const row = view.results[index];
             if (!row) {
               return <li key={index} aria-hidden="true" className={order} />;
             }
             return (
               <li key={index} className={`grid justify-items-center gap-2 text-center ${order}`}>
-                <Avatar name={row.name} className="size-10 text-lg" />
+                <PodiumFlower name={row.name} stem={stem} delay={delay} className="max-w-[7.5rem]" />
                 <span className="max-w-full truncate font-medium" title={row.name}>
                   {row.name}
                   {row.userId === userId && userId !== null && <span className="text-muted"> ({roomDict.you})</span>}
