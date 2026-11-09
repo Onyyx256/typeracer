@@ -153,26 +153,9 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             />
           </>
         )}
-
-        {!member && joinable && (
-          <div className="max-w-sm">
-            <JoinRoom
-              dict={t}
-              locale={locale}
-              code={room.code}
-              full={runners.length >= room.capacity}
-              elsewhere={current?.code ?? null}
-              defaultName={user?.displayName ?? ""}
-              hasSession={user !== null}
-            />
-          </div>
-        )}
-        {!member && !joinable && (
-          <p className="font-mono text-sm text-accent-text">&gt; {t.errors.notJoinable}</p>
-        )}
       </div>
 
-      {/* The host's start button sits under the settings it will race with. */}
+      {/* The start and join buttons sit under the settings they will race with. */}
       <div className="grid gap-4 lg:sticky lg:top-6">
         <aside className="border border-line bg-surface p-6 rounded-leaf">
           <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
@@ -196,6 +179,20 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             runners={runners.length}
             minRunners={MIN_RUNNERS}
           />
+        )}
+        {!member && joinable && (
+          <JoinRoom
+            dict={t}
+            locale={locale}
+            code={room.code}
+            full={runners.length >= room.capacity}
+            elsewhere={current?.code ?? null}
+            defaultName={user?.displayName ?? ""}
+            hasSession={user !== null}
+          />
+        )}
+        {!member && !joinable && (
+          <p className="font-mono text-sm text-accent-text">&gt; {t.errors.notJoinable}</p>
         )}
       </div>
     </div>
