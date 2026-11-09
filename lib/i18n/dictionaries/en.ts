@@ -96,6 +96,12 @@ export const en: Dictionary = {
     join: "Join as a runner",
     joinSpectator: "Join as a spectator",
     leave: "Leave the room",
+    leaveDialog: {
+      title: "Delete the room?",
+      lead: "You're the last member with an account. If you leave, nobody can take over as host, so the room will be deleted and any guests will be sent out.",
+      confirm: "Leave and delete the room",
+      cancel: "Stay",
+    },
     waitingNote: "the host will start the race",
     elsewhere: "You're already in room {code}.",
     goBack: "Go back to {code}",

@@ -13,6 +13,7 @@ import {
   createRoom,
   joinRoom,
   kickMember,
+  leaveClosesRoom,
   leaveRoom,
   type KickError,
   type RoomError,
@@ -180,6 +181,21 @@ export async function leaveRoomAction(formData: FormData): Promise<void> {
     }
   }
   redirect(localePath(lang, "/rooms"));
+}
+
+/** Asked before leaving: true when leaving now would delete the room (SALLE-08). */
+export async function leaveClosesRoomAction(): Promise<boolean> {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return false;
+  }
+  try {
+    return await leaveClosesRoom(userId);
+  } catch (error) {
+    // Not knowing shouldn't block leaving; the leave itself reports its errors.
+    logFailure("leaveClosesRoom", error);
+    return false;
+  }
 }
 
 const kickMemberInput = z.object({ userId: z.uuid() });

@@ -98,6 +98,12 @@ export const fr = {
     join: "Entrer comme coureur",
     joinSpectator: "Entrer comme spectateur",
     leave: "Quitter la salle",
+    leaveDialog: {
+      title: "Supprimer la salle ?",
+      lead: "Tu es le dernier membre avec un compte. Si tu pars, personne ne peut devenir hôte, donc la salle sera supprimée et les invités en sortiront.",
+      confirm: "Quitter et supprimer la salle",
+      cancel: "Rester",
+    },
     waitingNote: "l'hôte lancera la course",
     elsewhere: "Tu es déjà dans la salle {code}.",
     goBack: "Retourner dans {code}",

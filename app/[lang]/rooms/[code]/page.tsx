@@ -14,9 +14,9 @@ import { getLatestRaceResults } from "@/lib/race/results";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
-import { leaveRoomAction } from "../actions";
 import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
+import { LeaveRoom } from "./leave-room";
 import { RaceResults } from "./race/race-results";
 import { RaceView } from "./race/race-view";
 import { StartRace } from "./race/start-race";
@@ -95,15 +95,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             </p>
           </div>
           {member && (
-            <form action={leaveRoomAction}>
-              <input type="hidden" name="lang" value={locale} />
-              <button
-                type="submit"
-                className="h-11 cursor-pointer border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf"
-              >
-                {t.leave}
-              </button>
-            </form>
+            <LeaveRoom dict={t} locale={locale} />
           )}
         </header>
 
