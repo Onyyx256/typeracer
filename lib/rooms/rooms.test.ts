@@ -16,6 +16,7 @@ import {
   leaveClosesRoom,
   leaveRoom,
   listPublicRooms,
+  transferHost,
 } from "./rooms";
 import {
   defaultRoomSettings,
@@ -519,5 +520,47 @@ describe("listPublicRooms filters (JOIN-02)", () => {
     const unlisted = (await hostRoom({ language: "fr", visibility: "code" })).code;
 
     expect(await shown([closed, unlisted], { lang: "fr" })).toEqual([]);
+  });
+});
+
+describe("transferHost", () => {
+  test("the host hands the role to a member with an account", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const account = await accountJoins(code, "spectator");
+    expect(await transferHost(hostId, account.userId)).toEqual({ ok: true });
+
+    const room = await getRoom(code);
+    expect(room?.hostId).toBe(account.userId);
+    // The old host stays in the room as a plain member.
+    expect(room?.members.find((member) => member.userId === hostId)?.isHost).toBe(false);
+  });
+
+  test("a guest can't become host", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const guest = await guestJoins(code);
+    expect(await transferHost(hostId, guest.userId)).toEqual({ ok: false, error: "guest" });
+    expect((await getRoom(code))?.hostId).toBe(hostId);
+  });
+
+  test("only the host can hand the role over", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const first = await accountJoins(code);
+    const second = await accountJoins(code);
+    expect(await transferHost(first.userId, second.userId)).toEqual({
+      ok: false,
+      error: "notHost",
+    });
+    expect((await getRoom(code))?.hostId).toBe(hostId);
+  });
+
+  test("the target must be in the host's room, and not the host", async () => {
+    const { hostId } = await hostRoom({ capacity: 5 });
+    const other = await hostRoom({ capacity: 5 });
+    const elsewhere = await accountJoins(other.code);
+    expect(await transferHost(hostId, elsewhere.userId)).toEqual({
+      ok: false,
+      error: "notMember",
+    });
+    expect(await transferHost(hostId, hostId)).toEqual({ ok: false, error: "notMember" });
   });
 });

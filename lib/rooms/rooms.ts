@@ -427,6 +427,67 @@ export async function kickMember(hostId: string, targetId: string): Promise<Kick
   return { ok: true };
 }
 
+export type TransferHostError =
+  /** The user isn't the host of an open room. */
+  | "notHost"
+  /** The target isn't in the host's room, or is the host. */
+  | "notMember"
+  /** Only an account can host (SALLE-08), never a guest. */
+  | "guest";
+
+export type TransferHostResult = { ok: true } | { ok: false; error: TransferHostError };
+
+/**
+ * The host hands the role to another member who has an account. Checked
+ * here, not in the interface (SEC-01).
+ */
+export async function transferHost(
+  hostId: string,
+  targetId: string,
+): Promise<TransferHostResult> {
+  if (hostId === targetId) {
+    return { ok: false, error: "notMember" };
+  }
+  const result = await getDb().transaction(
+    async (tx): Promise<TransferHostResult & { code?: string }> => {
+      const [membership] = await tx
+        .select({ roomId: roomMembers.roomId })
+        .from(roomMembers)
+        .where(eq(roomMembers.userId, hostId));
+      if (!membership) {
+        return { ok: false, error: "notHost" };
+      }
+      // Locked like leaveRoom, so two hand-overs can't cross.
+      const [room] = await tx
+        .select({ id: rooms.id, code: rooms.code, hostId: rooms.hostId, state: rooms.state })
+        .from(rooms)
+        .where(eq(rooms.id, membership.roomId))
+        .for("update");
+      if (!room || room.hostId !== hostId || room.state === "closed") {
+        return { ok: false, error: "notHost" };
+      }
+      const [target] = await tx
+        .select({ isGuest: users.isGuest })
+        .from(roomMembers)
+        .innerJoin(users, eq(users.id, roomMembers.userId))
+        .where(and(eq(roomMembers.roomId, room.id), eq(roomMembers.userId, targetId)));
+      if (!target) {
+        return { ok: false, error: "notMember" };
+      }
+      if (target.isGuest) {
+        return { ok: false, error: "guest" };
+      }
+      await tx.update(rooms).set({ hostId: targetId }).where(eq(rooms.id, room.id));
+      return { ok: true, code: room.code };
+    },
+  );
+  if (!result.ok || !result.code) {
+    return result;
+  }
+  notifyRoomChanged(result.code);
+  return { ok: true };
+}
+
 export type RoomMemberView = {
   userId: string;
   displayName: string;
