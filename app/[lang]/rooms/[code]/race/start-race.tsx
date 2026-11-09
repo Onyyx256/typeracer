@@ -8,7 +8,7 @@ import { startRaceAction, type StartRaceActionResult } from "../../actions";
 
 type StartError = Extract<StartRaceActionResult, { ok: false }>["error"];
 
-/** COURSE-02, COURSE-11: the host's button, in the waiting room and on the results. */
+/** COURSE-02, COURSE-11: the host's button, under the room settings, in the waiting room and on the results. */
 export function StartRace({
   dict,
   label,
@@ -39,12 +39,12 @@ export function StartRace({
   }
 
   return (
-    <div className="grid justify-items-start gap-2">
+    <div className="grid gap-2">
       <button
         type="button"
         onClick={start}
         disabled={!enough || pending}
-        className="h-12 cursor-pointer bg-primary px-8 text-lg font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
+        className="h-12 w-full cursor-pointer bg-primary px-8 text-lg font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
       >
         {label}
       </button>

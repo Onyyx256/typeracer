@@ -120,14 +120,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             locale={locale}
           />
         )}
-        {!inRace && isHost && (
-          <StartRace
-            dict={dict.race}
-            label={results ? dict.race.restart : dict.race.start}
-            runners={runners.length}
-            minRunners={MIN_RUNNERS}
-          />
-        )}
         {results && member && !isHost && (
           <p className="font-mono text-sm text-muted">&gt; {dict.results.waitingHost}</p>
         )}
@@ -179,21 +171,32 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
         )}
       </div>
 
-      <aside className="border border-line bg-surface p-6 rounded-leaf lg:sticky lg:top-6">
-        <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
-        <div className="mt-4">
-          <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
-        </div>
-        {/* CONF: the host changes the settings between races, never during one. */}
-        {isHost && !inRace && (
-          <EditSettings
-            dict={t}
-            fieldsDict={dict.createRoom}
-            locale={locale}
-            settings={settings}
+      {/* The host's start button sits under the settings it will race with. */}
+      <div className="grid gap-4 lg:sticky lg:top-6">
+        <aside className="border border-line bg-surface p-6 rounded-leaf">
+          <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
+          <div className="mt-4">
+            <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
+          </div>
+          {/* CONF: the host changes the settings between races, never during one. */}
+          {isHost && !inRace && (
+            <EditSettings
+              dict={t}
+              fieldsDict={dict.createRoom}
+              locale={locale}
+              settings={settings}
+            />
+          )}
+        </aside>
+        {!inRace && isHost && (
+          <StartRace
+            dict={dict.race}
+            label={results ? dict.race.restart : dict.race.start}
+            runners={runners.length}
+            minRunners={MIN_RUNNERS}
           />
         )}
-      </aside>
+      </div>
     </div>
   );
 }
