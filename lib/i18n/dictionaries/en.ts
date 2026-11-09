@@ -121,6 +121,21 @@ export const en: Dictionary = {
       invalid: "invalid request",
       unavailable: "not possible right now, try again later",
     },
+    makeHost: "Make host",
+    makeHostLabel: "Make {name} the room's host",
+    makeHostDialog: {
+      title: "Make {name} the host?",
+      lead: "They'll start the races and manage the room. You stay in the room, without being host.",
+      confirm: "Make host",
+      cancel: "Cancel",
+    },
+    makeHostErrors: {
+      notHost: "only the host can make someone else host",
+      notMember: "this person isn't in the room anymore",
+      guest: "a guest can't be host",
+      invalid: "invalid request",
+      unavailable: "not possible right now, try again later",
+    },
     kicked: {
       title: "You were removed from this room",
       lead: "The host removed you. You can't join this room again, but you can join another one.",

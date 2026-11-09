@@ -123,6 +123,21 @@ export const fr = {
       invalid: "demande invalide",
       unavailable: "impossible pour le moment, réessaie plus tard",
     },
+    makeHost: "Nommer hôte",
+    makeHostLabel: "Nommer {name} hôte de la salle",
+    makeHostDialog: {
+      title: "Nommer {name} hôte ?",
+      lead: "Cette personne lancera les courses et gérera la salle. Tu restes dans la salle, sans être hôte.",
+      confirm: "Nommer hôte",
+      cancel: "Annuler",
+    },
+    makeHostErrors: {
+      notHost: "seul l'hôte peut nommer quelqu'un d'autre",
+      notMember: "cette personne n'est plus dans la salle",
+      guest: "un invité ne peut pas être hôte",
+      invalid: "demande invalide",
+      unavailable: "impossible pour le moment, réessaie plus tard",
+    },
     kicked: {
       title: "Tu as été retiré de cette salle",
       lead: "L'hôte t'a retiré. Tu ne peux plus entrer dans cette salle, mais tu peux en rejoindre une autre.",

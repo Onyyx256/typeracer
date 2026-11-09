@@ -17,6 +17,7 @@ import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
 import { LeaveRoom } from "./leave-room";
+import { MakeHost } from "./make-host";
 import { RaceResults } from "./race/race-results";
 import { RaceView } from "./race/race-view";
 import { StartRace } from "./race/start-race";
@@ -209,7 +210,7 @@ function MemberList({
   host: string;
   guest: string;
   userId: string | null;
-  /** Only for the host, who may remove the other members (SALLE-07). */
+  /** Only for the host, who may remove the other members (SALLE-07) or hand over the role. */
   kickDict: RoomDictionary | null;
 }) {
   return (
@@ -239,6 +240,9 @@ function MemberList({
               <span className="flex shrink-0 items-center gap-3 font-mono text-xs tracking-wide uppercase">
                 {entry.isGuest && <span className="text-muted">{guest}</span>}
                 {entry.isHost && <span className="text-accent-text">{host}</span>}
+                {kickDict && entry.userId !== userId && !entry.isGuest && (
+                  <MakeHost dict={kickDict} userId={entry.userId} name={entry.displayName} />
+                )}
                 {kickDict && entry.userId !== userId && (
                   <KickMember dict={kickDict} userId={entry.userId} name={entry.displayName} />
                 )}

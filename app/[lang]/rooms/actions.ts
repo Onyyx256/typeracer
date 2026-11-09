@@ -15,9 +15,11 @@ import {
   kickMember,
   leaveClosesRoom,
   leaveRoom,
+  transferHost,
   type KickError,
   type RoomError,
   type RoomResult,
+  type TransferHostError,
 } from "@/lib/rooms/rooms";
 import {
   HOST_ROLES,
@@ -216,6 +218,30 @@ export async function kickMemberAction(input: unknown): Promise<KickActionResult
     return await kickMember(hostId, parsed.data.userId);
   } catch (error) {
     logFailure("kickMember", error);
+    return { ok: false, error: "unavailable" };
+  }
+}
+
+const transferHostInput = z.object({ userId: z.uuid() });
+
+export type TransferHostActionResult =
+  | { ok: true }
+  | { ok: false; error: TransferHostError | "invalid" | "unavailable" };
+
+/** transferHost checks that the session's user hosts the room (SEC-01). */
+export async function transferHostAction(input: unknown): Promise<TransferHostActionResult> {
+  const parsed = transferHostInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid" };
+  }
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    return await transferHost(hostId, parsed.data.userId);
+  } catch (error) {
+    logFailure("transferHost", error);
     return { ok: false, error: "unavailable" };
   }
 }
