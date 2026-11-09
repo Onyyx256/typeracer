@@ -99,6 +99,38 @@ body {
   }
 }
 
+/*
+ * Podium flowers. Each keyframe only gives the starting state and the
+ * animations fill "backwards", so the resting style is the bloomed flower:
+ * that is also what shows when reduced motion turns animations off.
+ */
+@keyframes podium-grow {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes podium-pop {
+  from {
+    transform: scale(0);
+  }
+}
+
+.podium-stem {
+  stroke-dasharray: 1;
+  animation: podium-grow ease-out backwards;
+}
+
+.podium-pop {
+  transform-origin: 0 0;
+  animation: podium-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* HTML elements scale from their centre, not their corner. */
+span.podium-pop {
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
