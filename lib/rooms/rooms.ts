@@ -63,6 +63,44 @@ export async function findCurrentRoom(
   return found ?? null;
 }
 
+type RemainingMember = { userId: string; isGuest: boolean };
+
+/**
+ * What happens to the room once someone leaves, given who is still in it
+ * (oldest first): the next host, or whether it closes (SALLE-08).
+ */
+function planLeave(
+  wasHost: boolean,
+  remaining: RemainingMember[],
+): { closes: boolean; next: RemainingMember | undefined } {
+  const connected = remaining.filter((member) => isConnected(member.userId));
+  const next = wasHost ? connected.find((member) => !member.isGuest) : undefined;
+  return { closes: connected.length === 0 || (wasHost && !next), next };
+}
+
+/**
+ * Whether the room would be deleted if the user left it now, so the page
+ * can warn the host who is the last account in it before they go.
+ */
+export async function leaveClosesRoom(userId: string): Promise<boolean> {
+  const current = await findCurrentRoom(userId);
+  if (!current) {
+    return false;
+  }
+  const db = getDb();
+  const [room] = await db
+    .select({ hostId: rooms.hostId })
+    .from(rooms)
+    .where(eq(rooms.id, current.roomId));
+  const others = await db
+    .select({ userId: roomMembers.userId, isGuest: users.isGuest })
+    .from(roomMembers)
+    .innerJoin(users, eq(users.id, roomMembers.userId))
+    .where(and(eq(roomMembers.roomId, current.roomId), ne(roomMembers.userId, userId)))
+    .orderBy(asc(roomMembers.joinedAt));
+  return planLeave(room?.hostId === userId, others).closes;
+}
+
 /**
  * Removes the user from their room. If they were the host, the signed-in
  * connected member who has been there longest takes over (SALLE-08); a
@@ -99,11 +137,10 @@ export async function leaveRoom(userId: string): Promise<void> {
       .innerJoin(users, eq(users.id, roomMembers.userId))
       .where(eq(roomMembers.roomId, room.id))
       .orderBy(asc(roomMembers.joinedAt));
-    const connected = remaining.filter((member) => isConnected(member.userId));
     const wasHost = room.hostId === userId;
-    const next = wasHost ? connected.find((member) => !member.isGuest) : undefined;
+    const { closes, next } = planLeave(wasHost, remaining);
 
-    if (connected.length === 0 || (wasHost && !next)) {
+    if (closes) {
       await tx.delete(roomMembers).where(eq(roomMembers.roomId, room.id));
       await tx
         .update(rooms)

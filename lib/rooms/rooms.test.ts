@@ -13,6 +13,7 @@ import {
   isBanned,
   joinRoom,
   kickMember,
+  leaveClosesRoom,
   leaveRoom,
   listPublicRooms,
 } from "./rooms";
@@ -264,6 +265,48 @@ describe("one room per person (SALLE-06)", () => {
       .values({ roomId: room.id, userId: first.hostId, role: "participant", name: "dup" });
     // Drizzle queries are thenables, not promises, so `rejects` needs a real one.
     await expect(Promise.resolve(insert)).rejects.toThrow();
+  });
+});
+
+describe("leaveClosesRoom (SALLE-08)", () => {
+  test("true for a host with only guests left, and the room really closes", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    await guestJoins(code);
+    expect(await leaveClosesRoom(hostId)).toBe(true);
+    await leaveRoom(hostId);
+    expect(await getRoom(code)).toBeNull();
+  });
+
+  test("true for a host alone in the room", async () => {
+    const { hostId } = await hostRoom();
+    expect(await leaveClosesRoom(hostId)).toBe(true);
+  });
+
+  test("false when another account can take over", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    await guestJoins(code);
+    await accountJoins(code);
+    expect(await leaveClosesRoom(hostId)).toBe(false);
+  });
+
+  test("true when the only other account is disconnected", async () => {
+    installFakeIo();
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const guest = await guestJoins(code);
+    await accountJoins(code);
+    socketOpened(guest.userId);
+    expect(await leaveClosesRoom(hostId)).toBe(true);
+  });
+
+  test("false for a member who isn't the host", async () => {
+    const { code } = await hostRoom({ capacity: 5 });
+    const guest = await guestJoins(code);
+    expect(await leaveClosesRoom(guest.userId)).toBe(false);
+  });
+
+  test("false for someone in no room", async () => {
+    const account = await createTestAccount();
+    expect(await leaveClosesRoom(account.id)).toBe(false);
   });
 });
 
