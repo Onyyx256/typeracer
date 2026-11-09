@@ -92,9 +92,18 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   }
   // One wrong key out of all of them, so accuracy is below 100 %.
   await expect(host.getByRole("row").nth(1).getByRole("cell").nth(4)).not.toHaveText("100.0%");
-  // The host can start again (COURSE-11); others wait.
-  await expect(host.getByRole("button", { name: "New race" })).toBeEnabled();
-  await expect(guest.getByText("the host can start a new race")).toBeVisible();
+  // The host can start a new game (COURSE-11); others wait.
+  await expect(host.getByRole("button", { name: "Start the race" })).toHaveCount(0);
+  await expect(guest.getByText("the host can start a new game")).toBeVisible();
+  await host.getByRole("button", { name: "New game" }).click();
+
+  // Both pages go back to the waiting room, where the next race starts (COURSE-01).
+  for (const page of [host, guest]) {
+    await expect(page.getByRole("heading", { name: "Results" })).toHaveCount(0);
+    await expect(page.getByText("> Waiting")).toBeVisible();
+  }
+  await expect(host.getByRole("button", { name: "Start the race" })).toBeEnabled();
+  await expect(guest.getByRole("button", { name: "New game" })).toHaveCount(0);
 
   await guestContext.close();
   await hostContext.close();
