@@ -126,6 +126,8 @@ describe("during the race", () => {
     const saved = await getLatestRaceResults(code);
     expect(saved?.content.split(" ")).toHaveLength(10);
     expect(saved?.results.map((row) => row.status)).toEqual(["abandoned", "abandoned", "abandoned"]);
+    // Giving up leaves no accuracy (COURSE-07).
+    expect(saved?.results.map((row) => row.accuracy)).toEqual([null, null, null]);
     expect(saved?.results.map((row) => row.rank)).toEqual([1, 2, 3]);
     // Guests keep no history (AUTH-03); accounts do.
     const host = saved?.results.find((row) => row.userId === hostId);

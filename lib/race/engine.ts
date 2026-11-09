@@ -75,7 +75,8 @@ export type ParticipantResult = RaceParticipant & {
   status: ResultStatus;
   wpm: number;
   rawWpm: number;
-  accuracy: number;
+  /** Null for someone who gave up (COURSE-07). */
+  accuracy: number | null;
   errors: number;
   progress: number;
   durationMs: number;
@@ -226,7 +227,7 @@ export class Race {
         status,
         wpm,
         rawWpm: rawWpm(keystrokes, durationMs),
-        accuracy: accuracy(correctKeystrokes, keystrokes),
+        accuracy: status === "abandoned" ? null : accuracy(correctKeystrokes, keystrokes),
         errors: keystrokes - correctKeystrokes,
         progress: typingProgress(runner.text, this.mode, runner.typing),
         durationMs,

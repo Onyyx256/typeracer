@@ -134,6 +134,8 @@ describe("Race", () => {
     expect(bruno.accuracy).toBeCloseTo((13 / 14) * 100);
     expect(bruno.rawWpm).toBeGreaterThan(bruno.wpm);
     expect(bruno.missedKeys).toEqual({ n: 1 });
+    // Giving up leaves no accuracy (COURSE-07).
+    expect(chloe.accuracy).toBeNull();
     expect(chloe.progress).toBeCloseTo(2 / TEXT.length);
     expect(chloe.durationMs).toBe(4000);
   });
