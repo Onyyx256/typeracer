@@ -12,6 +12,9 @@ export function formatSeconds(seconds: number): string {
 export type SummarySettings = Omit<RoomSettings, "hostRole"> &
   Partial<Pick<RoomSettings, "hostRole">>;
 
+/** Label, value, and whether the value is a raw character list. */
+type Row = [label: string, value: string, chars?: boolean];
+
 type RoomSummaryProps = {
   dict: CreateRoomDictionary;
   locale: Locale;
@@ -26,7 +29,7 @@ export function RoomSummary({ dict, locale, settings }: RoomSummaryProps) {
     ["punctuation", "numbers", "capitals", "accents"] as const
   ).filter((key) => settings[key] && (key !== "accents" || french));
 
-  const textRows: [string, string][] = [
+  const textRows: Row[] = [
     [dict.language, LOCALE_NAMES[settings.language]],
     [dict.textType.legend, dict.textType[settings.textType]],
     [dict.length.label, plural(locale, dict.length.value, settings.length)],
@@ -39,18 +42,18 @@ export function RoomSummary({ dict, locale, settings }: RoomSummaryProps) {
     ],
   ];
   if (random && settings.includeChars) {
-    textRows.push([dict.charset.include, settings.includeChars]);
+    textRows.push([dict.charset.include, settings.includeChars, true]);
   }
   if (random && settings.excludeChars) {
-    textRows.push([dict.charset.exclude, settings.excludeChars]);
+    textRows.push([dict.charset.exclude, settings.excludeChars, true]);
   }
 
-  const groups: { title: string; rows: [string, string][] }[] = [
+  const groups: { title: string; rows: Row[] }[] = [
     {
       title: dict.sections.room,
       rows: [
         ...(settings.hostRole
-          ? [[dict.role.legend, dict.role[settings.hostRole]] as [string, string]]
+          ? [[dict.role.legend, dict.role[settings.hostRole]] as Row]
           : []),
         [dict.visibility.legend, dict.visibility[settings.visibility]],
         [dict.capacity.label, plural(locale, dict.capacity.value, settings.capacity)],
@@ -81,13 +84,14 @@ export function RoomSummary({ dict, locale, settings }: RoomSummaryProps) {
             {group.title}
           </h3>
           <dl className="mt-1 divide-y divide-line text-sm">
-            {group.rows.map(([label, value]) => (
+            {group.rows.map(([label, value, chars]) => (
               <div
                 key={label}
                 className="flex items-baseline justify-between gap-4 py-1.5"
               >
                 <dt className="text-muted">{label}</dt>
-                <dd className="text-right font-medium break-all">{value}</dd>
+                {/* Words wrap whole; only a list of characters may break anywhere. */}
+                <dd className={`text-right font-medium ${chars ? "min-w-0 break-all" : ""}`}>{value}</dd>
               </div>
             ))}
           </dl>
