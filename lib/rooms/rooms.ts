@@ -11,6 +11,7 @@ import {
   JOINABLE_STATES,
   raceConfigSchema,
   type HostRole,
+  type EditableSettings,
   type RaceConfig,
   type RoomSettings,
   type RoomState,
@@ -478,6 +479,73 @@ export async function transferHost(
         return { ok: false, error: "guest" };
       }
       await tx.update(rooms).set({ hostId: targetId }).where(eq(rooms.id, room.id));
+      return { ok: true, code: room.code };
+    },
+  );
+  if (!result.ok || !result.code) {
+    return result;
+  }
+  notifyRoomChanged(result.code);
+  return { ok: true };
+}
+
+export type UpdateSettingsError =
+  /** The user isn't the host of an open room. */
+  | "notHost"
+  /** Settings change only between races, never during the countdown or the race. */
+  | "notBetweenRaces"
+  /** The new capacity is below the runners already in the room. */
+  | "belowRunners";
+
+export type UpdateSettingsResult = { ok: true } | { ok: false; error: UpdateSettingsError };
+
+/**
+ * The host changes the room's settings between races (CONF-01 to CONF-11);
+ * the next race uses them. Everyone in the room and the room browser are
+ * told (CONF-12, JOIN-02). Checked here, not in the interface (SEC-01).
+ * `settings` is already validated and normalized.
+ */
+export async function updateRoomSettings(
+  hostId: string,
+  settings: EditableSettings,
+): Promise<UpdateSettingsResult> {
+  const { visibility, capacity, ...rest } = settings;
+  const config: RaceConfig = raceConfigSchema.parse(rest);
+
+  const result = await getDb().transaction(
+    async (tx): Promise<UpdateSettingsResult & { code?: string }> => {
+      const [membership] = await tx
+        .select({ roomId: roomMembers.roomId })
+        .from(roomMembers)
+        .where(eq(roomMembers.userId, hostId));
+      if (!membership) {
+        return { ok: false, error: "notHost" };
+      }
+      // Locked like startRace and joinRoom, so a race can't start, or a
+      // runner take a seat, while the settings change.
+      const [room] = await tx
+        .select({ id: rooms.id, code: rooms.code, hostId: rooms.hostId, state: rooms.state })
+        .from(rooms)
+        .where(eq(rooms.id, membership.roomId))
+        .for("update");
+      if (!room || room.hostId !== hostId || room.state === "closed") {
+        return { ok: false, error: "notHost" };
+      }
+      if (!JOINABLE_STATES.includes(room.state)) {
+        return { ok: false, error: "notBetweenRaces" };
+      }
+      const [{ value: participants } = { value: 0 }] = await tx
+        .select({ value: count() })
+        .from(roomMembers)
+        .where(and(eq(roomMembers.roomId, room.id), eq(roomMembers.role, "participant")));
+      // SALLE-05: nobody already seated is pushed out by a smaller room.
+      if (capacity < participants) {
+        return { ok: false, error: "belowRunners" };
+      }
+      await tx
+        .update(rooms)
+        .set({ visibility, capacity, config })
+        .where(eq(rooms.id, room.id));
       return { ok: true, code: room.code };
     },
   );

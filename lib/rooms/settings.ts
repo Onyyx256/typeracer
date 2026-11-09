@@ -56,6 +56,14 @@ export const roomSettingsSchema = z.object({
 export type RoomSettings = z.infer<typeof roomSettingsSchema>;
 
 /**
+ * What the host can change once the room exists, between races (CONF-xx):
+ * everything but their own role, which is their membership row.
+ */
+export const editableSettingsSchema = roomSettingsSchema.omit({ hostRole: true });
+
+export type EditableSettings = z.infer<typeof editableSettingsSchema>;
+
+/**
  * The settings that shape the text and the race, kept together in the room's
  * `config` column. Visibility and capacity have their own columns (they are
  * filtered on), and the host's role is their membership row.
@@ -90,7 +98,9 @@ export const JOINABLE_STATES: readonly RoomState[] = ["waiting", "results"];
  * what the race really uses: accents only exist in French, and the
  * include/exclude lists only apply to random text (CONF-07).
  */
-export function normalizeSettings(settings: RoomSettings): RoomSettings {
+export function normalizeSettings(settings: RoomSettings): RoomSettings;
+export function normalizeSettings(settings: EditableSettings): EditableSettings;
+export function normalizeSettings(settings: EditableSettings): EditableSettings {
   const random = settings.textType === "random";
   return {
     ...settings,

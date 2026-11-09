@@ -17,9 +17,12 @@ import {
   leaveRoom,
   listPublicRooms,
   transferHost,
+  updateRoomSettings,
 } from "./rooms";
 import {
   defaultRoomSettings,
+  editableSettingsSchema,
+  type EditableSettings,
   type HostRole,
   type RoomSettings,
   type RoomState,
@@ -562,5 +565,67 @@ describe("transferHost", () => {
       error: "notMember",
     });
     expect(await transferHost(hostId, hostId)).toEqual({ ok: false, error: "notMember" });
+  });
+});
+
+describe("updateRoomSettings (CONF-11, CONF-12)", () => {
+  function editable(changes: Partial<EditableSettings> = {}): EditableSettings {
+    return { ...editableSettingsSchema.parse(settings), ...changes };
+  }
+
+  test("the host changes the settings between races", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const changes = { capacity: 10, visibility: "code", length: 80, errorMode: "free" } as const;
+    expect(await updateRoomSettings(hostId, editable(changes))).toEqual({ ok: true });
+
+    const room = await getRoom(code);
+    expect(room?.capacity).toBe(10);
+    expect(room?.visibility).toBe("code");
+    expect(room?.config.length).toBe(80);
+    expect(room?.config.errorMode).toBe("free");
+  });
+
+  test("works on the results screen too, not during a race", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    await setState(code, "results");
+    expect(await updateRoomSettings(hostId, editable({ length: 20 }))).toEqual({ ok: true });
+
+    for (const state of ["countdown", "racing"] as const) {
+      await setState(code, state);
+      expect(await updateRoomSettings(hostId, editable({ length: 30 }))).toEqual({
+        ok: false,
+        error: "notBetweenRaces",
+      });
+    }
+    expect((await getRoom(code))?.config.length).toBe(20);
+  });
+
+  test("only the host can change them", async () => {
+    const { code } = await hostRoom({ capacity: 5 });
+    const member = await accountJoins(code);
+    expect(await updateRoomSettings(member.userId, editable({ capacity: 9 }))).toEqual({
+      ok: false,
+      error: "notHost",
+    });
+    expect((await getRoom(code))?.capacity).toBe(5);
+  });
+
+  test("the capacity can't drop below the runners already there", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    await accountJoins(code);
+    await accountJoins(code);
+    // The host and the two others are runners.
+    expect(await updateRoomSettings(hostId, editable({ capacity: 2 }))).toEqual({
+      ok: false,
+      error: "belowRunners",
+    });
+    expect(await updateRoomSettings(hostId, editable({ capacity: 3 }))).toEqual({ ok: true });
+  });
+
+  test("a room made unlisted leaves the room browser", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    await updateRoomSettings(hostId, editable({ visibility: "code" }));
+    const listed = await listPublicRooms();
+    expect(listed.some((room) => room.code === code)).toBe(false);
   });
 });
