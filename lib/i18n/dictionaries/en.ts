@@ -208,6 +208,7 @@ export const en: Dictionary = {
       timeUp: "Time's up",
       abandoned: "Gave up",
     },
+    noAccuracy: "no accuracy, gave up",
     source: "From “{title}”, {author}",
     seconds: "{value} s",
     waitingHost: "the host can start a new race",

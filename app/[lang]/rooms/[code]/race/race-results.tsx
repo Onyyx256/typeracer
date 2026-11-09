@@ -99,7 +99,16 @@ export function RaceResults({
                   </th>
                   <td className="px-4 py-3 text-right font-semibold">{formatNumber(locale, row.wpm)}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(locale, row.rawWpm)}</td>
-                  <td className="px-4 py-3 text-right">{formatPercent(locale, row.accuracy / 100, 1)}</td>
+                  <td className="px-4 py-3 text-right">
+                    {row.accuracy === null ? (
+                      <>
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">{dict.noAccuracy}</span>
+                      </>
+                    ) : (
+                      formatPercent(locale, row.accuracy / 100, 1)
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">{row.errors}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">{seconds(row)}</td>
                   <td className="px-4 py-3">{dict.statuses[row.status]}</td>

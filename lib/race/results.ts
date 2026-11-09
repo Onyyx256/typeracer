@@ -68,7 +68,8 @@ export type ResultRow = {
   status: ResultStatus;
   wpm: number;
   rawWpm: number;
-  accuracy: number;
+  /** Null for someone who gave up. */
+  accuracy: number | null;
   errors: number;
   progress: number;
   durationMs: number;

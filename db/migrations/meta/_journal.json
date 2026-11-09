@@ -50,6 +50,13 @@
       "when": 1794163843854,
       "tag": "0006_create_races",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794182422585,
+      "tag": "0007_abandoned_results_have_no_accuracy",
+      "breakpoints": true
     }
   ]
 }

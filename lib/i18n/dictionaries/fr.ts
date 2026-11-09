@@ -210,6 +210,7 @@ export const fr = {
       timeUp: "Temps écoulé",
       abandoned: "Abandon",
     },
+    noAccuracy: "pas de précision, abandon",
     source: "Extrait de « {title} », {author}",
     seconds: "{value} s",
     waitingHost: "l'hôte peut lancer une nouvelle course",

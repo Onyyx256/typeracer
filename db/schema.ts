@@ -260,7 +260,8 @@ export const raceResults = pgTable(
     status: text("status").$type<ResultStatus>().notNull(),
     wpm: real("wpm").notNull(),
     rawWpm: real("raw_wpm").notNull(),
-    accuracy: real("accuracy").notNull(),
+    /** Null when they gave up: a partial run's accuracy doesn't count (COURSE-07). */
+    accuracy: real("accuracy"),
     errors: integer("errors").notNull(),
     /** Validated characters ÷ text length, between 0 and 1. */
     progress: real("progress").notNull(),
@@ -283,6 +284,10 @@ export const raceResults = pgTable(
     ),
     check("race_results_progress", sql`${table.progress} between 0 and 1`),
     check("race_results_accuracy", sql`${table.accuracy} between 0 and 100`),
+    check(
+      "race_results_abandoned_no_accuracy",
+      sql`(${table.status} = 'abandoned') = (${table.accuracy} is null)`,
+    ),
     check("race_results_guest_has_no_user", sql`not (${table.isGuest} and ${table.userId} is not null)`),
   ],
 );
