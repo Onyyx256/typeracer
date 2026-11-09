@@ -16,13 +16,16 @@ import {
   leaveClosesRoom,
   leaveRoom,
   transferHost,
+  updateRoomSettings,
   type KickError,
   type RoomError,
   type RoomResult,
   type TransferHostError,
+  type UpdateSettingsError,
 } from "@/lib/rooms/rooms";
 import {
   HOST_ROLES,
+  editableSettingsSchema,
   normalizeSettings,
   raceConfigSchema,
   roomSettingsSchema,
@@ -242,6 +245,37 @@ export async function transferHostAction(input: unknown): Promise<TransferHostAc
     return await transferHost(hostId, parsed.data.userId);
   } catch (error) {
     logFailure("transferHost", error);
+    return { ok: false, error: "unavailable" };
+  }
+}
+
+const updateSettingsInput = z.object({ settings: editableSettingsSchema });
+
+export type UpdateSettingsActionResult =
+  | { ok: true }
+  | { ok: false; error: UpdateSettingsError | "invalid" | "noWords" | "unavailable" };
+
+/** Between races; updateRoomSettings checks that the session's user hosts the room (SEC-01). */
+export async function updateRoomSettingsAction(
+  input: unknown,
+): Promise<UpdateSettingsActionResult> {
+  const parsed = updateSettingsInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid" };
+  }
+  const settings = normalizeSettings(parsed.data.settings);
+  // Same check as on creation, so the next race can always get a text.
+  if (textConfigProblem(raceConfigSchema.parse(settings))) {
+    return { ok: false, error: "noWords" };
+  }
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    return await updateRoomSettings(hostId, settings);
+  } catch (error) {
+    logFailure("updateRoomSettings", error);
     return { ok: false, error: "unavailable" };
   }
 }
