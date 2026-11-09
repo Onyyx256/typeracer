@@ -25,8 +25,8 @@ import { saveRace } from "./results";
 /** 5 track updates a second, smoothed in the browser (COURSE-05). */
 export const TRACK_INTERVAL_MS = 200;
 
-/** The host starts from the waiting room or from the results (COURSE-11). */
-const STARTABLE_STATES: readonly RoomState[] = ["waiting", "results"];
+/** The host starts from the waiting room only; the results go back to it first (COURSE-01). */
+const STARTABLE_STATES: readonly RoomState[] = ["waiting"];
 
 /** COURSE-02: at least 2 runners. Bots will count; spectators never do. */
 export const MIN_RUNNERS = 2;
@@ -75,7 +75,7 @@ export type StartRaceError =
 export type StartRaceResult = { ok: true } | { ok: false; error: StartRaceError };
 
 /**
- * The host starts a race: EN_ATTENTE (or RÉSULTATS) → DÉCOMPTE. The text
+ * The host starts a race: EN_ATTENTE → DÉCOMPTE. The text
  * is generated now, so nobody sees it before the countdown (COURSE-03).
  */
 export async function startRace(hostId: string): Promise<StartRaceResult> {
@@ -153,6 +153,41 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
     store().byUser.set(runner.userId, room.code);
   }
   // Pages re-render into the race and ask for it (race:sync).
+  notifyRoomChanged(room.code);
+  return { ok: true };
+}
+
+export type BackToLobbyError =
+  /** The user isn't the host of an open room (SEC-01). */
+  | "notHost"
+  /** The room isn't showing results. */
+  | "notOnResults";
+
+export type BackToLobbyResult = { ok: true } | { ok: false; error: BackToLobbyError };
+
+/**
+ * COURSE-11: on the results, the host's "New game" brings the room back to
+ * the waiting room (RÉSULTATS → EN_ATTENTE), where the next race starts.
+ */
+export async function backToLobby(hostId: string): Promise<BackToLobbyResult> {
+  const db = getDb();
+  const [room] = await db
+    .select({ id: rooms.id, code: rooms.code, hostId: rooms.hostId, state: rooms.state })
+    .from(roomMembers)
+    .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
+    .where(eq(roomMembers.userId, hostId));
+  if (!room || room.hostId !== hostId || room.state === "closed") {
+    return { ok: false, error: "notHost" };
+  }
+  // Only from the results, checked in the update itself so two clicks change it once.
+  const moved = await db
+    .update(rooms)
+    .set({ state: "waiting" })
+    .where(and(eq(rooms.id, room.id), eq(rooms.hostId, hostId), eq(rooms.state, "results")))
+    .returning({ id: rooms.id });
+  if (moved.length === 0) {
+    return { ok: false, error: "notOnResults" };
+  }
   notifyRoomChanged(room.code);
   return { ok: true };
 }

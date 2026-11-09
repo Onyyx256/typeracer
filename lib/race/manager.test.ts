@@ -7,7 +7,7 @@ import { defaultRoomSettings, type RoomState } from "@/lib/rooms/settings";
 import { createTestAccount, createTestGuest, deleteTestUsers, uniqueName } from "@/test/db";
 import { installFakeIo, resetRealtime } from "@/test/realtime";
 import { BACKSPACE } from "./typing";
-import { abandonRace, closeRace, handleKeys, raceStateFor, startRace } from "./manager";
+import { abandonRace, backToLobby, closeRace, handleKeys, raceStateFor, startRace } from "./manager";
 import { getLatestRaceResults } from "./results";
 
 // Runs against the typeracer_test database (see test/setup.ts). Random
@@ -134,10 +134,48 @@ describe("during the race", () => {
     expect(host?.isGuest).toBe(false);
     expect(saved?.results.filter((row) => row.isGuest).every((row) => row.userId === null)).toBe(true);
 
-    // The host can start again from the results, with whoever stayed (COURSE-11).
+  });
+});
+
+describe("backToLobby", () => {
+  /** A room of 2 runners whose race is over, everyone having given up. */
+  async function roomOnResults() {
+    const room = await roomWithRunners(2);
+    await startRace(room.hostId);
+    abandonRace(room.hostId);
+    abandonRace(room.others[0]);
+    await until(async () => (await stateOf(room.code)) === "results");
+    return room;
+  }
+
+  test("only the host brings the room back to the waiting room (SEC-01)", async () => {
+    const { code, others } = await roomOnResults();
+    expect(await backToLobby(others[0])).toEqual({ ok: false, error: "notHost" });
+    const stranger = await createTestAccount();
+    expect(await backToLobby(stranger.id)).toEqual({ ok: false, error: "notHost" });
+    expect(await stateOf(code)).toBe("results");
+  });
+
+  test("works only from the results (COURSE-01)", async () => {
+    const { hostId, code } = await roomWithRunners(2);
+    expect(await backToLobby(hostId)).toEqual({ ok: false, error: "notOnResults" });
+    await startRace(hostId);
+    expect(await backToLobby(hostId)).toEqual({ ok: false, error: "notOnResults" });
+    expect(await stateOf(code)).toBe("countdown");
+  });
+
+  test("the next race starts from the waiting room, with whoever stayed (COURSE-11)", async () => {
+    const { hostId, code, others } = await roomOnResults();
+    // No shortcut from the results straight to the countdown.
+    expect(await startRace(hostId)).toEqual({ ok: false, error: "notStartable" });
+
+    expect(await backToLobby(hostId)).toEqual({ ok: true });
+    expect(await stateOf(code)).toBe("waiting");
+    expect(await backToLobby(hostId)).toEqual({ ok: false, error: "notOnResults" });
+
     expect(await startRace(hostId)).toEqual({ ok: true });
     expect(raceStateFor(code, hostId)?.track.map((entry) => entry.userId).sort()).toEqual(
-      [hostId, others[1]].sort(),
+      [hostId, others[0]].sort(),
     );
   });
 });
