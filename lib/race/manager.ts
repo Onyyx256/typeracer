@@ -1,4 +1,5 @@
 import "server-only";
+import { randomInt } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomMembers, rooms, users } from "@/db/schema";
@@ -7,13 +8,15 @@ import {
   roomChannel,
   type RaceResyncPayload,
   type RaceStatePayload,
+  type RaceTextPayload,
   type RaceTrackPayload,
+  userChannel,
 } from "@/lib/realtime/events";
 import { notifyRoomChanged } from "@/lib/realtime/notify";
 import { getIo } from "@/lib/realtime/state";
 import { raceConfigSchema, type RaceConfig, type RoomState } from "@/lib/rooms/settings";
 import { generateText } from "@/lib/texts/generate";
-import { COUNTDOWN_MS, Race, type RaceParticipant } from "./engine";
+import { COUNTDOWN_MS, Race, type BonusEvent, type RaceParticipant } from "./engine";
 import { saveRace } from "./results";
 
 /**
@@ -93,6 +96,8 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
   }
   const config = raceConfigSchema.parse(room.config);
   const text = await generateText(config);
+  // Night adds words from a second text of the same kind (BONUS-02).
+  const reserve = config.bonuses ? await generateText(config) : null;
 
   const checked = await db.transaction(
     async (tx): Promise<StartRaceError | RaceParticipant[]> => {
@@ -133,6 +138,7 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
     timeLimit: config.timeLimit,
     participants: checked,
     now,
+    bonuses: reserve ? { seed: randomInt(2 ** 31), reserve: reserve.content } : null,
   });
   const runtime: Runtime = {
     code: room.code,
@@ -213,9 +219,20 @@ function emitTrack(runtime: Runtime, now: number): void {
     } satisfies RaceTrackPayload);
 }
 
+/** Each runner whose text a bonus changed gets it (BONUS-04); the track shows the effect. */
+function emitTexts(runtime: Runtime, events: readonly BonusEvent[]): void {
+  const io = getIo();
+  for (const { userId, text } of events.flatMap((event) => event.texts)) {
+    io?.to(userChannel(userId)).emit(EVENTS.raceText, {
+      code: runtime.code,
+      text,
+    } satisfies RaceTextPayload);
+  }
+}
+
 function step(runtime: Runtime): void {
   const now = Date.now();
-  runtime.race.tick(now);
+  emitTexts(runtime, runtime.race.tick(now));
   emitTrack(runtime, now);
   if (runtime.race.isOver(now)) {
     void finish(runtime);

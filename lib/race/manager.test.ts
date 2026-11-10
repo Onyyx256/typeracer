@@ -96,7 +96,7 @@ describe("startRace", () => {
     expect(state?.startsInMs).toBeGreaterThan(2_000);
     expect(state?.endsInMs).toBeNull();
     expect(state?.track).toHaveLength(2);
-    expect(state?.you).toEqual({ input: "", keystrokes: 0, correctKeystrokes: 0 });
+    expect(state?.you).toEqual({ text: state?.text ?? "", input: "", keystrokes: 0, correctKeystrokes: 0 });
     // A spectator or a visitor sees the race, without a typing state.
     expect(raceStateFor(code, null)?.you).toBeNull();
   });
@@ -109,7 +109,12 @@ describe("during the race", () => {
     expect(handleKeys(hostId, 7, ["a", BACKSPACE])).toEqual({
       code,
       seq: 7,
-      you: { input: "", keystrokes: 0, correctKeystrokes: 0 },
+      you: {
+        text: raceStateFor(code, hostId)?.text ?? "",
+        input: "",
+        keystrokes: 0,
+        correctKeystrokes: 0,
+      },
     });
   });
 

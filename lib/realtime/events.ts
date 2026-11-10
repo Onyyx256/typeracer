@@ -34,6 +34,8 @@ export const EVENTS = {
   raceTrack: "race:track",
   /** Server → client: keys were refused, here is what the server has (COURSE-06). */
   raceResync: "race:resync",
+  /** Server → client, to one runner: a catch-up bonus changed their text (BONUS-04). */
+  raceText: "race:text",
 } as const;
 
 /** TECH-07: every message a client sends is validated. */
@@ -51,6 +53,7 @@ export const raceKeysSchema = z.object({
 /** What a page needs to show the race, sent when it asks (race:sync). */
 export type RaceStatePayload = {
   code: string;
+  /** The original text; a runner's own, changed by bonuses, is in `you`. */
   text: string;
   errorMode: ErrorMode;
   /** Relative times, so the browser's clock doesn't need to match the server's. */
@@ -69,6 +72,9 @@ export type RaceTrackPayload = { code: string; track: TrackEntry[] };
  * handled on top of this state.
  */
 export type RaceResyncPayload = { code: string; seq: number; you: PlayerState };
+
+/** Only words past the runner's cursor change, so their typing stays valid. */
+export type RaceTextPayload = { code: string; text: string };
 
 export type RoomChanged = { code: string };
 export type RoomClosed = { code: string };
