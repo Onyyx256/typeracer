@@ -51,7 +51,6 @@ export function bookUrl(book: Book): string {
   return `https://www.gutenberg.org/cache/epub/${book.gutenbergId}/pg${book.gutenbergId}.txt`;
 }
 
-/** Fetches a file once into the cache and returns its local path. */
 export async function download(url: string, fileName: string): Promise<string> {
   mkdirSync(CACHE_DIR, { recursive: true });
   const path = join(CACHE_DIR, fileName);

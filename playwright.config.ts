@@ -1,9 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 import { E2E_DATABASE_URL } from "./e2e/database";
 
-// End-to-end tests (TEST-02): a production build of the app, on its own
-// port and against the typeracer_test database, so a dev server on 3000
-// and its data are left alone.
+// End-to-end tests: a production build of the app, on its own port and
+// against the typeracer_test database, so a dev server on 3000 and its data
+// are left alone.
 //   bun run test:e2e
 
 const PORT = 3100;

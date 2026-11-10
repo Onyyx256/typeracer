@@ -3,7 +3,6 @@ import { splitWords } from "@/lib/texts/text-utils";
 /** Only what a French or English keyboard types directly (no «», curly quotes, œ...). */
 const TYPABLE = /^[A-Za-zÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸàâäçéèêëîïôöùûüÿ0-9 .,;:!?'"()-]+$/;
 
-/** The book's own text, without Project Gutenberg's header and licence footer. */
 export function bookBody(raw: string): string {
   const text = raw.replace(/\r\n?/g, "\n");
   const start = text.search(/^\*\*\* ?START OF TH(E|IS) PROJECT GUTENBERG.*$/m);
@@ -49,7 +48,6 @@ export function normalizeParagraph(paragraph: string): string {
     .trim();
 }
 
-/** A paragraph of prose that can be typed, not a heading, list or footnote. */
 export function isProse(paragraph: string): boolean {
   if (!TYPABLE.test(paragraph)) {
     return false;

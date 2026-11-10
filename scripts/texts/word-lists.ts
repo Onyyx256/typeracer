@@ -1,7 +1,6 @@
 import type { Locale } from "@/lib/i18n/config";
 import { BLOCKLIST } from "./blocklist";
 
-/** How many words each list keeps, most frequent first. */
 export const WORD_LIST_SIZE = 10000;
 
 type Casing = Map<string, { lower: number; upper: number }>;
@@ -64,7 +63,6 @@ const ENGLISH_SUFFIXES: [string, string][] = [
   ["ing", "e"], ["er", ""], ["er", "e"], ["est", ""], ["ly", ""],
 ];
 
-/** True when the word, or the word without a regular ending, is in the dictionary. */
 function inEnglishDictionary(word: string, dictionary: Set<string>): boolean {
   if (dictionary.has(word) || ENGLISH_IRREGULAR.has(word)) {
     return true;
@@ -86,13 +84,10 @@ export type WordListInput = {
   /** "word count" lines, most frequent first. */
   frequencyList: string;
   casing: Casing;
-  /** Lowercase spellings the language's dictionary knows. */
   dictionary: Set<string>;
-  /** Only used for English: names in the system list. */
   properNames?: Set<string>;
 };
 
-/** Frequent words that a dictionary knows and that aren't names, slang or swear words. */
 export function buildWordList({
   language,
   frequencyList,

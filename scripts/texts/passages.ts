@@ -22,7 +22,6 @@ export type Passage = {
   hasDigits: boolean;
   sourceTitle: string;
   sourceAuthor: string;
-  /** Stable id, so the seed can be run again without duplicates. */
   sourceRef: string;
 };
 

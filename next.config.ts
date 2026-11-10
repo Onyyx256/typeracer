@@ -1,13 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
     serverActions: {
-      // AUTH-04 allows 2 MB photos, plus room for the multipart overhead.
-      // The action itself refuses anything over 2 MB.
+      // 2 MB photos plus room for the multipart overhead. The action itself
+      // refuses anything over 2 MB.
       bodySizeLimit: "2.1mb",
     },
   },
