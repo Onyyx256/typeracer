@@ -37,3 +37,17 @@ export function formatNumber(locale: Locale, value: number, decimals = 0): strin
     maximumFractionDigits: decimals,
   }).format(value);
 }
+
+/**
+ * Pages render on the server, whose clock may be in UTC; dates are shown
+ * in the players' time zone so a race at 9 p.m. isn't listed the next day.
+ */
+export const DISPLAY_TIME_ZONE = "America/Toronto";
+
+export function formatDateTime(locale: Locale, date: Date): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: DISPLAY_TIME_ZONE,
+  }).format(date);
+}
