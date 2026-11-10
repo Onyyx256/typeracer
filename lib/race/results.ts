@@ -87,6 +87,30 @@ export type RaceResultsView = {
 };
 
 export async function getLatestRaceResults(code: string): Promise<RaceResultsView | null> {
+  const [race] = await getDb()
+    .select({ id: races.id })
+    .from(races)
+    .innerJoin(rooms, eq(rooms.id, races.roomId))
+    .where(eq(rooms.code, code))
+    .orderBy(desc(races.endedAt))
+    .limit(1);
+  return race ? loadRaceResults(race.id) : null;
+}
+
+/** Only for someone who ran in it, so a private room's results stay private. */
+export async function getRaceResultsFor(
+  raceId: string,
+  userId: string,
+): Promise<RaceResultsView | null> {
+  const [entry] = await getDb()
+    .select({ id: raceResults.id })
+    .from(raceResults)
+    .where(and(eq(raceResults.raceId, raceId), eq(raceResults.userId, userId)))
+    .limit(1);
+  return entry ? loadRaceResults(raceId) : null;
+}
+
+async function loadRaceResults(raceId: string): Promise<RaceResultsView | null> {
   const db = getDb();
   const [race] = await db
     .select({
@@ -99,10 +123,8 @@ export async function getLatestRaceResults(code: string): Promise<RaceResultsVie
       sourceAuthor: texts.sourceAuthor,
     })
     .from(races)
-    .innerJoin(rooms, eq(rooms.id, races.roomId))
     .leftJoin(texts, eq(texts.id, races.textId))
-    .where(eq(rooms.code, code))
-    .orderBy(desc(races.endedAt))
+    .where(eq(races.id, raceId))
     .limit(1);
   if (!race) {
     return null;
