@@ -1,4 +1,5 @@
 import { PodiumFlower } from "@/app/components/podium-flower";
+import { WeatherIcon } from "@/app/components/weather-icon";
 import type { RaceResultsView, ResultRow } from "@/lib/race/results";
 import type { Locale } from "@/lib/i18n/config";
 import type { RoomDictionary, ResultsDictionary } from "@/lib/i18n/dictionaries/fr";
@@ -72,7 +73,7 @@ export function RaceResults({
       </div>
 
       <div className="overflow-x-auto border border-line rounded-leaf">
-        <table className="w-full min-w-[40rem] text-left text-sm">
+        <table className="w-full min-w-[46rem] text-left text-sm">
           <caption className="sr-only">{dict.caption}</caption>
           <thead className="bg-surface font-mono text-xs tracking-wide text-muted uppercase">
             <tr>
@@ -84,6 +85,7 @@ export function RaceResults({
               <th scope="col" className="px-4 py-3 text-right">{dict.columns.errors}</th>
               <th scope="col" className="px-4 py-3 text-right">{dict.columns.time}</th>
               <th scope="col" className="px-4 py-3">{dict.columns.status}</th>
+              <th scope="col" className="px-4 py-3">{dict.columns.bonuses}</th>
             </tr>
           </thead>
           <tbody className="tabular-nums">
@@ -114,6 +116,23 @@ export function RaceResults({
                   <td className="px-4 py-3 text-right">{row.errors}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">{seconds(row)}</td>
                   <td className="px-4 py-3">{dict.statuses[row.status]}</td>
+                  <td className="px-4 py-3">
+                    {row.bonuses.length === 0 ? (
+                      <>
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">{dict.noBonuses}</span>
+                      </>
+                    ) : (
+                      <ul className="flex gap-1 text-accent-text">
+                        {row.bonuses.map((kind, index) => (
+                          <li key={index} title={dict.bonusNames[kind]}>
+                            <WeatherIcon kind={kind} className="size-5" />
+                            <span className="sr-only">{dict.bonusNames[kind]}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </td>
                 </tr>
               );
             })}

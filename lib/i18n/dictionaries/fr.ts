@@ -256,6 +256,13 @@ export const fr = {
       errors: "Erreurs",
       time: "Temps",
       status: "Statut",
+      bonuses: "Bonus reçus",
+    },
+    noBonuses: "aucun",
+    bonusNames: {
+      rain: "pluie et soleil",
+      night: "nuit",
+      glare: "soleil aveuglant",
     },
     statuses: {
       finished: "Terminé",

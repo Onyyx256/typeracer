@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { raceResults, races, rooms, texts } from "@/db/schema";
 import { raceConfigSchema, type RaceConfig } from "@/lib/rooms/settings";
+import type { BonusKind } from "./bonuses";
 import type { ParticipantResult } from "./engine";
 import type { ResultStatus, WpmPoint } from "./types";
 
@@ -49,6 +50,7 @@ export async function saveRace(race: {
           durationMs: Math.round(result.durationMs),
           wpmSeries: result.wpmSeries,
           missedKeys: result.missedKeys,
+          bonuses: result.bonuses,
         })),
       );
     }
@@ -75,6 +77,8 @@ export type ResultRow = {
   durationMs: number;
   wpmSeries: WpmPoint[];
   missedKeys: Record<string, number>;
+  /** Catch-up effects received, in order. */
+  bonuses: BonusKind[];
 };
 
 export type RaceResultsView = {
@@ -124,6 +128,7 @@ export async function getLatestRaceResults(code: string): Promise<RaceResultsVie
       durationMs: raceResults.durationMs,
       wpmSeries: raceResults.wpmSeries,
       missedKeys: raceResults.missedKeys,
+      bonuses: raceResults.bonuses,
     })
     .from(raceResults)
     .where(eq(raceResults.raceId, race.id))

@@ -138,6 +138,8 @@ describe("during the race", () => {
     const host = saved?.results.find((row) => row.userId === hostId);
     expect(host?.isGuest).toBe(false);
     expect(saved?.results.filter((row) => row.isGuest).every((row) => row.userId === null)).toBe(true);
+    // Nobody typed, so no checkpoint was reached and no bonus fell (RES-02).
+    expect(saved?.results.map((row) => row.bonuses)).toEqual([[], [], []]);
 
   });
 });

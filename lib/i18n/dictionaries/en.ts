@@ -254,6 +254,13 @@ export const en: Dictionary = {
       errors: "Errors",
       time: "Time",
       status: "Status",
+      bonuses: "Bonuses received",
+    },
+    noBonuses: "none",
+    bonusNames: {
+      rain: "rain and sun",
+      night: "night",
+      glare: "blinding sun",
     },
     statuses: {
       finished: "Finished",
