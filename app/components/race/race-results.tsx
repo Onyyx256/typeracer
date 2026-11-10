@@ -1,5 +1,7 @@
 import { PodiumFlower } from "@/app/components/podium-flower";
 import { BonusTip } from "@/app/components/race/bonus-tip";
+import { MissedKeys } from "@/app/components/race/missed-keys";
+import { RaceWpmChart } from "@/app/components/race/race-wpm-chart";
 import type { RaceResultsView, ResultRow } from "@/lib/race/results";
 import { cosmeticClasses } from "@/lib/profile/cosmetics";
 import type { PlayerLooks } from "@/lib/profile/look";
@@ -153,11 +155,93 @@ export function RaceResults({
         </table>
       </div>
 
+      <RaceCharts view={view} userId={userId} dict={dict} roomDict={roomDict} locale={locale} />
+
       {view.source && (
         <p className="text-sm text-muted">
           {interpolate(dict.source, { title: view.source.title, author: view.source.author })}
         </p>
       )}
     </section>
+  );
+}
+
+function RaceCharts({
+  view,
+  userId,
+  dict,
+  roomDict,
+  locale,
+}: {
+  view: Pick<RaceResultsView, "results">;
+  userId: string | null;
+  dict: ResultsDictionary;
+  roomDict: RoomDictionary;
+  locale: Locale;
+}) {
+  const t = dict.charts;
+  const id = (row: ResultRow) => String(row.rank);
+  const you = (row: ResultRow) => userId !== null && row.userId === userId;
+  // The player's own keys first; a spectator starts with the winner's.
+  const own = view.results.find(you) ?? view.results[0];
+  if (!own) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-8">
+      <section aria-labelledby="wpm-chart-heading" className="grid gap-3">
+        <div className="grid gap-1">
+          <h3 id="wpm-chart-heading" className="font-display text-2xl font-semibold">
+            {t.wpmHeading}
+          </h3>
+          <p className="text-sm text-muted">{t.wpmLead}</p>
+        </div>
+        <RaceWpmChart
+          runners={view.results.map((row) => ({
+            id: id(row),
+            name: row.name,
+            you: you(row),
+            series: row.wpmSeries,
+          }))}
+          labels={{
+            axis: t.axis,
+            time: t.time,
+            others: t.others,
+            you: roomDict.you,
+            summary: t.wpmSummary,
+          }}
+          locale={locale}
+        />
+      </section>
+
+      <section aria-labelledby="keys-chart-heading" className="grid gap-3">
+        <div className="grid gap-1">
+          <h3 id="keys-chart-heading" className="font-display text-2xl font-semibold">
+            {t.keysHeading}
+          </h3>
+          <p className="text-sm text-muted">{t.keysLead}</p>
+        </div>
+        <MissedKeys
+          runners={view.results.map((row) => ({
+            id: id(row),
+            name: you(row) ? `${row.name} (${roomDict.you})` : row.name,
+            missedKeys: row.missedKeys,
+          }))}
+          defaultId={id(own)}
+          labels={{
+            runner: t.runner,
+            none: t.none,
+            fewer: t.fewer,
+            more: t.more,
+            otherChars: t.otherChars,
+            space: t.space,
+            keyMisses: t.keyMisses,
+            list: t.list,
+          }}
+          locale={locale}
+        />
+      </section>
+    </div>
   );
 }
