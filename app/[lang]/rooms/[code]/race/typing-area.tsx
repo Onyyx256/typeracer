@@ -24,8 +24,6 @@ import { useNow } from "./use-race";
 const SEND_EVERY_MS = 150;
 /** Sent batches kept to replay after a refused one (race:resync). */
 const SENT_LOG = 50;
-/** Lines of text on screen: the previous one, the current one and the next one. */
-const VISIBLE_LINES = 3;
 
 type Batch = { seq: number; keys: string[] };
 
@@ -66,8 +64,8 @@ export function TypingArea({
   const sent = useRef<Batch[]>([]);
   const seq = useRef(0);
   const field = useRef<HTMLTextAreaElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const lines = useRef<HTMLParagraphElement>(null);
-  const [scrolled, setScrolled] = useState(0);
 
   const now = useNow(250, finishedAt === null);
   const open = now >= startsAt && (endsAt === null || now < endsAt);
@@ -211,15 +209,17 @@ export function TypingArea({
     };
   }, [press, text, errorMode]);
 
-  // A long text scrolls one line at a time: the caret's line stays in the
-  // middle, with the line before it and the one after it always in sight.
+  // The text box scrolls by itself so the caret's line, the one before it
+  // and the one after it are always in sight; the player may still scroll
+  // ahead with the wheel, and the next key brings the caret back.
   const caret = typing.input.length;
   useLayoutEffect(() => {
+    const scroller = box.current;
     const element = lines.current;
-    if (!element) {
+    if (!scroller || !element) {
       return;
     }
-    const measure = () => {
+    const follow = (smooth: boolean) => {
       const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
       const chars = element.children;
       const at = chars[Math.min(caret, chars.length - 1)];
@@ -227,22 +227,20 @@ export function TypingArea({
         return;
       }
       const line = Math.round(at.offsetTop / lineHeight);
-      const total = Math.round(element.scrollHeight / lineHeight);
-      const first = Math.max(0, Math.min(line - 1, total - VISIBLE_LINES));
-      setScrolled(first * lineHeight);
+      const top = Math.max(0, line - 1) * lineHeight;
+      const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      scroller.scrollTo({ top, behavior: smooth && !still ? "smooth" : "instant" });
     };
-    measure();
+    follow(true);
     // The lines wrap differently when the window is resized.
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(() => follow(false));
     observer.observe(element);
     return () => observer.disconnect();
   }, [caret]);
 
-  // Ready to type as soon as the countdown starts, with the text on screen
-  // (scrolled no further than needed, so the track stays in sight too).
+  // Ready to type as soon as the countdown starts.
   useEffect(() => {
     field.current?.focus({ preventScroll: true });
-    field.current?.scrollIntoView({ block: "nearest" });
   }, []);
 
   const until = finishedAt ?? (endsAt === null ? now : Math.min(now, endsAt));
@@ -252,7 +250,7 @@ export function TypingArea({
   const left = endsAt === null ? null : Math.max(0, Math.ceil((endsAt - now) / 1000));
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-3">
       <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
         <Stat label={dict.wpm} value={formatNumber(locale, wpm)} />
         <Stat label={dict.accuracy} value={formatPercent(locale, acc / 100)} />
@@ -261,19 +259,25 @@ export function TypingArea({
         )}
       </dl>
 
-      <div className="relative border border-line bg-surface p-6 rounded-leaf focus-within:border-accent-text">
-        {/* Three lines high (leading-9 = 2.25rem each); a little side room keeps the caret visible. */}
-        <div className="-mx-1 max-h-[6.75rem] overflow-hidden px-1">
+      {/* Clicking anywhere in the box focuses the hidden field. */}
+      <div
+        onClick={() => field.current?.focus({ preventScroll: true })}
+        className="relative cursor-text border border-line bg-surface py-6 pr-3 pl-6 rounded-leaf focus-within:border-accent-text"
+      >
+        {/* At most three lines high (leading-9 = 2.25rem each); a little side room keeps the caret visible. */}
+        <div
+          ref={box}
+          className="-ml-1 max-h-[6.75rem] overflow-y-auto pr-3 pl-1 [scrollbar-width:thin]"
+        >
           <p
             ref={lines}
             aria-label={dict.textLabel}
-            style={{ transform: `translateY(-${scrolled}px)` }}
-            className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap transition-transform duration-200 ease-out select-none motion-reduce:transition-none"
+            className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap select-none"
           >
             <TextChars text={text} input={typing.input} />
           </p>
         </div>
-        {/* Invisible over the text: clicking the text focuses it. */}
+        {/* Invisible over the text; clicks go through it so the wheel scrolls the text. */}
         <textarea
           ref={field}
           aria-label={dict.typeLabel}
@@ -282,7 +286,7 @@ export function TypingArea({
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="absolute inset-0 size-full cursor-text resize-none bg-transparent text-transparent caret-transparent opacity-0"
+          className="pointer-events-none absolute inset-0 size-full resize-none bg-transparent text-transparent caret-transparent opacity-0"
         />
       </div>
       {!done && <p className="font-mono text-xs text-muted">&gt; {dict.focusHint}</p>}
