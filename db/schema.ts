@@ -26,27 +26,15 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /**
-     * Login identifier. Unique regardless of case, see the index below. Null
-     * for guests, who never log in (AUTH-02).
-     */
+    /** Null for guests. Unique regardless of case, see the index below. */
     username: text("username"),
-    /**
-     * A guest only has a nickname (display name) and the session cookie that
-     * points at this row: no password, no history (AUTH-02, AUTH-03).
-     */
     isGuest: boolean("is_guest").notNull().default(false),
-    /** Name shown in rooms and on the profile; the user can change it (AUTH-05). */
     displayName: text("display_name").notNull(),
-    /**
-     * Argon2id hash, never the password itself. Null for accounts that only
-     * sign in through OAuth.
-     */
+    /** Null for accounts that only sign in through OAuth. */
     passwordHash: text("password_hash"),
     /**
-     * Cosmetics: the colour of the player's stem and petals, ids from
-     * lib/profile/cosmetics.ts. No check constraint, so the palette can grow
-     * without a migration; an unknown id is shown as the default.
+     * Ids from lib/profile/cosmetics.ts. No check constraint, so the palette can
+     * grow without a migration; an unknown id is shown as the default.
      */
     stemColor: text("stem_color").notNull().default("classic"),
     petalColor: text("petal_color").notNull().default("classic"),
@@ -83,10 +71,7 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType: () => "bytea",
 });
 
-/**
- * AUTH-04: a signed-in user's profile photo, already resized to a small
- * WebP on upload. In its own table so reading a user never loads the image.
- */
+/** In its own table so reading a user never loads the image. */
 export const userAvatars = pgTable(
   "user_avatars",
   {
@@ -107,10 +92,6 @@ export const userAvatars = pgTable(
 
 export type UserAvatar = typeof userAvatars.$inferSelect;
 
-/**
- * Passages for coherent texts (CONF-03), from public-domain books. A race
- * takes a run of whole sentences out of one passage; see lib/texts/.
- */
 export const texts = pgTable(
   "texts",
   {
@@ -118,9 +99,7 @@ export const texts = pgTable(
     language: text("language").notNull(),
     content: text("content").notNull(),
     wordCount: integer("word_count").notNull(),
-    /** From the passage's score (CONF-05), see lib/texts/complexity.ts. */
     complexity: text("complexity").notNull(),
-    /** Passages with digits are skipped when numbers are off (CONF-06). */
     hasDigits: boolean("has_digits").notNull(),
     sourceTitle: text("source_title").notNull(),
     sourceAuthor: text("source_author").notNull(),
@@ -145,7 +124,6 @@ export const rooms = pgTable(
   "rooms",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /** SALLE-02: 6 characters, without 0/O and 1/I/L. */
     code: text("code").notNull(),
     hostId: uuid("host_id")
       .notNull()
@@ -153,7 +131,6 @@ export const rooms = pgTable(
     visibility: text("visibility").$type<Visibility>().notNull(),
     capacity: integer("capacity").notNull(),
     state: text("state").$type<RoomState>().notNull().default("waiting"),
-    /** Everything else the host configures (CONF-01 to CONF-09). */
     config: jsonb("config").$type<RaceConfig>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -166,7 +143,6 @@ export const rooms = pgTable(
   },
   (table) => [
     uniqueIndex("rooms_code_idx").on(table.code),
-    // The room browser lists public rooms that aren't closed (JOIN-02).
     index("rooms_visibility_state_idx").on(table.visibility, table.state),
     check("rooms_code_format", sql`${table.code} ~ '^[A-HJKMNP-Z2-9]{6}$'`),
     check(
@@ -195,18 +171,15 @@ export const roomMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     role: text("role").$type<HostRole>().notNull(),
-    /**
-     * The name shown in this room, chosen on entry (it defaults to the
-     * user's display name). Unique within the room, see the index below.
-     */
+    /** Defaults to the user's display name. Unique within the room, see the index below. */
     name: text("name").notNull(),
-    /** The longest-present member becomes host when the host leaves (SALLE-08). */
+    /** The longest-present member becomes host when the host leaves. */
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    // SALLE-06: one room per person at a time, whatever the interface does.
+    // One room per person at a time, whatever the interface does.
     uniqueIndex("room_members_user_idx").on(table.userId),
     index("room_members_room_idx").on(table.roomId, table.joinedAt),
     // Two members of a room never share a name, whatever its case.
@@ -219,10 +192,6 @@ export const roomMembers = pgTable(
 export type RoomMember = typeof roomMembers.$inferSelect;
 export type NewRoomMember = typeof roomMembers.$inferInsert;
 
-/**
- * SALLE-07: people the host kicked out. They can't join that room again;
- * the row goes away with the room or the user.
- */
 export const roomBans = pgTable(
   "room_bans",
   {
@@ -246,27 +215,20 @@ export const roomBans = pgTable(
 export type RoomBan = typeof roomBans.$inferSelect;
 export type NewRoomBan = typeof roomBans.$inferInsert;
 
-/**
- * One finished race (RES-05). The progress itself stays in memory during
- * the race; this row and its results are written once, at the end (PERF-02).
- */
 export const races = pgTable(
   "races",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     /** Kept if the room goes away, so the participants' history stays. */
     roomId: uuid("room_id").references(() => rooms.id, { onDelete: "set null" }),
-    /** The corpus passage, for coherent texts (CONF-03). */
     textId: uuid("text_id").references(() => texts.id, { onDelete: "set null" }),
-    /** The exact text typed, so the results can be shown again (HIST-02). */
+    /** The exact text typed, so the results can be shown again. */
     content: text("content").notNull(),
-    /** The settings the race ran with. */
     config: jsonb("config").$type<RaceConfig>().notNull(),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
     endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
   },
   (table) => [
-    // The results screen shows the room's latest race.
     index("races_room_ended_idx").on(table.roomId, table.endedAt),
     check("races_ended_after_start", sql`${table.endedAt} >= ${table.startedAt}`),
   ],
@@ -276,10 +238,8 @@ export type Race = typeof races.$inferSelect;
 export type NewRace = typeof races.$inferInsert;
 
 /**
- * Every participant's result in a race (RES-02). Guests get a row too, so
- * the full table can be shown again, but without `user_id`: it never
- * becomes their history (AUTH-03). Signed-in users' rows are their history
- * (HIST-01) and keep the WPM time series for the charts (RES-05).
+ * Guests get a row too, so the full table can be shown again, but without
+ * `user_id`: it never becomes their history.
  */
 export const raceResults = pgTable(
   "race_results",
@@ -290,31 +250,25 @@ export const raceResults = pgTable(
       .references(() => races.id, { onDelete: "cascade" }),
     /** Null for a guest, or for an account deleted since. */
     userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
-    /** The name shown in the room during that race. */
     name: text("name").notNull(),
     isGuest: boolean("is_guest").notNull(),
     rank: integer("rank").notNull(),
     status: text("status").$type<ResultStatus>().notNull(),
     wpm: real("wpm").notNull(),
     rawWpm: real("raw_wpm").notNull(),
-    /** Null when they gave up: a partial run's accuracy doesn't count (COURSE-07). */
+    /** Null when they gave up: a partial run's accuracy doesn't count. */
     accuracy: real("accuracy"),
     errors: integer("errors").notNull(),
-    /** Validated characters ÷ text length, between 0 and 1. */
     progress: real("progress").notNull(),
-    /** From the start to finishing, abandoning or the end of the race. */
     durationMs: integer("duration_ms").notNull(),
     wpmSeries: jsonb("wpm_series").$type<WpmPoint[]>().notNull(),
-    /** Wrong presses per expected character (RES-03). */
     missedKeys: jsonb("missed_keys").$type<Record<string, number>>().notNull(),
-    /** Catch-up effects received, in order (RES-02, BONUS-01). */
     bonuses: jsonb("bonuses").$type<BonusKind[]>().notNull().default([]),
   },
   (table) => [
     uniqueIndex("race_results_race_rank_idx").on(table.raceId, table.rank),
     // One row per account per race; guests (null) aren't constrained.
     uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
-    // A user's history, newest first (HIST-01).
     index("race_results_user_idx").on(table.userId),
     check("race_results_rank", sql`${table.rank} >= 1`),
     check(
