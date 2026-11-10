@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { e2eName } from "./database";
 
 // Practice without an account: bots can be configured, then a race alone
 // from the countdown to the results, and again.
@@ -52,4 +53,45 @@ test("a visitor without an account practices alone", async ({ page }) => {
   await page.getByRole("button", { name: "Give up" }).click();
   await page.getByRole("dialog", { name: "Give up this practice?" }).getByRole("button", { name: "Give up" }).click();
   await expect(rows.nth(1)).toContainText("Gave up");
+});
+
+test("someone in a room can't practice", async ({ browser }) => {
+  const username = e2eName();
+  const password = "e2e-password-1234";
+  const context = await browser.newContext();
+  const practice = await context.newPage();
+  await practice.goto("/en/login");
+  await practice.getByRole("button", { name: "Sign up", exact: true }).click();
+  await practice.getByLabel("Username").fill(username);
+  await practice.getByLabel("Password", { exact: true }).fill(password);
+  await practice.getByLabel("Confirm").fill(password);
+  await practice.getByRole("button", { name: "Create my account" }).click();
+  await expect(practice).toHaveURL(/\/en$/);
+
+  // Practice opens while not in a room...
+  await practice.goto("/en/practice");
+  await practice.getByRole("radio", { name: /^Random/ }).check({ force: true });
+  const start = practice.getByRole("button", { name: "Start", exact: true });
+  await expect(start).toBeVisible();
+
+  // ...then a room is created in another tab.
+  const other = await context.newPage();
+  await other.goto("/en/rooms/new");
+  await other.getByLabel("Your name in this room").fill(username);
+  await other.getByRole("button", { name: "Create the room" }).click();
+  await expect(other).toHaveURL(/\/en\/rooms\/[A-HJKMNP-Z2-9]{6}$/);
+  const code = other.url().split("/").at(-1) ?? "";
+
+  // The server refuses the text, and the page points back to the room.
+  await start.click();
+  await expect(practice.getByText(`You're in room ${code}. Leave it to practice.`)).toBeVisible();
+  await expect(practice.getByText("The race starts in")).toHaveCount(0);
+
+  // Opened afresh, the page shows only that.
+  await practice.goto("/en/practice");
+  await expect(practice.getByRole("button", { name: "Start", exact: true })).toHaveCount(0);
+  await practice.getByRole("link", { name: `Back to ${code}` }).click();
+  await expect(practice).toHaveURL(new RegExp(`/en/rooms/${code}$`));
+
+  await context.close();
 });
