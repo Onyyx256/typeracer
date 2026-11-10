@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { glareRange } from "@/lib/race/bonuses";
 import { MAX_KEYS_PER_BATCH, type PlayerState } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import {
@@ -13,7 +14,7 @@ import {
   type ErrorMode,
   type TypingState,
 } from "@/lib/race/typing";
-import { EVENTS, type RaceResyncPayload } from "@/lib/realtime/events";
+import { EVENTS, type RaceResyncPayload, type RaceTextPayload } from "@/lib/realtime/events";
 import { getSocket } from "@/lib/realtime/client";
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary } from "@/lib/i18n/dictionaries/fr";
@@ -28,36 +29,46 @@ const SENT_LOG = 50;
 type Batch = { seq: number; keys: string[] };
 
 function fromServer(you: PlayerState): TypingState {
-  return { ...you, missed: {} };
+  return {
+    input: you.input,
+    keystrokes: you.keystrokes,
+    correctKeystrokes: you.correctKeystrokes,
+    missed: {},
+  };
 }
 
 /**
  * COURSE-04: the typing area. Feedback is immediate, from the same reducer
  * the server replays the keys through (lib/race/typing.ts); the server's
  * numbers are the real ones and correct this one if they ever differ.
+ * The text is the runner's own: catch-up bonuses change its end (BONUS-04).
  */
 export function TypingArea({
   code,
-  text,
   errorMode,
   startsAt,
   endsAt,
   initial,
   syncId,
+  glare,
   dict,
   locale,
 }: {
   code: string;
-  text: string;
   errorMode: ErrorMode;
   startsAt: number;
   endsAt: number | null;
   initial: PlayerState;
   syncId: number;
+  /** A blinding sun hides the next words (BONUS-03). */
+  glare: boolean;
   dict: RaceDictionary;
   locale: Locale;
 }) {
+  const [text, setText] = useState(initial.text);
   const [typing, setTyping] = useState<TypingState>(() => fromServer(initial));
+  // Read by the handlers, so a new text applies to the very next key.
+  const textRef = useRef(initial.text);
   const [finishedAt, setFinishedAt] = useState<number | null>(null);
   const state = useRef(typing);
   const pending = useRef<string[]>([]);
@@ -72,13 +83,15 @@ export function TypingArea({
   // The finish time goes with the state: a refused batch can take a
   // finished text back to unfinished, and the clock must run again.
   const update = useCallback(
-    (next: TypingState) => {
+    (next: TypingState, nextText: string = textRef.current) => {
+      textRef.current = nextText;
+      setText(nextText);
       state.current = next;
       setTyping(next);
-      const complete = isComplete(text, errorMode, next);
+      const complete = isComplete(nextText, errorMode, next);
       setFinishedAt((previous) => (complete ? (previous ?? Date.now()) : null));
     },
-    [text, errorMode],
+    [errorMode],
   );
 
   const flush = useCallback(() => {
@@ -100,6 +113,7 @@ export function TypingArea({
       if (time < startsAt || (endsAt !== null && time >= endsAt)) {
         return;
       }
+      const text = textRef.current;
       let current = state.current;
       for (const key of keys) {
         const next = applyKey(text, errorMode, current, key);
@@ -117,15 +131,15 @@ export function TypingArea({
         flush();
       }
     },
-    [text, errorMode, startsAt, endsAt, update, flush],
+    [errorMode, startsAt, endsAt, update, flush],
   );
 
   // A new race:sync answer (first load, reconnection): the server's state,
   // plus what was typed but not sent yet.
   useEffect(() => {
     sent.current = [];
-    update(applyKeys(text, errorMode, fromServer(initial), pending.current));
-  }, [syncId, initial, text, errorMode, update]);
+    update(applyKeys(initial.text, errorMode, fromServer(initial), pending.current), initial.text);
+  }, [syncId, initial, errorMode, update]);
 
   useEffect(() => {
     const timer = setInterval(flush, SEND_EVERY_MS);
@@ -137,15 +151,24 @@ export function TypingArea({
       const after = sent.current.filter((batch) => batch.seq > payload.seq);
       sent.current = after;
       const replay = [...after.flatMap((batch) => batch.keys), ...pending.current];
-      update(applyKeys(text, errorMode, fromServer(payload.you), replay));
+      const { text } = payload.you;
+      update(applyKeys(text, errorMode, fromServer(payload.you), replay), text);
+    };
+    // A bonus changed the end of the text; what's typed stays valid.
+    const onText = (payload: RaceTextPayload) => {
+      if (payload.code === code) {
+        update(state.current, payload.text);
+      }
     };
     socket.on(EVENTS.raceResync, onResync);
+    socket.on(EVENTS.raceText, onText);
     return () => {
       clearInterval(timer);
       socket.off(EVENTS.raceResync, onResync);
+      socket.off(EVENTS.raceText, onText);
       flush();
     };
-  }, [code, text, errorMode, flush, update]);
+  }, [code, errorMode, flush, update]);
 
   // Native listeners: beforeinput says what the key does, including
   // accented letters from dead keys, and lets paste be refused (COURSE-04).
@@ -173,7 +196,7 @@ export function TypingArea({
           event.preventDefault();
           const { input } = state.current;
           const start = (input.endsWith(" ") ? input.slice(0, -1) : input).lastIndexOf(" ") + 1;
-          const stop = Math.max(start, lockedLength(text, errorMode, input));
+          const stop = Math.max(start, lockedLength(textRef.current, errorMode, input));
           press(Array(Math.max(0, input.length - stop)).fill(BACKSPACE));
           return;
         }
@@ -205,7 +228,7 @@ export function TypingArea({
       element.removeEventListener("paste", refuse);
       element.removeEventListener("drop", refuse);
     };
-  }, [press, text, errorMode]);
+  }, [press, errorMode]);
 
   // Ready to type as soon as the countdown starts.
   useEffect(() => {
@@ -233,7 +256,7 @@ export function TypingArea({
           aria-label={dict.textLabel}
           className="font-mono text-xl leading-relaxed break-words whitespace-pre-wrap select-none"
         >
-          <TextChars text={text} input={typing.input} />
+          <TextChars text={text} input={typing.input} glare={glare} />
         </p>
         {/* Invisible over the text: clicking the text focuses it. */}
         <textarea
@@ -262,11 +285,22 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 /** Right, wrong, the cursor, and what's left. Only re-rendered when the input changes. */
-const TextChars = memo(function TextChars({ text, input }: { text: string; input: string }) {
+const TextChars = memo(function TextChars({
+  text,
+  input,
+  glare,
+}: {
+  text: string;
+  input: string;
+  glare: boolean;
+}) {
+  const [glareStart, glareEnd] = glare ? glareRange(text, input.length) : [0, 0];
   // By UTF-16 unit, like the reducer's indexes.
   return text.split("").map((char, index) => {
     let className = "text-muted";
-    if (index < input.length) {
+    if (index > glareStart && index < glareEnd) {
+      className = "glare";
+    } else if (index < input.length) {
       className = input[index] === char ? "text-primary-text" : "bg-danger/20 text-danger underline";
     } else if (index === input.length) {
       // The caret, drawn as a shadow so the text doesn't move.

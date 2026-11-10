@@ -1,5 +1,6 @@
 "use client";
 
+import { WeatherIcon } from "@/app/components/weather-icon";
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { AbandonRace } from "./abandon-race";
@@ -40,6 +41,18 @@ export function RaceView({
         {racing && <AbandonRace dict={dict} />}
       </div>
 
+      {/* BONUS-03: the targeted runner is told what fell on them. */}
+      {racing && (
+        <p role="status" aria-live="polite" className="min-h-6 font-mono text-sm text-accent-text">
+          {mine.effect && (
+            <span className="flex items-center gap-2">
+              <WeatherIcon kind={mine.effect} className="size-5 shrink-0" />
+              {dict.bonusNotices[mine.effect]}
+            </span>
+          )}
+        </p>
+      )}
+
       <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
 
       {racing && race.you !== null && (
@@ -49,12 +62,12 @@ export function RaceView({
           <div className="hidden md:block">
             <TypingArea
               code={code}
-              text={race.text}
               errorMode={race.errorMode}
               startsAt={race.startsAt}
               endsAt={race.endsAt}
               initial={race.you}
               syncId={race.syncId}
+              glare={mine?.effect === "glare"}
               dict={dict}
               locale={locale}
             />
