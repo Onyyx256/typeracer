@@ -36,6 +36,75 @@ export const fr = {
     title: "Statistiques",
     heading: "Mes statistiques",
     empty: "tes statistiques apparaîtront après ta première course",
+    lead: "Tes courses en salle. Les courses d'entraînement ne sont pas enregistrées.",
+    tiles: {
+      races: "Courses",
+      wins: "Victoires",
+      winRate: "{rate} des courses",
+      best: "Meilleur MPM",
+      bestNote: "course terminée",
+      average: "MPM moyen",
+      accuracy: "Précision moyenne",
+      averageNote: "sans les abandons",
+      none: "aucune donnée",
+    },
+    progress: {
+      heading: "Progression",
+      lead: {
+        one: "MPM de ta dernière course, sans les abandons.",
+        other: "MPM de tes {count} dernières courses, sans les abandons.",
+      } satisfies PluralForms,
+      raceSeries: "MPM de la course",
+      averageSeries: "Moyenne sur {count} courses",
+      axis: "Course",
+      race: "Course {number}",
+      average: "moyenne {wpm}",
+      open: "Clique sur un point pour revoir la course.",
+      summary: "Graphique : de {first} MPM à la première course à {last} MPM à la dernière, moyenne récente {average} MPM. Flèches gauche et droite pour parcourir les courses, Entrée pour ouvrir ses résultats.",
+    },
+    missedKeys: {
+      heading: "Touches les plus manquées",
+      lead: "Les caractères que tu as le plus souvent ratés, toutes courses confondues.",
+      value: "{count} ({share})",
+      empty: "aucune erreur pour l'instant",
+      space: "espace",
+      newline: "retour à la ligne",
+      tab: "tabulation",
+    },
+    places: {
+      heading: "Classements",
+      lead: "Ta place à l'arrivée de chaque course.",
+      labels: {
+        first: "1re place",
+        second: "2e place",
+        third: "3e place",
+        other: "4e place ou plus",
+        abandoned: "Abandon",
+      },
+    },
+    history: {
+      heading: "Historique",
+      caption: "Tes courses, de la plus récente à la plus ancienne",
+      columns: {
+        date: "Date",
+        text: "Texte",
+        place: "Place",
+        wpm: "MPM",
+        accuracy: "Précision",
+        status: "Statut",
+      },
+      place: "{rank} sur {runners}",
+      noText: "texte retiré",
+      nav: "Pages de l'historique",
+      previous: "Précédente",
+      next: "Suivante",
+      page: "Page {page} sur {pages}",
+    },
+    race: {
+      title: "Résultats de course",
+      heading: "Course du {date}",
+      back: "Retour aux statistiques",
+    },
   },
   accountPage: {
     title: "Mon compte",
@@ -578,3 +647,4 @@ export type RoomDictionary = Dictionary["room"];
 export type RaceDictionary = Dictionary["race"];
 export type ResultsDictionary = Dictionary["results"];
 export type PracticeDictionary = Dictionary["practice"];
+export type StatsDictionary = Dictionary["statsPage"];
