@@ -15,6 +15,7 @@ import { getLooks } from "@/lib/profile/profile";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
+import { DeleteRoom } from "./delete-room";
 import { EditSettings } from "./edit-settings";
 import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
@@ -96,7 +97,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
       {/* Tighter during the race, so the whole race fits on screen. */}
       <div className={`grid ${inRace ? "gap-5" : "gap-8"}`}>
         <header className={`grid ${inRace ? "gap-2" : "gap-4"}`}>
-          {/* The leave button lines up with the title, not the state below it. */}
+          {/* The leave and delete buttons line up with the title, not the state below it. */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-display text-4xl leading-tight font-semibold">
               {t.heading}{" "}
@@ -105,7 +106,10 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               </span>
             </h1>
             {member && (
-              <LeaveRoom dict={t} locale={locale} />
+              <div className="flex flex-wrap gap-3">
+                {isHost && <DeleteRoom dict={t} locale={locale} />}
+                <LeaveRoom dict={t} locale={locale} />
+              </div>
             )}
           </div>
           <p className="font-mono text-sm text-muted">

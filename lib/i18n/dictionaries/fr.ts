@@ -168,6 +168,17 @@ export const fr = {
       confirm: "Quitter et supprimer la salle",
       cancel: "Rester",
     },
+    deleteRoom: "Supprimer la salle",
+    deleteDialog: {
+      title: "Supprimer la salle ?",
+      lead: "Tout le monde en sortira, et la salle disparaîtra pour de bon.",
+      confirm: "Supprimer la salle",
+      cancel: "La garder",
+    },
+    deleteErrors: {
+      notHost: "seul l'hôte peut supprimer la salle",
+      unavailable: "impossible pour le moment, réessaie plus tard",
+    },
     waitingNote: "l'hôte lancera la course",
     elsewhere: "Tu es déjà dans la salle {code}.",
     goBack: "Retourner dans {code}",
@@ -226,6 +237,7 @@ export const fr = {
     closed: {
       title: "Ta salle a été supprimée",
       lead: "L'hôte est parti et aucun membre connecté avec un compte ne pouvait le remplacer, donc la salle a fermé. Tu peux en rejoindre une autre.",
+      deletedLead: "L'hôte a supprimé la salle. Tu peux en rejoindre une autre.",
       back: "Voir les salles",
     },
     nameDialog: {

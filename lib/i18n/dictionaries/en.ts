@@ -166,6 +166,17 @@ export const en: Dictionary = {
       confirm: "Leave and delete the room",
       cancel: "Stay",
     },
+    deleteRoom: "Delete the room",
+    deleteDialog: {
+      title: "Delete the room?",
+      lead: "Everyone in it will be sent out, and the room will be gone for good.",
+      confirm: "Delete the room",
+      cancel: "Keep it",
+    },
+    deleteErrors: {
+      notHost: "only the host can delete the room",
+      unavailable: "not possible right now, try again later",
+    },
     waitingNote: "the host will start the race",
     elsewhere: "You're already in room {code}.",
     goBack: "Go back to {code}",
@@ -224,6 +235,7 @@ export const en: Dictionary = {
     closed: {
       title: "Your room has been deleted",
       lead: "The host left and nobody signed in could take over, so the room closed. You can join another one.",
+      deletedLead: "The host deleted the room. You can join another one.",
       back: "Browse rooms",
     },
     nameDialog: {

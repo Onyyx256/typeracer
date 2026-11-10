@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { localePath, type Locale } from "@/lib/i18n/config";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
-import { EVENTS } from "@/lib/realtime/events";
+import { EVENTS, type RoomClosed as RoomClosedPayload, type RoomClosedReason } from "@/lib/realtime/events";
 import { getSocket } from "@/lib/realtime/client";
 
 /**
  * SALLE-08: tells a member that their room was deleted while they were in
- * it (the host left and no signed-in member could take over). The server
+ * it (the host left and no signed-in member could take over, or the host
+ * deleted it). The server
  * sends this to their own tabs only. Mounted in the layout, so a room page
  * re-rendering into a 404 at the same moment doesn't take the notice away.
  */
@@ -20,13 +21,13 @@ export function RoomClosed({
   dict: RoomDictionary["closed"];
   locale: Locale;
 }) {
-  const [closed, setClosed] = useState(false);
+  const [closed, setClosed] = useState<RoomClosedReason | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
   useEffect(() => {
     const socket = getSocket();
-    const onClosed = () => setClosed(true);
+    const onClosed = (payload: RoomClosedPayload) => setClosed(payload.reason);
     socket.on(EVENTS.roomClosed, onClosed);
     return () => {
       socket.off(EVENTS.roomClosed, onClosed);
@@ -41,7 +42,7 @@ export function RoomClosed({
 
   function dismiss() {
     dialog.current?.close();
-    setClosed(false);
+    setClosed(null);
   }
 
   return (
@@ -55,7 +56,7 @@ export function RoomClosed({
       <h2 id={titleId} className="font-display text-3xl leading-tight font-semibold">
         {dict.title}
       </h2>
-      <p className="mt-3 text-muted">{dict.lead}</p>
+      <p className="mt-3 text-muted">{closed === "deleted" ? dict.deletedLead : dict.lead}</p>
       <Link
         href={localePath(locale, "/rooms")}
         onClick={dismiss}
