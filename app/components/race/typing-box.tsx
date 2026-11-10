@@ -140,6 +140,7 @@ export function TypingBox({
   const now = useNow(250, finishedAt === null);
   const open = now >= startsAt && (endsAt === null || now < endsAt);
   const done = isComplete(text, errorMode, typing);
+  const started = useStarted(startsAt, now);
 
   // Native listeners: beforeinput says what the key does, including
   // accented letters from dead keys, and lets paste be refused (COURSE-04).
@@ -228,7 +229,7 @@ export function TypingBox({
     const observer = new ResizeObserver(() => follow(false));
     observer.observe(element);
     return () => observer.disconnect();
-  }, [caret]);
+  }, [caret, started]);
 
   // Ready to type as soon as the countdown starts.
   useEffect(() => {
@@ -264,20 +265,25 @@ export function TypingBox({
           ref={box}
           className="-ml-1 max-h-[6.75rem] overflow-y-auto pr-3 pl-1 [scrollbar-width:thin]"
         >
-          <p
-            ref={lines}
-            aria-label={dict.textLabel}
-            className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap select-none"
-          >
-            <TextChars text={text} input={typing.input} glare={glare} />
-            {/* After the characters, so the caret's index into them stays right. */}
-            {removed && (
-              <span>
-                <span className="sr-only">{dict.removedWords}</span>{" "}
-                <span className="text-muted/70 line-through decoration-accent-text decoration-2">{removed}</span>
-              </span>
-            )}
-          </p>
+          {/* The text stays hidden until the countdown ends, so nobody reads ahead. */}
+          {started ? (
+            <p
+              ref={lines}
+              aria-label={dict.textLabel}
+              className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap select-none"
+            >
+              <TextChars text={text} input={typing.input} glare={glare} />
+              {/* After the characters, so the caret's index into them stays right. */}
+              {removed && (
+                <span>
+                  <span className="sr-only">{dict.removedWords}</span>{" "}
+                  <span className="text-muted/70 line-through decoration-accent-text decoration-2">{removed}</span>
+                </span>
+              )}
+            </p>
+          ) : (
+            <div aria-hidden className="h-[6.75rem]" />
+          )}
         </div>
         {/* Invisible over the text; clicks go through it so the wheel scrolls the text. */}
         <textarea
@@ -294,6 +300,23 @@ export function TypingBox({
       {!done && <p className="font-mono text-xs text-muted">&gt; {dict.focusHint}</p>}
     </div>
   );
+}
+
+/**
+ * Whether the race has started: `now` is only updated every 250 ms, so a
+ * timer also flips it right at `startsAt`.
+ */
+function useStarted(startsAt: number, now: number): boolean {
+  const [reached, setReached] = useState<number | null>(null);
+  useEffect(() => {
+    const wait = startsAt - Date.now();
+    if (wait <= 0) {
+      return;
+    }
+    const timer = setTimeout(() => setReached(startsAt), wait);
+    return () => clearTimeout(timer);
+  }, [startsAt]);
+  return now >= startsAt || reached === startsAt;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
