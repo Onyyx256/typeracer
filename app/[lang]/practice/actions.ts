@@ -1,17 +1,31 @@
 "use server";
 
+import { getSessionUserId } from "@/lib/auth/session";
 import { practiceConfigSchema, practiceRaceConfig } from "@/lib/practice/settings";
+import { findCurrentRoom } from "@/lib/rooms/rooms";
 import { generateText, textConfigProblem } from "@/lib/texts/generate";
 
-export type PracticeTextError = "invalid" | "noWords" | "unavailable";
+export type PracticeTextError = "invalid" | "noWords" | "inRoom" | "unavailable";
 
 export type PracticeTextResult =
   | { ok: true; text: string; source: { title: string; author: string } | null }
-  | { ok: false; error: PracticeTextError };
+  | {
+      ok: false;
+      error: PracticeTextError;
+      /** With "inRoom": the room to go back to. */
+      currentCode?: string;
+    };
+
+/** Logs only the driver's message: Drizzle's own embeds the query parameters. */
+function logFailure(error: unknown): void {
+  const cause = error instanceof Error ? (error.cause ?? error) : error;
+  console.error("practiceText failed:", cause instanceof Error ? cause.message : "unknown error");
+}
 
 /**
- * The text of a practice race. Open to everyone, signed in or not: it
- * only reads the corpus. The config is checked like a room's (TECH-07).
+ * The text of a practice race. Open to everyone, signed in or not, except
+ * someone who is in a room: they belong to that room's races. The config
+ * is checked like a room's (TECH-07).
  */
 export async function practiceTextAction(input: unknown): Promise<PracticeTextResult> {
   const parsed = practiceConfigSchema.safeParse(input);
@@ -23,6 +37,11 @@ export async function practiceTextAction(input: unknown): Promise<PracticeTextRe
     return { ok: false, error: "noWords" };
   }
   try {
+    const userId = await getSessionUserId();
+    const current = userId ? await findCurrentRoom(userId) : null;
+    if (current) {
+      return { ok: false, error: "inRoom", currentCode: current.code };
+    }
     const { content, source } = await generateText(config);
     return {
       ok: true,
@@ -30,9 +49,7 @@ export async function practiceTextAction(input: unknown): Promise<PracticeTextRe
       source: source && { title: source.title, author: source.author },
     };
   } catch (error) {
-    // Only the message: the driver's error can embed query parameters.
-    const cause = error instanceof Error ? (error.cause ?? error) : error;
-    console.error("practiceText failed:", cause instanceof Error ? cause.message : "unknown error");
+    logFailure(error);
     return { ok: false, error: "unavailable" };
   }
 }
