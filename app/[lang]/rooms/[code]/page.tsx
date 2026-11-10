@@ -283,7 +283,7 @@ function Kicked({ dict, locale }: { dict: RoomDictionary; locale: Locale }) {
       <h1 className="font-display text-3xl leading-tight font-semibold">{dict.kicked.title}</h1>
       <p className="mt-3 text-muted">{dict.kicked.lead}</p>
       <Link
-        href={localePath(locale, "/rooms")}
+        href={localePath(locale, "/")}
         className="mt-6 inline-flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
       >
         {dict.kicked.back}

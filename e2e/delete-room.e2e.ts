@@ -57,14 +57,14 @@ test("the host deletes the room and the members are told", async ({ browser }) =
 
   await host.getByRole("button", { name: "Delete the room" }).click();
   await confirm.getByRole("button", { name: "Delete the room" }).click();
-  await expect(host).toHaveURL(/\/en\/rooms$/);
+  await expect(host).toHaveURL(/\/en$/);
 
   // Another account was there, but the room is deleted rather than handed over.
   const notice = member.getByRole("dialog", { name: "Your room has been deleted" });
   await expect(notice).toBeVisible();
   await expect(notice).toContainText("The host deleted the room");
   await notice.getByRole("link", { name: "Browse rooms" }).click();
-  await expect(member).toHaveURL(/\/en\/rooms$/);
+  await expect(member).toHaveURL(/\/en$/);
 
   await member.goto(`/en/rooms/${code}`);
   await expect(member.getByRole("button", { name: "Join as a runner" })).toHaveCount(0);

@@ -33,7 +33,7 @@ export async function SiteHeader() {
           aria-label={dict.header.nav}
           className="flex flex-col gap-1 lg:flex-1 lg:flex-row lg:items-center"
         >
-          <NavLink href={localePath(locale, "/rooms")}>
+          <NavLink href={localePath(locale, "/")}>
             {dict.header.join}
           </NavLink>
           <NavLink href={localePath(locale, "/practice")}>

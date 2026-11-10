@@ -55,7 +55,7 @@ export function RoomClosed({
       </h2>
       <p className="mt-3 text-muted">{closed === "deleted" ? dict.deletedLead : dict.lead}</p>
       <Link
-        href={localePath(locale, "/rooms")}
+        href={localePath(locale, "/")}
         onClick={dismiss}
         className="mt-6 inline-flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
       >

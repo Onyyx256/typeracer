@@ -49,7 +49,7 @@ test("the host role skips a guest and goes to a signed-in member", async ({ brow
   const account = await joins(browser, code, true);
 
   await host.getByRole("button", { name: "Leave the room" }).click();
-  await expect(host).toHaveURL(/\/en\/rooms$/);
+  await expect(host).toHaveURL(/\/en$/);
 
   // The guest joined first, but the account becomes host, live on both pages.
   for (const page of [guest.page, account.page]) {
@@ -75,12 +75,12 @@ test("with only a guest left, the room is deleted and the guest is told", async 
   await expect(host).toHaveURL(new RegExp(`/en/rooms/${code}$`));
   await host.getByRole("button", { name: "Leave the room" }).click();
   await confirm.getByRole("button", { name: "Leave and delete the room" }).click();
-  await expect(host).toHaveURL(/\/en\/rooms$/);
+  await expect(host).toHaveURL(/\/en$/);
 
   const notice = guest.page.getByRole("dialog", { name: "Your room has been deleted" });
   await expect(notice).toBeVisible();
   await notice.getByRole("link", { name: "Browse rooms" }).click();
-  await expect(guest.page).toHaveURL(/\/en\/rooms$/);
+  await expect(guest.page).toHaveURL(/\/en$/);
 
   await guest.page.goto(`/en/rooms/${code}`);
   await expect(guest.page.getByRole("button", { name: "Join as a runner" })).toHaveCount(0);
