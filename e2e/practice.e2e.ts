@@ -10,7 +10,7 @@ test("a visitor without an account practices alone", async ({ page }) => {
   await expect(page).toHaveURL(/\/en\/practice$/);
   await expect(page.getByRole("heading", { name: "Practice", level: 1 })).toBeVisible();
 
-  // Bots: added with a level, then removed (CONF-10); they don't race yet.
+  // Bots can be added and removed; they don't race yet.
   await expect(page.getByText("no bots: you race alone")).toBeVisible();
   const add = page.getByRole("button", { name: "Add a bot" });
   await add.click();
@@ -87,7 +87,6 @@ test("someone in a room can't practice", async ({ browser }) => {
   await expect(practice.getByText(`You're in room ${code}. Leave it to practice.`)).toBeVisible();
   await expect(practice.getByText("The race starts in")).toHaveCount(0);
 
-  // Opened afresh, the page shows only that.
   await practice.goto("/en/practice");
   await expect(practice.getByRole("button", { name: "Start", exact: true })).toHaveCount(0);
   await practice.getByRole("link", { name: `Back to ${code}` }).click();

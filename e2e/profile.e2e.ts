@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
 import { e2eName } from "./database";
 
-// The account page: profile photo (AUTH-04, SEC-02), display name
-// (AUTH-05) and flower colours, for a new account that has never raced.
+// The account page: profile photo, display name and flower colours, for a
+// new account that has never raced.
 
 const PASSWORD = "e2e-password-1234";
 
@@ -28,7 +28,7 @@ test("a new account sets a photo, a display name and its free colours", async ({
   const status = page.getByRole("status").first();
   const headerPhoto = page.getByRole("banner").locator('img[src^="/api/avatars/"]');
 
-  // A text file renamed .png is refused: the server reads the bytes (SEC-02).
+  // A text file renamed .png is refused: the server reads the bytes.
   await photoInput.setInputFiles({
     name: "fake.png",
     mimeType: "image/png",
@@ -37,7 +37,6 @@ test("a new account sets a photo, a display name and its free colours", async ({
   await expect(status).toHaveText("> this file isn't a JPEG, PNG or WebP photo");
   await expect(headerPhoto).toHaveCount(0);
 
-  // A real photo becomes the avatar, in the header too.
   const photo = await sharp({
     create: { width: 800, height: 600, channels: 3, background: "#309975" },
   })
@@ -54,7 +53,6 @@ test("a new account sets a photo, a display name and its free colours", async ({
   await expect(status).toHaveText("> photo removed");
   await expect(headerPhoto).toHaveCount(0);
 
-  // AUTH-05: same rules as a nickname.
   const name = page.getByRole("textbox", { name: "Display name" });
   const saveName = page.locator("form").filter({ has: name }).getByRole("button", { name: "Save" });
   await name.fill("x");
@@ -66,7 +64,6 @@ test("a new account sets a photo, a display name and its free colours", async ({
   await expect(page.getByText("> name saved")).toBeVisible();
   await expect(page.getByRole("link", { name: `My account (${newName})` })).toBeVisible();
 
-  // Colours: the free ones can be worn, the others wait for races.
   await expect(page.getByText("> 0 races · 0 wins · best 0 WPM")).toBeVisible();
   await expect(page.getByRole("radio", { name: /^Sky/ })).toBeDisabled();
   await expect(page.getByRole("radio", { name: /^Midnight/ })).toBeDisabled();

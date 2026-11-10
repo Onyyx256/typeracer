@@ -3,7 +3,7 @@ import { e2eName } from "./database";
 
 // A whole race between two browsers: the host types the text to the end,
 // with a mistake fixed on the way; the guest gives up. Both pages then
-// show the results (COURSE-02 to COURSE-10, RES-01, RES-02).
+// show the results.
 
 const PASSWORD = "e2e-password-1234";
 
@@ -36,7 +36,6 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   await expect(host).toHaveURL(/\/en\/rooms\/[A-HJKMNP-Z2-9]{6}$/);
   const code = host.url().split("/").at(-1) ?? "";
 
-  // Alone, the host can't start (COURSE-02).
   const start = host.getByRole("button", { name: "Start the race" });
   await expect(start).toBeDisabled();
   await expect(host.getByText("at least 2 runners are needed")).toBeVisible();
@@ -49,13 +48,12 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   await joinDialog.getByLabel("Name").fill(nickname);
   await joinDialog.getByRole("button", { name: "Join as a runner" }).click();
   await expect(guest.getByRole("button", { name: "Leave the room" })).toBeVisible();
-  // Only the host gets the button.
   await expect(guest.getByRole("button", { name: "Start the race" })).toHaveCount(0);
 
   await expect(start).toBeEnabled();
   await start.click();
 
-  // Both pages count down together, with the text already shown (COURSE-03).
+  // Both pages count down together.
   await expect(host.getByText("The race starts in")).toBeVisible();
   await expect(guest.getByText("The race starts in")).toBeVisible();
   const text = (await host.locator('p[aria-label="Text to type"]').innerText()).trim();
@@ -63,7 +61,6 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   await expect(guest.locator('p[aria-label="Text to type"]')).toHaveText(text);
   await expect(host.getByText("The race starts in")).toBeHidden({ timeout: 6_000 });
 
-  // The guest gives up, after cancelling once (COURSE-07).
   await guest.getByRole("button", { name: "Give up" }).click();
   const abandon = guest.getByRole("dialog", { name: "Give up the race?" });
   await abandon.getByRole("button", { name: "Keep racing" }).click();
@@ -75,14 +72,12 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
     "gave up",
   );
 
-  // The host types at a human pace, with one mistake fixed (strict mode).
   await host.getByLabel("Type the text here").focus();
   const wrong = text[0] === "q" ? "z" : "q";
   await host.keyboard.type(wrong, { delay: 60 });
   await host.keyboard.press("Backspace");
   await host.keyboard.type(text, { delay: 60 });
 
-  // Everyone done: both pages switch to the results (COURSE-09).
   for (const page of [host, guest]) {
     await expect(page.getByRole("heading", { name: "Results" })).toBeVisible();
     const rows = page.getByRole("table", { name: "Full ranking of the race" }).getByRole("row");
@@ -94,12 +89,10 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   }
   // One wrong key out of all of them, so accuracy is below 100 %.
   await expect(host.getByRole("row").nth(1).getByRole("cell").nth(4)).not.toHaveText("100.0%");
-  // The host can start a new game (COURSE-11); others wait.
   await expect(host.getByRole("button", { name: "Start the race" })).toHaveCount(0);
   await expect(guest.getByText("the host can start a new game")).toBeVisible();
   await host.getByRole("button", { name: "New game" }).click();
 
-  // Both pages go back to the waiting room, where the next race starts (COURSE-01).
   for (const page of [host, guest]) {
     await expect(page.getByRole("heading", { name: "Results" })).toHaveCount(0);
     await expect(page.getByText("> Waiting")).toBeVisible();
