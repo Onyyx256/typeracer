@@ -17,6 +17,7 @@ erDiagram
     texts |o--o{ races : "utilisé dans"
     races ||--o{ race_results : "donne"
     users ||--o{ race_results : "obtient"
+    users ||--o| user_avatars : "a"
 
     users {
         uuid id PK
@@ -24,7 +25,13 @@ erDiagram
         text display_name
         boolean is_guest
         text password_hash
-        text avatar_url
+        text stem_color "cosmétique"
+        text petal_color "cosmétique"
+    }
+    user_avatars {
+        uuid user_id PK, FK
+        bytea image "WebP 256 px"
+        timestamptz updated_at
     }
     accounts {
         uuid id PK

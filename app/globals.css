@@ -170,3 +170,29 @@ span.podium-pop {
 .weather-pop {
   animation: weather-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
+
+/*
+ * Cosmetics (lib/profile/cosmetics.ts): each class recolours the flowers
+ * inside it. Stems have a value per theme, so they read on the race bed
+ * (green in the light theme, navy in the dark one) and on the page.
+ */
+.stem-fern { --stem: #bfe8a6; }
+.stem-sky { --stem: #a9def2; }
+.stem-coral { --stem: #ffb48c; }
+.stem-lilac { --stem: #dcc6f2; }
+.stem-gold { --stem: #ffd166; }
+.stem-ink { --stem: #2e1f33; }
+
+[data-theme="dark"] .stem-fern { --stem: #8fd99b; }
+[data-theme="dark"] .stem-sky { --stem: #6fb8d6; }
+[data-theme="dark"] .stem-coral { --stem: #f08a5d; }
+[data-theme="dark"] .stem-lilac { --stem: #b28ce0; }
+[data-theme="dark"] .stem-gold { --stem: #f5c04a; }
+[data-theme="dark"] .stem-ink { --stem: #f3f2dc; }
+
+.petal-snow { --petal: #fdfdf8; --petal-line: #5b5563; }
+.petal-sunflower { --petal: #ffd166; --petal-line: #8a4f00; }
+.petal-cornflower { --petal: #b9d4ff; --petal-line: #2c4f9e; }
+.petal-poppy { --petal: #ff8a7a; --petal-line: #8f1d1d; }
+.petal-violet { --petal: #d7c4f5; --petal-line: #5b2a91; }
+.petal-midnight { --petal: #3a3f5c; --petal-line: #f3d3e2; }

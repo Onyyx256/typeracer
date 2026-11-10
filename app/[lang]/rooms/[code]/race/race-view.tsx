@@ -1,6 +1,7 @@
 "use client";
 
 import type { Locale } from "@/lib/i18n/config";
+import type { PlayerLooks } from "@/lib/profile/look";
 import type { RaceDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { AbandonRace } from "@/app/components/race/abandon-race";
 import { Countdown } from "@/app/components/race/countdown";
@@ -18,12 +19,14 @@ import { useRace } from "./use-race";
 export function RaceView({
   code,
   userId,
+  looks,
   dict,
   roomDict,
   locale,
 }: {
   code: string;
   userId: string | null;
+  looks: PlayerLooks;
   dict: RaceDictionary;
   roomDict: RoomDictionary;
   locale: Locale;
@@ -43,7 +46,7 @@ export function RaceView({
     <div className="grid gap-4">
       {/* The countdown shows over the garden bed, so it takes no room once the race is on. */}
       <div className="relative">
-        <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
+        <RaceTrack entries={track} youId={userId} looks={looks} dict={dict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.endsAt} dict={dict} />
         {/* BONUS-03: the targeted runner is told what fell on them, over the track like the countdown. */}
         {racing && (

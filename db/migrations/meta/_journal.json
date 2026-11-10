@@ -64,6 +64,13 @@
       "when": 1794270948262,
       "tag": "0008_add_race_result_bonuses",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794274626448,
+      "tag": "0009_add_avatars_and_cosmetics",
+      "breakpoints": true
     }
   ]
 }

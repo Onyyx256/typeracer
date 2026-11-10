@@ -11,6 +11,7 @@ import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import { MIN_RUNNERS } from "@/lib/race/manager";
 import { getLatestRaceResults } from "@/lib/race/results";
+import { getLooks } from "@/lib/profile/profile";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
@@ -78,6 +79,11 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   // COURSE-01: the page follows the room's state, which only the server changes.
   const inRace = room.state === "countdown" || room.state === "racing";
   const results = room.state === "results" ? await getLatestRaceResults(room.code) : null;
+  // The podium can show someone who has left the room since.
+  const looks = await getLooks([
+    ...room.members.map((entry) => entry.userId),
+    ...(results?.results.flatMap((row) => (row.userId ? [row.userId] : [])) ?? []),
+  ]);
   const settings = { ...room.config, visibility: room.visibility, capacity: room.capacity };
 
   return (
@@ -112,6 +118,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           <RaceView
             code={room.code}
             userId={user?.id ?? null}
+            looks={looks}
             dict={dict.race}
             roomDict={t}
             locale={locale}
@@ -121,6 +128,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           <RaceResults
             view={results}
             userId={user?.id ?? null}
+            looks={looks}
             dict={dict.results}
             roomDict={t}
             locale={locale}
