@@ -33,7 +33,7 @@ export async function generateMetadata({
 
 export default function RoomPage({ params }: PageProps<"/[lang]/rooms/[code]">) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 sm:px-8">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
       {/* The room depends on the code and the session, so it renders per request. */}
       <Suspense fallback={null}>
         <Room params={params} />
@@ -87,8 +87,9 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
     >
       {/* Members, host and settings re-render as soon as they change. */}
       <LiveRoom code={room.code} />
-      <div className="grid gap-8">
-        <header className="grid gap-4">
+      {/* Tighter during the race, so the whole race fits on screen. */}
+      <div className={`grid ${inRace ? "gap-5" : "gap-8"}`}>
+        <header className={`grid ${inRace ? "gap-2" : "gap-4"}`}>
           {/* The leave button lines up with the title, not the state below it. */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-display text-4xl leading-tight font-semibold">
