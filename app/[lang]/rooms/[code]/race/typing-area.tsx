@@ -58,6 +58,7 @@ export function TypingArea({
   action?: ReactNode;
 }) {
   const [text, setText] = useState(initial.text);
+  const [removed, setRemoved] = useState(initial.removed);
   const typing = useTyping({ text, errorMode, startsAt, endsAt, initial: fromServer(initial) });
   const { set, press, state } = typing;
   const pending = useRef<string[]>([]);
@@ -112,6 +113,7 @@ export function TypingArea({
     synced.current = syncId;
     sent.current = [];
     setText(initial.text);
+    setRemoved(initial.removed);
     set(applyKeys(initial.text, errorMode, fromServer(initial), pending.current));
   }, [syncId, initial, errorMode, set]);
 
@@ -126,12 +128,14 @@ export function TypingArea({
       sent.current = after;
       const replay = [...after.flatMap((batch) => batch.keys), ...pending.current];
       setText(payload.you.text);
+      setRemoved(payload.you.removed);
       set(applyKeys(payload.you.text, errorMode, fromServer(payload.you), replay));
     };
     // A bonus changed the end of the text; what's typed stays valid.
     const onText = (payload: RaceTextPayload) => {
       if (payload.code === code) {
         setText(payload.text);
+        setRemoved(payload.removed);
       }
     };
     socket.on(EVENTS.raceResync, onResync);
@@ -153,6 +157,7 @@ export function TypingArea({
       typing={typing}
       onKeys={onKeys}
       glare={glare}
+      removed={removed}
       dict={dict}
       locale={locale}
       action={action}

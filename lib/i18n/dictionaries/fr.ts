@@ -237,8 +237,9 @@ export const fr = {
       night: "nuit",
       glare: "soleil aveuglant",
     },
+    removedWords: "retirés par la pluie :",
     bonusNotices: {
-      rain: "Pluie et soleil ! Ton texte vient de raccourcir.",
+      rain: "Pluie et soleil ! Les mots barrés sont retirés de ton texte.",
       night: "La nuit tombe… Ton texte vient de s'allonger.",
       glare: "Soleil aveuglant ! Tes prochains mots sont difficiles à lire pendant quelques secondes.",
     },

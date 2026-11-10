@@ -114,6 +114,7 @@ export function TypingBox({
   typing: { typing, finishedAt, state },
   onKeys,
   glare = false,
+  removed = "",
   dict,
   locale,
   action,
@@ -126,6 +127,8 @@ export function TypingBox({
   onKeys: (keys: string[]) => void;
   /** A blinding sun hides the next words (BONUS-03). */
   glare?: boolean;
+  /** Words rain took off the end, shown crossed out after the text (BONUS-03). */
+  removed?: string;
   dict: RaceDictionary;
   locale: Locale;
   /** Shown at the end of the stats row (the give up button). */
@@ -267,6 +270,13 @@ export function TypingBox({
             className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap select-none"
           >
             <TextChars text={text} input={typing.input} glare={glare} />
+            {/* After the characters, so the caret's index into them stays right. */}
+            {removed && (
+              <span>
+                <span className="sr-only">{dict.removedWords}</span>{" "}
+                <span className="text-muted/70 line-through decoration-accent-text decoration-2">{removed}</span>
+              </span>
+            )}
           </p>
         </div>
         {/* Invisible over the text; clicks go through it so the wheel scrolls the text. */}

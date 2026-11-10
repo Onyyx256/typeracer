@@ -235,8 +235,9 @@ export const en: Dictionary = {
       night: "night",
       glare: "blinding sun",
     },
+    removedWords: "removed by the rain:",
     bonusNotices: {
-      rain: "Rain and sun! Your text just got shorter.",
+      rain: "Rain and sun! The crossed-out words are gone from your text.",
       night: "Night falls… Your text just got longer.",
       glare: "Blinding sun! Your next words are hard to read for a few seconds.",
     },
