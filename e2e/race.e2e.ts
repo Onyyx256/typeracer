@@ -30,6 +30,8 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   // Random words: the e2e database has no passage corpus.
   await host.getByRole("radio", { name: /^Random/ }).check({ force: true });
   await host.getByLabel("Length").fill("10");
+  // A night would add words while the host types the text; bonuses have their own test.
+  await host.getByRole("switch", { name: /^Catch-up bonuses/ }).uncheck({ force: true });
   await host.getByRole("button", { name: "Create the room" }).click();
   await expect(host).toHaveURL(/\/en\/rooms\/[A-HJKMNP-Z2-9]{6}$/);
   const code = host.url().split("/").at(-1) ?? "";
