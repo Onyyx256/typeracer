@@ -69,7 +69,7 @@ export function CosmeticsForm({
       <div
         role="img"
         aria-label={`${dict.preview}: ${dict.stems[choice.stem]}, ${dict.petals[choice.petal]}`}
-        className={`grid justify-items-center bg-panel p-4 rounded-leaf ${cosmeticClasses(choice)}`}
+        className={`grid w-36 justify-items-center bg-panel p-4 rounded-leaf sm:w-auto ${cosmeticClasses(choice)}`}
       >
         <GrowingStem progress={1} zoomed className="h-48 w-auto" />
       </div>
