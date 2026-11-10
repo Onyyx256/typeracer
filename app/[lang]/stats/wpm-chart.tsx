@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useChartWidth } from "@/app/components/charts/use-chart-width";
 import { niceScale } from "@/lib/stats/series";
 
 export type WpmChartPoint = {
@@ -38,23 +39,8 @@ export function WpmChart({
   locale: string;
 }) {
   const router = useRouter();
-  const frame = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(640);
-  const [measured, setMeasured] = useState(false);
+  const { ref: frame, width, measured } = useChartWidth();
   const [active, setActive] = useState<number | null>(null);
-
-  useEffect(() => {
-    const element = frame.current;
-    if (!element) {
-      return;
-    }
-    const observer = new ResizeObserver(([entry]) => {
-      setWidth(Math.max(280, entry.contentRect.width));
-      setMeasured(true);
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const format = (value: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
   const scale = niceScale(
