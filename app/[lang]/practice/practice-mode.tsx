@@ -26,6 +26,7 @@ import {
 } from "@/lib/practice/settings";
 import { practiceTextAction, type PracticeTextError } from "./actions";
 import { BotList } from "./bot-list";
+import { InRoomNotice } from "./in-room-notice";
 import { PRACTICE_PLAYER, PracticeRace } from "./practice-race";
 
 type Source = { title: string; author: string } | null;
@@ -65,6 +66,8 @@ export function PracticeMode({
   const [settings, setSettings] = useState<PracticeSettings>(() => defaultPracticeSettings(locale));
   const [phase, setPhase] = useState<Phase>({ kind: "setup" });
   const [error, setError] = useState<PracticeTextError | null>(null);
+  // Set when the server refuses because a room was joined meanwhile (another tab).
+  const [roomCode, setRoomCode] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function update(changes: Partial<PracticeSettings>) {
@@ -82,6 +85,7 @@ export function PracticeMode({
       const result = await practiceTextAction(settings);
       if (!result.ok) {
         setError(result.error);
+        setRoomCode(result.error === "inRoom" ? (result.currentCode ?? null) : null);
         setPhase({ kind: "setup" });
         return;
       }
@@ -109,6 +113,10 @@ export function PracticeMode({
       <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">_</span>
     </p>
   );
+
+  if (roomCode) {
+    return <InRoomNotice code={roomCode} dict={dict} locale={locale} />;
+  }
 
   if (phase.kind === "race") {
     return (

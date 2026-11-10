@@ -287,6 +287,8 @@ export const en: Dictionary = {
     again: "Go again",
     settings: "Change the settings",
     notSaved: "Practice results aren't saved.",
+    inRoom: "You're in room {code}. Leave it to practice.",
+    backToRoom: "Back to {code}",
     abandonDialog: {
       title: "Give up this practice?",
       lead: "The race stops here and you see your results.",
@@ -296,6 +298,7 @@ export const en: Dictionary = {
     errors: {
       invalid: "a setting isn't valid",
       noWords: "no word matches these letter filters",
+      inRoom: "you're in a room: leave it to practice",
       unavailable: "can't get the text ready right now, try again later",
     },
   },

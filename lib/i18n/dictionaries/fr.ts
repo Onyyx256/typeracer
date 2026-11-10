@@ -289,6 +289,8 @@ export const fr = {
     again: "Recommencer",
     settings: "Changer les réglages",
     notSaved: "Les résultats d'entraînement ne sont pas enregistrés.",
+    inRoom: "Tu es dans la salle {code}. Quitte-la pour t'entraîner.",
+    backToRoom: "Retourner dans {code}",
     abandonDialog: {
       title: "Abandonner l'entraînement ?",
       lead: "La course s'arrête ici et tu vois tes résultats.",
@@ -298,6 +300,7 @@ export const fr = {
     errors: {
       invalid: "un réglage n'est pas valide",
       noWords: "aucun mot ne correspond à ces filtres de lettres",
+      inRoom: "tu es dans une salle : quitte-la pour t'entraîner",
       unavailable: "impossible de préparer le texte pour le moment, réessaie plus tard",
     },
   },

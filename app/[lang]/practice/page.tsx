@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getViewer } from "@/lib/auth/current-user";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { findCurrentRoom } from "@/lib/rooms/rooms";
+import { InRoomNotice } from "./in-room-notice";
 import { PracticeMode } from "./practice-mode";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -9,7 +11,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: dict.practice.title };
 }
 
-/** Practice is open to everyone: signed in, guest, or no session at all. */
+/**
+ * Practice is open to everyone: signed in, guest, or no session at all,
+ * as long as they aren't in a room. The text action checks that too.
+ */
 export default async function PracticePage() {
   const dict = await getDictionary();
 
@@ -27,6 +32,10 @@ export default async function PracticePage() {
 
 async function Practice() {
   const [viewer, dict, locale] = await Promise.all([getViewer(), getDictionary(), getLocale()]);
+  const current = viewer ? await findCurrentRoom(viewer.id) : null;
+  if (current) {
+    return <InRoomNotice code={current.code} dict={dict.practice} locale={locale} />;
+  }
 
   // Only the strings the page uses are sent to the browser.
   return (
