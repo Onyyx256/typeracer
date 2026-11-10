@@ -46,6 +46,7 @@ export function TypingArea({
   syncId,
   dict,
   locale,
+  action,
 }: {
   code: string;
   text: string;
@@ -56,6 +57,8 @@ export function TypingArea({
   syncId: number;
   dict: RaceDictionary;
   locale: Locale;
+  /** Shown at the end of the stats row (the give up button). */
+  action?: React.ReactNode;
 }) {
   const [typing, setTyping] = useState<TypingState>(() => fromServer(initial));
   const [finishedAt, setFinishedAt] = useState<number | null>(null);
@@ -251,6 +254,7 @@ export function TypingArea({
 
   return (
     <div className="grid gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
       <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
         <Stat label={dict.wpm} value={formatNumber(locale, wpm)} />
         <Stat label={dict.accuracy} value={formatPercent(locale, acc / 100)} />
@@ -258,6 +262,8 @@ export function TypingArea({
           <Stat label={dict.timeLeft} value={`${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`} />
         )}
       </dl>
+      {action}
+      </div>
 
       {/* Clicking anywhere in the box focuses the hidden field. */}
       <div

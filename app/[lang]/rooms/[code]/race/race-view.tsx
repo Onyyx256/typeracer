@@ -34,18 +34,20 @@ export function RaceView({
   const racing = race.you !== null && mine?.status === "racing";
 
   return (
-    <div className="grid gap-6">
-      <div className="flex min-h-14 flex-wrap items-center justify-between gap-4">
+    <div className="grid gap-4">
+      {/* The countdown shows over the garden bed, so it takes no room once the race is on. */}
+      <div className="relative">
+        <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.endsAt} dict={dict} />
-        {racing && <AbandonRace dict={dict} />}
       </div>
-
-      <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
 
       {racing && race.you !== null && (
         <>
           {/* DES-06: no race on a phone, only the track. */}
-          <p className="font-mono text-sm text-accent-text md:hidden">&gt; {dict.mobile}</p>
+          <div className="flex flex-wrap items-center justify-between gap-4 md:hidden">
+            <p className="font-mono text-sm text-accent-text">&gt; {dict.mobile}</p>
+            <AbandonRace dict={dict} />
+          </div>
           <div className="hidden md:block">
             <TypingArea
               code={code}
@@ -57,6 +59,8 @@ export function RaceView({
               syncId={race.syncId}
               dict={dict}
               locale={locale}
+              // Next to the stats, far from "Leave the room", which doesn't ask first.
+              action={<AbandonRace dict={dict} />}
             />
           </div>
         </>
@@ -92,9 +96,18 @@ function Countdown({
   } else if (now < startsAt + 1_000) {
     content = dict.go;
   }
+  // Always in the page, so screen readers announce each change (aria-live).
   return (
-    <p role="status" aria-live="polite" className="font-display text-3xl font-semibold">
-      {content}
+    <p
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none absolute inset-0 grid place-items-center"
+    >
+      {content && (
+        <span className="bg-background/90 px-8 py-4 font-display text-4xl font-semibold text-foreground shadow-lg rounded-leaf">
+          {content}
+        </span>
+      )}
     </p>
   );
 }
