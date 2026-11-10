@@ -15,15 +15,9 @@ type JoinRoomProps = {
   dict: RoomDictionary;
   locale: Locale;
   code: string;
-  /** No seat left for a runner; spectators can still come in. */
   full: boolean;
-  /** The room the visitor is in already, if any (SALLE-06). */
   elsewhere: string | null;
-  /**
-   * What the name field starts with: the account's display name or the
-   * guest's nickname, empty for a visitor without a session (who joins as a
-   * guest, AUTH-02).
-   */
+  /** Empty for a visitor without a session, who joins as a guest. */
   defaultName: string;
   hasSession: boolean;
 };
@@ -35,7 +29,6 @@ const secondary =
 
 const LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
 
-/** Everyone picks their name for the room on the way in; it must be free there. */
 export function JoinRoom({
   dict,
   locale,

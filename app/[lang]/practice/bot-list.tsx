@@ -7,16 +7,12 @@ import type { PracticeDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 import { PRACTICE_BOTS_MAX, type PracticeBot } from "@/lib/practice/settings";
 
-/** A new bot starts in the middle of the range. */
 const DEFAULT_LEVEL: BotLevel = "intermediate";
 
 const button =
   "flex h-10 cursor-pointer items-center gap-2 border border-line px-4 text-sm font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-line rounded-leaf";
 
-/**
- * CONF-10: add and remove bots, each with a level (BOT-01). They're only
- * configured for now; the note says so until the bot engine exists.
- */
+/** Bots are only configured for now; the note says so until the bot engine exists. */
 export function BotList({
   dict,
   bots,
@@ -88,7 +84,6 @@ function BotRow({
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 border border-line bg-background px-4 py-3 rounded-leaf">
       <span className="flex items-center gap-2">
         <span className="font-medium">{name}</span>
-        {/* BOT-04: always marked as a bot. */}
         <span className="font-mono text-xs tracking-wide text-muted uppercase">{dict.badge}</span>
       </span>
       <span className="flex flex-1 flex-wrap items-center justify-end gap-3">

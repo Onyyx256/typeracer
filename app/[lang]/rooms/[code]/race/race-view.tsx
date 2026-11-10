@@ -12,10 +12,7 @@ import { EVENTS } from "@/lib/realtime/events";
 import { getSocket } from "@/lib/realtime/client";
 import { useRace } from "./use-race";
 
-/**
- * The countdown and the race (DÉCOMPTE, EN_COURSE). Runners get the typing
- * area; spectators and visitors get the track only (COURSE-05).
- */
+/** Runners get the typing area; spectators and visitors get the track only. */
 export function RaceView({
   code,
   userId,
@@ -39,7 +36,6 @@ export function RaceView({
 
   const mine = track.find((entry) => entry.userId === userId);
   const racing = race.you !== null && mine?.status === "racing";
-  // The server marks the runner as abandoned.
   const abandon = <AbandonRace dict={dict} onConfirm={() => getSocket().emit(EVENTS.raceAbandon)} />;
 
   return (
@@ -48,7 +44,7 @@ export function RaceView({
       <div className="relative">
         <RaceTrack entries={track} youId={userId} looks={looks} dict={dict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.endsAt} dict={dict} />
-        {/* BONUS-03: the targeted runner is told what fell on them, over the track like the countdown. */}
+        {/* The targeted runner is told what fell on them, over the track like the countdown. */}
         {racing && (
           <p
             role="status"
@@ -67,7 +63,7 @@ export function RaceView({
 
       {racing && race.you !== null && (
         <>
-          {/* DES-06: no race on a phone, only the track. */}
+          {/* No race on a phone, only the track. */}
           <div className="flex flex-wrap items-center justify-between gap-4 md:hidden">
             <p className="font-mono text-sm text-accent-text">&gt; {dict.mobile}</p>
             {abandon}

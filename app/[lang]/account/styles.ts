@@ -1,4 +1,3 @@
-/** Button styles shared by the account forms. */
 export const primaryButton =
   "h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 export const secondaryButton =

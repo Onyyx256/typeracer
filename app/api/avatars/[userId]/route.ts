@@ -1,7 +1,6 @@
 import * as z from "zod";
 import { getAvatarImage } from "@/lib/profile/profile";
 
-/** AUTH-04: a user's profile photo, already resized when it was uploaded. */
 export async function GET(request: Request, ctx: RouteContext<"/api/avatars/[userId]">) {
   const parsed = z.uuid().safeParse((await ctx.params).userId);
   const image = parsed.success ? await getAvatarImage(parsed.data) : null;

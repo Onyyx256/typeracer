@@ -16,7 +16,6 @@ export default async function StatsPage() {
       <h1 className="font-display text-4xl leading-tight font-semibold">
         {dict.statsPage.heading}
       </h1>
-      {/* Reads the session cookie, so it streams in after the static shell. */}
       <Suspense fallback={null}>
         <Stats />
       </Suspense>
@@ -27,7 +26,7 @@ export default async function StatsPage() {
 async function Stats() {
   const [, dict] = await Promise.all([requireUser(), getDictionary()]);
 
-  // Filled in once races are saved (AUTH-06, HIST-01).
+  // Filled in once races are saved.
   return (
     <p className="mt-6 font-mono text-sm text-muted">
       &gt; {dict.statsPage.empty}

@@ -14,17 +14,12 @@ import type {
   RoomDictionary,
 } from "@/lib/i18n/dictionaries/fr";
 
-/** The practice runner's id in the engine; there is no account behind it. */
 export const PRACTICE_PLAYER = "practice-player";
 
-/** How often the track and the WPM samples are refreshed (COURSE-05: ~4+ per second). */
+/** At least 4 updates per second. */
 const TICK_MS = 200;
 
-/**
- * A practice race, run in this browser by the same engine as a room's
- * (lib/race/engine.ts): same countdown, typing rules, time limit and
- * numbers. Nothing goes to the server, so nothing is saved.
- */
+/** Runs in this browser with the same engine as a room. Nothing is saved. */
 export function PracticeRace({
   race,
   hasBots,
@@ -35,7 +30,6 @@ export function PracticeRace({
   locale,
 }: {
   race: Race;
-  /** Bots were asked for, but don't race yet. */
   hasBots: boolean;
   onEnd: (results: ParticipantResult[]) => void;
   dict: PracticeDictionary;
@@ -99,14 +93,13 @@ export function PracticeRace({
 
   return (
     <div className="grid gap-4">
-      {/* The countdown shows over the garden bed, like in a room. */}
       <div className="relative">
         <RaceTrack entries={track} youId={PRACTICE_PLAYER} dict={raceDict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.deadline} dict={raceDict} />
       </div>
       {hasBots && <p className="font-mono text-sm text-muted">&gt; {dict.bots.soon}</p>}
 
-      {/* DES-06: no race on a phone, only the track. */}
+      {/* No race on a phone, only the track. */}
       <div className="flex flex-wrap items-center justify-between gap-4 md:hidden">
         <p className="font-mono text-sm text-accent-text">&gt; {raceDict.mobile}</p>
         {abandon}

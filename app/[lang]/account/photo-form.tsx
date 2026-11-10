@@ -12,7 +12,7 @@ type Copy = Dictionary["accountPage"];
 /** Same limit as the server; checked here too so a big file isn't sent for nothing. */
 const MAX_BYTES = 2 * 1024 * 1024;
 
-/** AUTH-04: the photo is sent as soon as it's chosen. */
+/** The photo is sent as soon as it's chosen. */
 export function PhotoForm({
   name,
   avatarUrl,

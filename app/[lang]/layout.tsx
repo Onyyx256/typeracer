@@ -26,12 +26,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 async function SessionPresence() {
-  // Guests count too: their seat is freed when they close the page (SALLE-08).
+  // Guests count too: their seat is freed when they close the page.
   const [viewer, dict, locale] = await Promise.all([getViewer(), getDictionary(), getLocale()]);
   return (
     <>
       <Presence userId={viewer?.id ?? null} />
-      {/* Only a member can be told their room was deleted (SALLE-08). */}
       {viewer && <RoomClosed dict={dict.room.closed} locale={locale} />}
     </>
   );
@@ -72,7 +71,6 @@ export default async function RootLayout({
         {/* In the layout so every page, including 404 and error pages, gets the language switch. */}
         <SiteHeader />
         {children}
-        {/* Reads the session cookie, so it streams in after the static shell. */}
         <Suspense fallback={null}>
           <SessionPresence />
         </Suspense>

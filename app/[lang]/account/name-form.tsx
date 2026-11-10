@@ -11,7 +11,6 @@ import { primaryButton } from "./styles";
 
 const LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
 
-/** AUTH-05: the display name, with the same rules as a nickname. */
 export function NameForm({
   displayName,
   dict,

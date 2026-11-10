@@ -42,7 +42,7 @@ const primary =
 const secondary =
   "h-11 cursor-pointer border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf";
 
-/** The practice page, entirely in this browser once the text is fetched. */
+/** Runs entirely in this browser once the text is fetched. */
 export function PracticeMode({
   playerName,
   isGuest,
@@ -54,7 +54,6 @@ export function PracticeMode({
   locale,
 }: {
   playerName: string;
-  /** No account: shown with the guest badge, like in a room. */
   isGuest: boolean;
   dict: PracticeDictionary;
   settingsDict: CreateRoomDictionary;
@@ -89,7 +88,7 @@ export function PracticeMode({
         setPhase({ kind: "setup" });
         return;
       }
-      // Created now, so the countdown starts as the text appears (COURSE-03).
+      // Created now, so the countdown starts as the text appears.
       const race = new Race({
         text: result.text,
         errorMode: settings.errorMode,

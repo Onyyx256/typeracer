@@ -8,7 +8,6 @@ import { startRaceAction, type StartRaceActionResult } from "../../actions";
 
 type StartError = Extract<StartRaceActionResult, { ok: false }>["error"];
 
-/** COURSE-02: the host's button, under the room settings, in the waiting room. */
 export function StartRace({
   dict,
   runners,

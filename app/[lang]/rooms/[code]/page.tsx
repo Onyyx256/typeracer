@@ -46,7 +46,6 @@ export default function RoomPage({ params }: PageProps<"/[lang]/rooms/[code]">) 
 async function Room({ params }: { params: Promise<{ code: string }> }) {
   const [{ code: raw }, user, dict, locale] = await Promise.all([
     params,
-    // Anyone may look at a public room; a visitor without a session joins as a guest (AUTH-02).
     getViewer(),
     getDictionary(),
     getLocale(),
@@ -61,7 +60,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
 
   const room = await getRoom(parsed.data);
   const member = user ? room?.members.find((entry) => entry.userId === user.id) : undefined;
-  // SALLE-07: someone the host removed sees why, whatever the room's visibility.
+  // Someone the host removed sees why, whatever the room's visibility.
   if (room && user && !member && (await isBanned(user.id, room.code))) {
     return <Kicked dict={dict.room} locale={locale} />;
   }
@@ -76,7 +75,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   const joinable = JOINABLE_STATES.includes(room.state);
   const t = dict.room;
   const isHost = user !== null && room.hostId === user.id;
-  // COURSE-01: the page follows the room's state, which only the server changes.
   const inRace = room.state === "countdown" || room.state === "racing";
   const results = room.state === "results" ? await getLatestRaceResults(room.code) : null;
   // The podium can show someone who has left the room since.
@@ -91,7 +89,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
     <div
       className={`grid gap-10 lg:items-start ${inRace ? "" : "lg:grid-cols-[minmax(0,1fr)_20rem]"}`}
     >
-      {/* Members, host and settings re-render as soon as they change. */}
       <LiveRoom code={room.code} />
       {/* Tighter during the race, so the whole race fits on screen. */}
       <div className={`grid ${inRace ? "gap-5" : "gap-8"}`}>
@@ -179,7 +176,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             <div className="mt-4">
               <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
             </div>
-            {/* CONF: the host changes the settings between races, never during one. */}
             {isHost && (
               <EditSettings
                 dict={t}
@@ -189,7 +185,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               />
             )}
           </aside>
-          {/* COURSE-11: the results go back to the waiting room, where the next race starts. */}
           {isHost && room.state === "waiting" && (
             <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
           )}
@@ -233,7 +228,7 @@ function MemberList({
   host: string;
   guest: string;
   userId: string | null;
-  /** Only for the host, who may remove the other members (SALLE-07) or hand over the role. */
+  /** Only for the host. */
   kickDict: RoomDictionary | null;
 }) {
   return (

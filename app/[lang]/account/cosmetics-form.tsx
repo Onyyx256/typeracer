@@ -24,7 +24,6 @@ function unlockText(unlock: Unlock, dict: Copy, locale: Locale): string {
   return unlock ? plural(locale, dict.unlock[unlock.kind], unlock.at, { count: unlock.at }) : "";
 }
 
-/** The two colour pickers, with a live preview on the race bed. */
 export function CosmeticsForm({
   current,
   progress,

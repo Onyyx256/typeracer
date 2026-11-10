@@ -38,7 +38,6 @@ import {
 import { textConfigProblem } from "@/lib/texts/generate";
 
 
-/** Error codes; the forms show them in the visitor's language. */
 export type RoomActionError =
   | RoomError
   | NameError
@@ -50,7 +49,6 @@ export type RoomActionError =
 export type RoomActionResult = {
   ok: false;
   error: RoomActionError;
-  /** With "alreadyInRoom": the room the user is in, to offer going back or leaving it. */
   currentCode?: string;
 };
 
@@ -63,17 +61,15 @@ function logFailure(action: string, error: unknown): void {
   );
 }
 
-/** The session's user, if the row still exists. */
 async function sessionProfile() {
   const userId = await getSessionUserId();
   return userId ? findProfile(userId) : null;
 }
 
 /**
- * The name someone picked for a room (3 to 20 characters, AUTH-02). Any name
- * is allowed, an account's username included; only a name already used in
- * the same room is refused, by the database (nameTaken). The guest badge
- * tells a guest apart from an account of the same name.
+ * Any name is allowed, an account's username included; only a name already
+ * used in the same room is refused, by the database. The guest badge tells
+ * a guest apart from an account of the same name.
  */
 function checkName(input: string): { name: string } | { error: NameError } {
   const parsed = nicknameSchema.safeParse(input);
@@ -84,7 +80,6 @@ function checkName(input: string): { name: string } | { error: NameError } {
   return { name: parsed.data };
 }
 
-/** Checks the name, runs the database call; on success, sends the user to the room page. */
 async function enterRoom(
   action: string,
   lang: Locale,
@@ -109,12 +104,10 @@ const nameInput = z.string().max(200);
 const createRoomInput = z.object({
   lang: localeSchema,
   settings: roomSettingsSchema,
-  /** The host's name in this room. */
   name: nameInput,
   leaveCurrent: z.boolean().default(false),
 });
 
-/** SALLE-01: only signed-in users create rooms, never guests (AUTH-03). */
 export async function createRoomAction(input: unknown): Promise<RoomActionResult> {
   const parsed = createRoomInput.safeParse(input);
   if (!parsed.success) {
@@ -143,7 +136,7 @@ const joinRoomInput = z.object({
   lang: localeSchema,
   code: roomCodeSchema,
   role: z.enum(HOST_ROLES),
-  /** The name in this room; a visitor without a session also becomes a guest under it (AUTH-02). */
+  /** A visitor without a session becomes a guest under this name. */
   name: nameInput,
   leaveCurrent: z.boolean().default(false),
 });
@@ -193,7 +186,6 @@ export async function leaveRoomAction(formData: FormData): Promise<void> {
   redirect(localePath(lang, "/rooms"));
 }
 
-/** Asked before leaving: true when leaving now would delete the room (SALLE-08). */
 export async function leaveClosesRoomAction(): Promise<boolean> {
   const userId = await getSessionUserId();
   if (!userId) {
@@ -212,7 +204,6 @@ const kickMemberInput = z.object({ userId: z.uuid() });
 
 export type KickActionResult = { ok: true } | { ok: false; error: KickError | "invalid" | "unavailable" };
 
-/** SALLE-07: kickMember checks that the session's user hosts the room (SEC-01). */
 export async function kickMemberAction(input: unknown): Promise<KickActionResult> {
   const parsed = kickMemberInput.safeParse(input);
   if (!parsed.success) {
@@ -236,7 +227,6 @@ export type TransferHostActionResult =
   | { ok: true }
   | { ok: false; error: TransferHostError | "invalid" | "unavailable" };
 
-/** transferHost checks that the session's user hosts the room (SEC-01). */
 export async function transferHostAction(input: unknown): Promise<TransferHostActionResult> {
   const parsed = transferHostInput.safeParse(input);
   if (!parsed.success) {
@@ -260,7 +250,6 @@ export type UpdateSettingsActionResult =
   | { ok: true }
   | { ok: false; error: UpdateSettingsError | "invalid" | "noWords" | "unavailable" };
 
-/** Between races; updateRoomSettings checks that the session's user hosts the room (SEC-01). */
 export async function updateRoomSettingsAction(
   input: unknown,
 ): Promise<UpdateSettingsActionResult> {
@@ -289,10 +278,6 @@ export type StartRaceActionResult =
   | { ok: true }
   | { ok: false; error: StartRaceError | "unavailable" };
 
-/**
- * COURSE-02: the host starts the race from the waiting room. startRace
- * checks that the session's user hosts the room (SEC-01).
- */
 export async function startRaceAction(): Promise<StartRaceActionResult> {
   const hostId = await getSessionUserId();
   if (!hostId) {
@@ -310,10 +295,6 @@ export type BackToLobbyActionResult =
   | { ok: true }
   | { ok: false; error: BackToLobbyError | "unavailable" };
 
-/**
- * COURSE-11: "New game" on the results brings the room back to the waiting
- * room. No input; backToLobby checks that the session's user hosts the room (SEC-01).
- */
 export async function backToLobbyAction(): Promise<BackToLobbyActionResult> {
   const hostId = await getSessionUserId();
   if (!hostId) {

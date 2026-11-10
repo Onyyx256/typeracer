@@ -23,7 +23,6 @@ export default async function AccountPage() {
       <h1 className="font-display text-4xl leading-tight font-semibold">
         {dict.accountPage.heading}
       </h1>
-      {/* Reads the session cookie, so it streams in after the static shell. */}
       <Suspense fallback={null}>
         <Account />
       </Suspense>
@@ -42,7 +41,6 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-/** AUTH-04 (photo), AUTH-05 (display name) and the flower colours. */
 async function Account() {
   const [user, dict, locale] = await Promise.all([
     requireUser(),

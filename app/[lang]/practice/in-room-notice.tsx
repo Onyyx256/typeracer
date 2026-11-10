@@ -3,7 +3,6 @@ import { localePath, type Locale } from "@/lib/i18n/config";
 import type { PracticeDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 
-/** Shown instead of practice to someone who is in a room. */
 export function InRoomNotice({
   code,
   dict,

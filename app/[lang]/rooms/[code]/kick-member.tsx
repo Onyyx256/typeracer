@@ -14,7 +14,6 @@ const danger =
 const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 
-/** SALLE-07: shown to the host beside each other member; asks before removing them. */
 export function KickMember({
   dict,
   userId,
@@ -59,7 +58,6 @@ export function KickMember({
       >
         <RemovePersonIcon />
       </button>
-      {/* Same centered native dialog as the join form. */}
       <dialog
         ref={dialog}
         aria-labelledby={titleId}
@@ -93,7 +91,6 @@ export function KickMember({
   );
 }
 
-/** A person with a minus sign: removes someone, doesn't delete anything. */
 function RemovePersonIcon() {
   return (
     <svg

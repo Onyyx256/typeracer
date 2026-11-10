@@ -10,7 +10,6 @@ type ErrorPageProps = {
   retry: () => void;
 };
 
-/** Shown when a page crashes; the layout (header, language switch) stays. */
 export default function ErrorPage({ error, retry }: ErrorPageProps) {
   const locale = localeFromPathname(usePathname());
 
