@@ -189,10 +189,10 @@ Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le
 
 ## Mode entraînement
 
-Une course seul, ouverte à tous (`app/[lang]/practice/`). Elle n'a pas de salle : rien en base, pas de socket.
+Une course seul, ouverte à tous sauf à quelqu'un qui est dans une salle (`app/[lang]/practice/`) : la page le renvoie vers sa salle, et la server action du texte le refuse aussi. Elle n'a pas de salle : rien en base, pas de socket.
 
 1. **Réglages.** Les mêmes champs que pour une salle pour le texte, la limite de temps et le mode d'erreur (`TextSettingsSection`, `RaceRulesFields`), plus une liste de bots : jusqu'à 5, chacun avec un niveau (`lib/practice/settings.ts`, `lib/bots/levels.ts`).
-2. **Texte.** La server action `practiceTextAction` valide les réglages avec Zod et génère le texte comme pour une salle (`lib/texts/generate.ts`). C'est le seul appel au serveur.
+2. **Texte.** La server action `practiceTextAction` refuse quelqu'un qui est dans une salle, valide les réglages avec Zod et génère le texte comme pour une salle (`lib/texts/generate.ts`). C'est le seul appel au serveur.
 3. **Course.** Le navigateur crée un `Race` (`lib/race/engine.ts`), le même moteur que le serveur : décompte de 3 s, règles de frappe, limite de temps, échantillons de MPM et classement. Chaque touche acceptée par `useTyping` lui est passée, et la piste est rafraîchie 5 fois par seconde.
 4. **Résultats.** Le tableau et le podium des salles, avec « Recommencer » (nouveau texte, mêmes réglages) et « Changer les réglages ».
 
