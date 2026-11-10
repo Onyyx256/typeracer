@@ -96,11 +96,11 @@ export function RaceTrack({
                   className="weather-pop absolute top-1 right-1 size-7 text-on-panel"
                 />
               )}
-              {/* As tall as the window allows: the rest of the race page takes about 36rem. */}
+              {/* As tall as the window allows: the rest of the race page takes about 37.5rem. */}
               <GrowingStem
                 progress={progress}
                 zoomed
-                className="h-[clamp(7rem,calc(100dvh-36.5rem),18rem)] w-auto"
+                className="h-[clamp(7rem,calc(100dvh-37.5rem),18rem)] w-auto"
               />
               <span className="flex max-w-full items-center gap-1.5">
                 <Avatar name={entry.name} src={look?.avatarUrl} className="size-6 shrink-0 text-xs" />
@@ -113,11 +113,9 @@ export function RaceTrack({
                   </span>
                 )}
               </span>
-              {/* An effect's name is longer than a status: that line may wrap while it shows. */}
+              {/* An effect's name can wrap to a second line: that line is always kept, so the track never grows when one lands. */}
               <span
-                className={`text-center font-mono text-xs text-on-panel-muted tabular-nums ${
-                  entry.effect ? "" : "whitespace-nowrap"
-                }`}
+                className="line-clamp-2 min-h-[2lh] text-center font-mono text-xs text-on-panel-muted tabular-nums"
                 aria-hidden="true"
               >
                 {entry.wpm} {dict.wpm} ·{" "}
