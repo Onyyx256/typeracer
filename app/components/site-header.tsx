@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import logo from "@/app/icon.png";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { getLooks } from "@/lib/profile/profile";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { Avatar } from "./avatar";
@@ -115,13 +116,15 @@ async function AccountLink() {
     );
   }
 
+  const look = (await getLooks([user.id]))[user.id];
+
   return (
     <Link
       href={localePath(locale, "/account")}
       title={dict.header.account}
       className="rounded-full transition-[filter] hover:brightness-110"
     >
-      <Avatar name={user.displayName} className="size-10 text-lg" />
+      <Avatar name={user.displayName} src={look?.avatarUrl} className="size-10 text-lg" />
       <span className="sr-only">
         {dict.header.account} ({user.displayName})
       </span>
