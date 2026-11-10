@@ -18,7 +18,7 @@ import { getSocket } from "@/lib/realtime/client";
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary } from "@/lib/i18n/dictionaries/fr";
 import { formatNumber, formatPercent } from "@/lib/i18n/format";
-import { useNow } from "./use-race";
+import { useNow } from "@/app/components/race/use-now";
 
 /** Keys go to the server in batches, at most this often (PERF-02: under 10 messages/s). */
 const SEND_EVERY_MS = 150;

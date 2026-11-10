@@ -19,7 +19,7 @@ import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
 import { LeaveRoom } from "./leave-room";
 import { MakeHost } from "./make-host";
-import { RaceResults } from "./race/race-results";
+import { RaceResults } from "@/app/components/race/race-results";
 import { RaceView } from "./race/race-view";
 import { NewGame } from "./race/new-game";
 import { StartRace } from "./race/start-race";

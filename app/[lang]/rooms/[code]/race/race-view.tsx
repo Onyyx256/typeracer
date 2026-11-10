@@ -2,10 +2,11 @@
 
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
-import { AbandonRace } from "./abandon-race";
-import { RaceTrack } from "./race-track";
+import { AbandonRace } from "@/app/components/race/abandon-race";
+import { Countdown } from "@/app/components/race/countdown";
+import { RaceTrack } from "@/app/components/race/race-track";
 import { TypingArea } from "./typing-area";
-import { useNow, useRace } from "./use-race";
+import { useRace } from "./use-race";
 
 /**
  * The countdown and the race (DÉCOMPTE, EN_COURSE). Runners get the typing
@@ -65,37 +66,6 @@ export function RaceView({
       {mine?.status === "abandoned" && <Note text={dict.abandoned} />}
       {race.you === null && <Note text={dict.spectating} />}
     </div>
-  );
-}
-
-/** COURSE-03: the synchronized 3-2-1, then "Go!", then "Time's up!" at the limit. */
-function Countdown({
-  startsAt,
-  endsAt,
-  dict,
-}: {
-  startsAt: number;
-  endsAt: number | null;
-  dict: RaceDictionary;
-}) {
-  const now = useNow(100);
-  let content: React.ReactNode = null;
-  if (now < startsAt) {
-    content = (
-      <>
-        {dict.countdown}{" "}
-        <span className="text-accent-text tabular-nums">{Math.ceil((startsAt - now) / 1000)}</span>
-      </>
-    );
-  } else if (endsAt !== null && now >= endsAt) {
-    content = dict.timeUp;
-  } else if (now < startsAt + 1_000) {
-    content = dict.go;
-  }
-  return (
-    <p role="status" aria-live="polite" className="font-display text-3xl font-semibold">
-      {content}
-    </p>
   );
 }
 
