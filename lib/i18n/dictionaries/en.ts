@@ -17,11 +17,6 @@ export const en: Dictionary = {
     themeTitle: "Switch theme",
     language: "Language",
   },
-  home: {
-    greeting: "Hello {name}",
-    guest: "guest",
-    login: "Log in",
-  },
   notFound: {
     title: "Page not found",
     heading: "Nothing grows here",

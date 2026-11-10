@@ -19,11 +19,6 @@ export const fr = {
     themeTitle: "Changer de thème",
     language: "Langue",
   },
-  home: {
-    greeting: "Bonjour {name}",
-    guest: "invité",
-    login: "Se connecter",
-  },
   notFound: {
     title: "Page introuvable",
     heading: "Rien ne pousse ici",
