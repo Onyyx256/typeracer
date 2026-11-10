@@ -5,9 +5,8 @@ import { lettersOf, splitWords } from "./text-utils";
 export type Complexity = (typeof COMPLEXITIES)[number];
 
 /**
- * CONF-05 for random text: which words each difficulty draws from. The rank
- * is the word's place in the language's frequency list (1 = most frequent).
- * Easy is short everyday words, hard is long and less common ones.
+ * Rank is the word's place in the language's frequency list (1 = most
+ * frequent). Easy is short everyday words, hard is long and less common ones.
  */
 export const WORD_TIERS: Record<
   Complexity,
@@ -18,18 +17,14 @@ export const WORD_TIERS: Record<
   hard: { minRank: 500, maxRank: 10000, minLength: 7, maxLength: 30 },
 };
 
-/** A word outside the language's most frequent ones counts as uncommon. */
 export const COMMON_RANK = 2000;
 
-/** How much the share of uncommon words weighs against the mean word length. */
 export const UNCOMMON_WEIGHT = 5;
 
 /**
- * CONF-05 for coherent text: a passage's score is
- *   mean letters per word + UNCOMMON_WEIGHT × share of uncommon words.
- * Below `easy` it is easy, above `hard` it is hard, medium in between.
- * The cut-offs split each language's corpus roughly in thirds (French words
- * are longer, so its cut-offs are higher).
+ * A passage's score is mean letters per word + UNCOMMON_WEIGHT × share of
+ * uncommon words. The cut-offs split each corpus roughly in thirds (French
+ * words are longer, so its cut-offs are higher).
  */
 export const SCORE_CUTOFFS: Record<Locale, { easy: number; hard: number }> = {
   en: { easy: 5.4, hard: 5.9 },

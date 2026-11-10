@@ -20,18 +20,18 @@ import { COUNTDOWN_MS, Race, type BonusEvent, type RaceParticipant } from "./eng
 import { saveRace } from "./results";
 
 /**
- * Runs the races (COURSE-01): the server makes every transition, with
- * real timers around the pure engine. Races live in memory only; the
- * database gets the room's state and, at the end, the results (PERF-02).
+ * The server makes every transition, with real timers around the pure
+ * engine. Races live in memory only; the database gets the room's state
+ * and, at the end, the results.
  */
 
-/** 5 track updates a second, smoothed in the browser (COURSE-05). */
+/** Smoothed in the browser. */
 export const TRACK_INTERVAL_MS = 200;
 
-/** The host starts from the waiting room only; the results go back to it first (COURSE-01). */
+/** The results go back to the waiting room first. */
 const STARTABLE_STATES: readonly RoomState[] = ["waiting"];
 
-/** COURSE-02: at least 2 runners. Bots will count; spectators never do. */
+/** Spectators never count. */
 export const MIN_RUNNERS = 2;
 
 type Runtime = {
@@ -40,7 +40,6 @@ type Runtime = {
   race: Race;
   config: RaceConfig;
   textId: string | null;
-  /** When the countdown started. */
   startedAt: Date;
   startTimer: ReturnType<typeof setTimeout>;
   loop: ReturnType<typeof setInterval>;
@@ -49,7 +48,6 @@ type Runtime = {
 
 type RaceStore = {
   byCode: Map<string, Runtime>;
-  /** Which race each runner is in. */
   byUser: Map<string, string>;
 };
 
@@ -68,19 +66,13 @@ function logFailure(action: string, error: unknown): void {
 }
 
 export type StartRaceError =
-  /** The user isn't the host of an open room (SEC-01). */
   | "notHost"
-  /** Fewer than MIN_RUNNERS runners (COURSE-02). */
   | "notEnoughRunners"
-  /** A race is already counting down or running. */
   | "notStartable";
 
 export type StartRaceResult = { ok: true } | { ok: false; error: StartRaceError };
 
-/**
- * The host starts a race: EN_ATTENTE → DÉCOMPTE. The text
- * is generated now, so nobody sees it before the countdown (COURSE-03).
- */
+/** The text is generated now, so nobody sees it before the countdown. */
 export async function startRace(hostId: string): Promise<StartRaceResult> {
   const db = getDb();
   const [room] = await db
@@ -96,7 +88,7 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
   }
   const config = raceConfigSchema.parse(room.config);
   const text = await generateText(config);
-  // Night adds words from a second text of the same kind (BONUS-02).
+  // Night adds words from a second text of the same kind.
   const reserve = config.bonuses ? await generateText(config) : null;
 
   const checked = await db.transaction(
@@ -147,7 +139,6 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
     config,
     textId: text.source?.textId ?? null,
     startedAt: new Date(now),
-    // DÉCOMPTE → EN_COURSE when the 3-2-1 is over.
     startTimer: setTimeout(() => void markRacing(runtime), COUNTDOWN_MS),
     loop: setInterval(() => step(runtime), TRACK_INTERVAL_MS),
     finishing: false,
@@ -164,17 +155,11 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
 }
 
 export type BackToLobbyError =
-  /** The user isn't the host of an open room (SEC-01). */
   | "notHost"
-  /** The room isn't showing results. */
   | "notOnResults";
 
 export type BackToLobbyResult = { ok: true } | { ok: false; error: BackToLobbyError };
 
-/**
- * COURSE-11: on the results, the host's "New game" brings the room back to
- * the waiting room (RÉSULTATS → EN_ATTENTE), where the next race starts.
- */
 export async function backToLobby(hostId: string): Promise<BackToLobbyResult> {
   const db = getDb();
   const [room] = await db
@@ -219,7 +204,6 @@ function emitTrack(runtime: Runtime, now: number): void {
     } satisfies RaceTrackPayload);
 }
 
-/** Each runner whose text a bonus changed gets it (BONUS-04); the track shows the effect. */
 function emitTexts(runtime: Runtime, events: readonly BonusEvent[]): void {
   const io = getIo();
   for (const { userId, text, removed } of events.flatMap((event) => event.texts)) {
@@ -240,7 +224,6 @@ function step(runtime: Runtime): void {
   }
 }
 
-/** EN_COURSE → RÉSULTATS: saves everyone's result, then the pages show them. */
 async function finish(runtime: Runtime): Promise<void> {
   if (runtime.finishing) {
     return;
@@ -293,10 +276,7 @@ function runtimeOf(userId: string): Runtime | null {
   return code ? (store().byCode.get(code) ?? null) : null;
 }
 
-/**
- * A batch of a runner's keys (COURSE-06). Returns what to send back to
- * that browser when the batch was refused, so it shows the server's state.
- */
+/** Returns what to send back to the browser when the batch was refused. */
 export function handleKeys(
   userId: string,
   seq: number,
@@ -321,10 +301,7 @@ export function handleKeys(
   return null;
 }
 
-/**
- * COURSE-07: the runner gives up. Also called when they leave the room or
- * are kicked mid-race, and after 30 s away (COURSE-08).
- */
+/** Also called when they leave, are kicked, or have been away 30 s. */
 export function abandonRace(userId: string): void {
   const runtime = runtimeOf(userId);
   if (!runtime || runtime.finishing) {
@@ -339,10 +316,7 @@ export function abandonRace(userId: string): void {
   }
 }
 
-/**
- * The room closed mid-race: whoever is still racing abandons, and it ends
- * now. Resolves once the results are saved.
- */
+/** Resolves once the results are saved. */
 export async function closeRace(code: string): Promise<void> {
   const runtime = store().byCode.get(code);
   if (!runtime || runtime.finishing) {
@@ -355,17 +329,13 @@ export async function closeRace(code: string): Promise<void> {
   await finish(runtime);
 }
 
-/** A runner's own text and the words rain removed, for race:text-sync (BONUS-04). */
 export function raceTextFor(code: string, userId: string): RaceTextPayload | null {
   const runtime = store().byCode.get(code);
   const you = runtime && !runtime.finishing ? runtime.race.playerState(userId) : null;
   return you ? { code, text: you.text, removed: you.removed } : null;
 }
 
-/**
- * The race as one viewer sees it, for race:sync; the caller checks they
- * may watch the room. A runner coming back gets their own typing back.
- */
+/** The caller checks they may watch the room. */
 export function raceStateFor(code: string, userId: string | null): RaceStatePayload | null {
   const runtime = store().byCode.get(code);
   if (!runtime || runtime.finishing) {

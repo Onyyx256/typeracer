@@ -2,12 +2,10 @@ import type { RaceConfig } from "@/lib/rooms/settings";
 import { progressRatio } from "./stats";
 
 /**
- * What a player typed, as one pure reducer. The browser runs it for
- * instant feedback (COURSE-04), and the server replays the same keys
- * through it to get the real numbers (COURSE-06), so both always agree.
+ * The browser runs this reducer for instant feedback, and the server
+ * replays the same keys through it, so both always agree.
  */
 
-/** Backspace, in a batch of keys sent to the server. */
 export const BACKSPACE = "\b";
 
 export type ErrorMode = RaceConfig["errorMode"];
@@ -22,11 +20,9 @@ export const MAX_WRONG_TAIL = 8;
 export type TypingState = {
   /** What the player has typed, compared character by character with the text. */
   input: string;
-  /** Character keys pressed (backspaces excluded), for raw WPM. */
+  /** Backspaces excluded. */
   keystrokes: number;
-  /** Keys that matched the text where they were typed, for accuracy. */
   correctKeystrokes: number;
-  /** Wrong presses per expected character, for the missed-keys chart (RES-03). */
   missed: Record<string, number>;
 };
 
@@ -34,7 +30,6 @@ export function initialTyping(): TypingState {
   return { input: "", keystrokes: 0, correctKeystrokes: 0, missed: {} };
 }
 
-/** How many characters from the start of the input match the text. */
 export function correctPrefixLength(text: string, input: string): number {
   let index = 0;
   while (index < input.length && input[index] === text[index]) {
@@ -87,12 +82,11 @@ export function isComplete(text: string, mode: ErrorMode, state: TypingState): b
   return validatedChars(text, mode, state) >= text.length;
 }
 
-/** A single character or a backspace; anything else is ignored. */
 export function isValidKey(key: string): boolean {
   return key === BACKSPACE || key.length === 1;
 }
 
-/** The state after one key. Keys that can't apply return the same object. */
+/** Keys that can't apply return the same object. */
 export function applyKey(
   text: string,
   mode: ErrorMode,

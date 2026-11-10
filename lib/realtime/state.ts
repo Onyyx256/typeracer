@@ -9,7 +9,6 @@ import type { Server } from "socket.io";
 type RealtimeState = {
   /** Open sockets per signed-in user (several tabs = several sockets). */
   sockets: Map<string, number>;
-  /** Pending "counts as left" timers for users with no open socket. */
   leaveTimers: Map<string, ReturnType<typeof setTimeout>>;
   handlersAttached: boolean;
 };

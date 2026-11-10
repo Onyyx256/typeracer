@@ -2,18 +2,15 @@ import type { ResultStatus } from "./types";
 
 export type Rankable = {
   status: ResultStatus;
-  /** Validated characters ÷ text length. */
   progress: number;
-  /** From the start to finishing (or abandoning, or the end). */
   durationMs: number;
 };
 
 const STATUS_ORDER: Record<ResultStatus, number> = { finished: 0, timeUp: 1, abandoned: 2 };
 
 /**
- * COURSE-10: finishers by finish time, then those the time limit stopped
- * by progress, then those who abandoned by their progress when they did.
- * Ties keep the given order. Returns new objects with `rank` from 1.
+ * Finishers by time, then those the time limit stopped by progress, then
+ * those who abandoned. Ties keep the given order.
  */
 export function rank<T extends Rankable>(entries: readonly T[]): (T & { rank: number })[] {
   return [...entries]

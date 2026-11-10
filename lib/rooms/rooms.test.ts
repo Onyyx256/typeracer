@@ -28,14 +28,12 @@ import {
   type RoomState,
 } from "./settings";
 
-// Runs against the typeracer_test database (see test/setup.ts).
 
 afterEach(resetRealtime);
 afterAll(deleteTestUsers);
 
 const settings: RoomSettings = { ...defaultRoomSettings("en"), capacity: 2 };
 
-/** A signed-in user hosting a new room; returns its code. */
 async function hostRoom(
   changes: Partial<RoomSettings> = {},
 ): Promise<{ hostId: string; hostName: string; code: string }> {
@@ -48,14 +46,12 @@ async function hostRoom(
   return { hostId: host.id, hostName, code: result.code };
 }
 
-/** A new guest joining the room; returns their id and the result. */
 async function guestJoins(code: string, role: HostRole = "participant", name = uniqueName("g")) {
   const guest = await createTestGuest(name);
   const result = await joinRoom(guest.id, code, role, false, name);
   return { userId: guest.id, name, result };
 }
 
-/** A new signed-in user joining the room; returns their id and the result. */
 async function accountJoins(code: string, role: HostRole = "participant", name = uniqueName("a")) {
   const account = await createTestAccount();
   const result = await joinRoom(account.id, code, role, false, name);
@@ -253,7 +249,6 @@ describe("one room per person (SALLE-06)", () => {
     if (result.ok) {
       expect((await findCurrentRoom(first.hostId))?.code).toBe(result.code);
     }
-    // They were alone, so the old room closed.
     expect(await getRoom(first.code)).toBeNull();
   });
 
@@ -400,7 +395,6 @@ describe("leaveRoom (SALLE-08)", () => {
     const gone = await accountJoins(code);
     await leaveRoom(hostId);
     expect(await getRoom(code)).toBeNull();
-    // Free to join or create another room (SALLE-06).
     expect(await findCurrentRoom(gone.userId)).toBeNull();
   });
 
@@ -428,7 +422,6 @@ describe("kickMember (SALLE-07)", () => {
     expect((await membersOf(code)).map((member) => member.userId)).toEqual([hostId]);
     expect(await findCurrentRoom(runner.userId)).toBeNull();
     expect(await isBanned(runner.userId, code)).toBe(true);
-    // Neither as a runner nor as a spectator, under any name.
     expect(await joinRoom(runner.userId, code, "participant", false, runner.name)).toEqual({
       ok: false,
       error: "banned",
@@ -498,7 +491,6 @@ describe("kickMember (SALLE-07)", () => {
 });
 
 describe("listPublicRooms filters (JOIN-02)", () => {
-  /** Codes from `codes` that the filtered list shows; other tests' rooms are ignored. */
   async function shown(codes: string[], filters: Parameters<typeof listPublicRooms>[0]) {
     const listed = new Set((await listPublicRooms(filters, 1000)).map((room) => room.code));
     return codes.filter((code) => listed.has(code));
@@ -534,7 +526,6 @@ describe("transferHost", () => {
 
     const room = await getRoom(code);
     expect(room?.hostId).toBe(account.userId);
-    // The old host stays in the room as a plain member.
     expect(room?.members.find((member) => member.userId === hostId)?.isHost).toBe(false);
   });
 

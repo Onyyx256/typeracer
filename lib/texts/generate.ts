@@ -9,16 +9,14 @@ import { generateRandomText } from "./random-text";
 import { createRng } from "./rng";
 import { buildWordPool, commonWords } from "./word-pool";
 
-/** How many passages are read to look for a good excerpt. */
 const CANDIDATES = 25;
 
 export type GeneratedText = {
   content: string;
-  /** The passage it comes from, for coherent texts (shown with the results). */
+  /** Shown with the results. */
   source: { textId: string; title: string; author: string } | null;
 };
 
-/** Error code when a config can't produce any text, or null when it can. */
 export function textConfigProblem(config: RaceConfig): "noWords" | null {
   if (config.textType === "random" && buildWordPool(config).length === 0) {
     return "noWords";
@@ -50,9 +48,8 @@ async function passageCandidates(config: RaceConfig, withComplexity: boolean) {
 }
 
 /**
- * The text of the next race. Called when the countdown starts, so nobody
- * sees it earlier (COURSE-03). Throws if the config leaves nothing to type,
- * which textConfigProblem() prevents when the room is created or edited.
+ * Called when the countdown starts, so nobody sees the text earlier. Throws
+ * if the config leaves nothing to type; textConfigProblem() prevents that.
  */
 export async function generateText(
   config: RaceConfig,

@@ -7,10 +7,7 @@ import type { BonusKind } from "./bonuses";
 import type { ParticipantResult } from "./engine";
 import type { ResultStatus, WpmPoint } from "./types";
 
-/**
- * RES-05: a race and everyone's result, written once when it ends, in one
- * transaction with the room's move to the results screen.
- */
+/** Written once, in the same transaction that moves the room to the results. */
 export async function saveRace(race: {
   roomId: string;
   textId: string | null;
@@ -36,7 +33,7 @@ export async function saveRace(race: {
       await tx.insert(raceResults).values(
         race.results.map((result) => ({
           raceId: row.id,
-          // Guests keep no history (AUTH-03).
+          // Guests keep no history.
           userId: result.isGuest ? null : result.userId,
           name: result.name,
           isGuest: result.isGuest,
@@ -70,14 +67,12 @@ export type ResultRow = {
   status: ResultStatus;
   wpm: number;
   rawWpm: number;
-  /** Null for someone who gave up. */
   accuracy: number | null;
   errors: number;
   progress: number;
   durationMs: number;
   wpmSeries: WpmPoint[];
   missedKeys: Record<string, number>;
-  /** Catch-up effects received, in order. */
   bonuses: BonusKind[];
 };
 
@@ -91,7 +86,6 @@ export type RaceResultsView = {
   results: ResultRow[];
 };
 
-/** The room's latest race, for the results screen (RES-01, RES-02). */
 export async function getLatestRaceResults(code: string): Promise<RaceResultsView | null> {
   const db = getDb();
   const [race] = await db

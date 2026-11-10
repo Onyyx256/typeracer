@@ -16,7 +16,7 @@ export function createRng(seed: number): Rng {
   };
 }
 
-/** Between min and max, both included. */
+/** Both bounds included. */
 export function randomInt(rng: Rng, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
 }

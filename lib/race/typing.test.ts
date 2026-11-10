@@ -65,7 +65,6 @@ describe("strict mode (mandatory correction)", () => {
     expect(isComplete(TEXT, "strict", type("strict", "le chat dorx"))).toBe(false);
     const done = type("strict", "le chat dort");
     expect(isComplete(TEXT, "strict", done)).toBe(true);
-    // Nothing changes after the end.
     expect(applyKey(TEXT, "strict", done, "s")).toBe(done);
   });
 });
@@ -86,7 +85,6 @@ describe("free mode (errors counted)", () => {
 
   test("the race is complete when the length is reached, errors included", () => {
     expect(isComplete(TEXT, "free", type("free", "le chat dorx"))).toBe(true);
-    // Never longer than the text.
     expect(type("free", "le chat dortttt").input).toBe("le chat dort");
   });
 });

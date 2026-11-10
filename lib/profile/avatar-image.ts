@@ -1,7 +1,6 @@
 import "server-only";
 import sharp from "sharp";
 
-/** AUTH-04: what the upload may be, checked on the server. */
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 export const AVATAR_SIZE = 256;
 const ACCEPTED_FORMATS = ["jpeg", "png", "webp"] as const;
@@ -19,9 +18,8 @@ function isAccepted(format: string | undefined): boolean {
 }
 
 /**
- * SEC-02: the type comes from the file's bytes, not its name or the
- * browser's MIME type. The photo is cropped to a square, resized and
- * re-encoded as WebP, which also drops its metadata (EXIF, location).
+ * The type comes from the file's bytes, not its name. Re-encoding as WebP
+ * also drops the metadata (EXIF, location).
  */
 export async function prepareAvatar(bytes: Buffer): Promise<AvatarImageResult> {
   if (bytes.length === 0) {
@@ -45,7 +43,6 @@ export async function prepareAvatar(bytes: Buffer): Promise<AvatarImageResult> {
       .toBuffer();
     return { ok: true, image };
   } catch {
-    // Not an image sharp can read, a truncated file, or too many pixels.
     return { ok: false, error: "avatarType" };
   }
 }

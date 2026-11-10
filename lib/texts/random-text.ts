@@ -7,7 +7,6 @@ const END_MARKS = [".", ".", ".", ".", "?", "!"];
 const MID_MARKS = [",", ",", ",", ",", ";", ":"];
 const DIGITS = "0123456789";
 
-/** How often a word becomes a number, gets a comma, or a capital mid-sentence. */
 const NUMBER_RATE = 0.1;
 const MID_MARK_RATE = 0.12;
 const CAPITAL_RATE = 0.08;
@@ -19,7 +18,6 @@ function capitalize(word: string): string {
   return first.toUpperCase() + rest.join("");
 }
 
-/** 1 to 4 digits, never starting with 0 unless it is a single digit. */
 function randomNumber(rng: Rng, digits: string[]): string {
   const length = randomInt(rng, 1, 4);
   const leading = length > 1 ? digits.filter((d) => d !== "0") : digits;
@@ -31,12 +29,8 @@ function randomNumber(rng: Rng, digits: string[]): string {
 }
 
 /**
- * A random text of exactly `config.length` words, or null when the filters
- * leave no word at all. The toggles add what they name (CONF-06):
- * punctuation → sentences of 5–12 words with an end mark and some commas;
- * capitals → each sentence starts with one, plus a few words mid-sentence;
- * numbers → about one word in ten is a number. Excluded characters never
- * appear, punctuation and digits included (CONF-07).
+ * Null when the filters leave no word at all. Excluded characters never
+ * appear, punctuation and digits included.
  */
 export function generateRandomText(
   config: RaceConfig,
@@ -64,7 +58,6 @@ export function generateRandomText(
       token = randomNumber(rng, digits);
     } else {
       token = pick(rng, pool);
-      // No word twice in a row, when there is a choice.
       while (pool.length > 1 && token === previous) {
         token = pick(rng, pool);
       }

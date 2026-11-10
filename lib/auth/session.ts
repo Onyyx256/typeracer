@@ -13,7 +13,7 @@ function secretKey(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-/** Signs the user id into an HttpOnly cookie; the cookie is the whole session. */
+/** The cookie is the whole session. */
 export async function createSession(userId: string): Promise<void> {
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: "HS256" })
@@ -31,7 +31,6 @@ export async function createSession(userId: string): Promise<void> {
   });
 }
 
-/** Returns the signed-in user's id, or null if the cookie is absent, forged or expired. */
 export async function getSessionUserId(): Promise<string | null> {
   return verifySessionToken((await cookies()).get(COOKIE_NAME)?.value);
 }

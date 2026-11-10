@@ -12,16 +12,12 @@ export const WORD_LISTS: Record<Locale, readonly string[]> = { en, fr };
 export const MIN_POOL_SIZE = 30;
 
 export type CharacterFilter = {
-  /** Lowercase letters; each word must contain at least one of them. */
+  /** Each word must contain at least one of these letters. */
   include: ReadonlySet<string>;
-  /** Lowercase characters that never appear (letters, digits or punctuation). */
   exclude: ReadonlySet<string>;
 };
 
-/**
- * CONF-07: the host's include/exclude lists, compared without case.
- * Only letters count for "include"; a character in both lists is excluded.
- */
+/** Compared without case. Only letters count for "include"; a character in both lists is excluded. */
 export function characterFilter(
   config: Pick<RaceConfig, "includeChars" | "excludeChars">,
 ): CharacterFilter {
@@ -49,12 +45,6 @@ function allowed(
   return include.size === 0 || letters.some((letter) => include.has(letter));
 }
 
-/**
- * The words a random text draws from: the difficulty's tier (rank and
- * length, see WORD_TIERS), minus words with accents when they are off and
- * words that fail the include/exclude lists. If that leaves fewer than
- * MIN_POOL_SIZE words, every word of the list that passes the filters is used.
- */
 export function buildWordPool(
   config: Pick<
     RaceConfig,
@@ -83,7 +73,6 @@ export function buildWordPool(
 
 const commonWordsCache = new Map<Locale, ReadonlySet<string>>();
 
-/** The words that don't count as uncommon in the passage score. */
 export function commonWords(language: Locale): ReadonlySet<string> {
   let words = commonWordsCache.get(language);
   if (!words) {

@@ -13,7 +13,6 @@ import {
   setCosmetics,
 } from "./profile";
 
-// Runs against the typeracer_test database (see test/setup.ts).
 
 const raceIds: string[] = [];
 
@@ -24,7 +23,6 @@ afterAll(async () => {
   await deleteTestUsers();
 });
 
-/** A saved race with one result for this user. */
 async function addResult(userId: string, rank: number, status: ResultStatus, wpm: number) {
   const db = getDb();
   const now = new Date();
