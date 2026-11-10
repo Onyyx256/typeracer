@@ -19,7 +19,7 @@ export function AbandonRace({ dict, onConfirm }: { dict: RaceDictionary; onConfi
       <button
         type="button"
         onClick={() => dialog.current?.showModal()}
-        className="h-11 cursor-pointer border border-danger/50 px-6 font-medium text-danger transition-colors hover:border-danger hover:bg-danger/10 rounded-leaf"
+        className="h-9 cursor-pointer border border-danger/50 px-4 text-sm font-medium text-danger transition-colors hover:border-danger hover:bg-danger/10 rounded-leaf"
       >
         {dict.abandon}
       </button>

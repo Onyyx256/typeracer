@@ -33,3 +33,11 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** dans une fenêtre privée (cache vide, donc hydratation lente en dev), le bouton ne fonctionnait pas et l'URL contenait `?name=…&hostRole=…`. L'IA a reproduit le bug avec un script Playwright qui ralentit le JavaScript, et a repéré le défaut de sa première correction avec un second script avant le commit.
 - **Correction :** le bouton reste désactivé tant que la page n'est pas hydratée (`useSyncExternalStore`), et le formulaire garde `onSubmit` (commit c26c63f).
 - **Leçon :** tester un formulaire avec un JavaScript lent ou un cache vide, et vérifier le chemin d'erreur après chaque correction, pas seulement le cas qui marche.
+
+## 2026-11-09 — Test e2e oublié après l'ajout d'une confirmation
+
+- **Outil / agent :** Claude Code (session précédente; agent exact à compléter), Playwright.
+- **Ce que l'IA a fait :** le commit d6e3683 a ajouté le dialogue « Delete the room? » au bouton « Leave the room » (dernier compte de la salle), sans mettre à jour `e2e/host-leaves.e2e.ts`. Le test cliquait toujours sur « Leave the room » et attendait une redirection qui ne venait plus : il échouait depuis.
+- **Comment je l'ai détecté :** en lançant toute la suite e2e après le travail sur la page de course; l'IA a relancé le test sur le code sans ses changements pour confirmer que l'échec venait d'avant.
+- **Correction :** le test annule le dialogue une fois, puis confirme (commit ce4008c).
+- **Leçon :** relancer la suite e2e, pas seulement les tests unitaires, après avoir changé un parcours que les tests e2e cliquent.

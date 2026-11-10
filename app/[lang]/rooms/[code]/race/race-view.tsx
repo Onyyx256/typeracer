@@ -35,23 +35,24 @@ export function RaceView({
 
   const mine = track.find((entry) => entry.userId === userId);
   const racing = race.you !== null && mine?.status === "racing";
+  // The server marks the runner as abandoned.
+  const abandon = <AbandonRace dict={dict} onConfirm={() => getSocket().emit(EVENTS.raceAbandon)} />;
 
   return (
-    <div className="grid gap-6">
-      <div className="flex min-h-14 flex-wrap items-center justify-between gap-4">
+    <div className="grid gap-4">
+      {/* The countdown shows over the garden bed, so it takes no room once the race is on. */}
+      <div className="relative">
+        <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.endsAt} dict={dict} />
-        {racing && (
-          // The server marks the runner as abandoned.
-          <AbandonRace dict={dict} onConfirm={() => getSocket().emit(EVENTS.raceAbandon)} />
-        )}
       </div>
-
-      <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
 
       {racing && race.you !== null && (
         <>
           {/* DES-06: no race on a phone, only the track. */}
-          <p className="font-mono text-sm text-accent-text md:hidden">&gt; {dict.mobile}</p>
+          <div className="flex flex-wrap items-center justify-between gap-4 md:hidden">
+            <p className="font-mono text-sm text-accent-text">&gt; {dict.mobile}</p>
+            {abandon}
+          </div>
           <div className="hidden md:block">
             <TypingArea
               code={code}
@@ -63,6 +64,8 @@ export function RaceView({
               syncId={race.syncId}
               dict={dict}
               locale={locale}
+              // Next to the stats, far from "Leave the room", which doesn't ask first.
+              action={abandon}
             />
           </div>
         </>

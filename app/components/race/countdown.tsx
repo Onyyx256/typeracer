@@ -27,9 +27,19 @@ export function Countdown({
   } else if (now < startsAt + 1_000) {
     content = dict.go;
   }
+  // Always in the page, so screen readers announce each change (aria-live).
+  // Shown over the track: its parent must be positioned.
   return (
-    <p role="status" aria-live="polite" className="font-display text-3xl font-semibold">
-      {content}
+    <p
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none absolute inset-0 grid place-items-center"
+    >
+      {content && (
+        <span className="bg-background/90 px-8 py-4 font-display text-4xl font-semibold text-foreground shadow-lg rounded-leaf">
+          {content}
+        </span>
+      )}
     </p>
   );
 }

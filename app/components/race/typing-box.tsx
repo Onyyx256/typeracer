@@ -1,6 +1,15 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import {
   applyKey,
@@ -87,7 +96,8 @@ export function useTyping({ text, errorMode, startsAt, endsAt, initial }: Typing
 /**
  * COURSE-04: the typing area. Shows the text with right, wrong and the
  * cursor, the live WPM and accuracy, and turns key presses into `onKeys`
- * calls; paste and drop are refused.
+ * calls; paste and drop are refused. The text box shows three lines and
+ * follows the caret.
  */
 export function TypingBox({
   text,
@@ -98,6 +108,7 @@ export function TypingBox({
   onKeys,
   dict,
   locale,
+  action,
 }: {
   text: string;
   errorMode: ErrorMode;
@@ -107,8 +118,12 @@ export function TypingBox({
   onKeys: (keys: string[]) => void;
   dict: RaceDictionary;
   locale: Locale;
+  /** Shown at the end of the stats row (the give up button). */
+  action?: ReactNode;
 }) {
   const field = useRef<HTMLTextAreaElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const lines = useRef<HTMLParagraphElement>(null);
   const now = useNow(250, finishedAt === null);
   const open = now >= startsAt && (endsAt === null || now < endsAt);
   const done = isComplete(text, errorMode, typing);
@@ -173,9 +188,38 @@ export function TypingBox({
     };
   }, [onKeys, state, text, errorMode]);
 
+  // The text box scrolls by itself so the caret's line, the one before it
+  // and the one after it are always in sight; the player may still scroll
+  // ahead with the wheel, and the next key brings the caret back.
+  const caret = typing.input.length;
+  useLayoutEffect(() => {
+    const scroller = box.current;
+    const element = lines.current;
+    if (!scroller || !element) {
+      return;
+    }
+    const follow = (smooth: boolean) => {
+      const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+      const chars = element.children;
+      const at = chars[Math.min(caret, chars.length - 1)];
+      if (!(at instanceof HTMLElement) || !lineHeight) {
+        return;
+      }
+      const line = Math.round(at.offsetTop / lineHeight);
+      const top = Math.max(0, line - 1) * lineHeight;
+      const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      scroller.scrollTo({ top, behavior: smooth && !still ? "smooth" : "instant" });
+    };
+    follow(true);
+    // The lines wrap differently when the window is resized.
+    const observer = new ResizeObserver(() => follow(false));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [caret]);
+
   // Ready to type as soon as the countdown starts.
   useEffect(() => {
-    field.current?.focus();
+    field.current?.focus({ preventScroll: true });
   }, []);
 
   const until = finishedAt ?? (endsAt === null ? now : Math.min(now, endsAt));
@@ -185,23 +229,37 @@ export function TypingBox({
   const left = endsAt === null ? null : Math.max(0, Math.ceil((endsAt - now) / 1000));
 
   return (
-    <div className="grid gap-4">
-      <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
-        <Stat label={dict.wpm} value={formatNumber(locale, wpm)} />
-        <Stat label={dict.accuracy} value={formatPercent(locale, acc / 100)} />
-        {left !== null && (
-          <Stat label={dict.timeLeft} value={`${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`} />
-        )}
-      </dl>
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
+          <Stat label={dict.wpm} value={formatNumber(locale, wpm)} />
+          <Stat label={dict.accuracy} value={formatPercent(locale, acc / 100)} />
+          {left !== null && (
+            <Stat label={dict.timeLeft} value={`${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`} />
+          )}
+        </dl>
+        {action}
+      </div>
 
-      <div className="relative border border-line bg-surface p-6 rounded-leaf focus-within:border-accent-text">
-        <p
-          aria-label={dict.textLabel}
-          className="font-mono text-xl leading-relaxed break-words whitespace-pre-wrap select-none"
+      {/* Clicking anywhere in the box focuses the hidden field. */}
+      <div
+        onClick={() => field.current?.focus({ preventScroll: true })}
+        className="relative cursor-text border border-line bg-surface py-6 pr-3 pl-6 rounded-leaf focus-within:border-accent-text"
+      >
+        {/* At most three lines high (leading-9 = 2.25rem each); a little side room keeps the caret visible. */}
+        <div
+          ref={box}
+          className="-ml-1 max-h-[6.75rem] overflow-y-auto pr-3 pl-1 [scrollbar-width:thin]"
         >
-          <TextChars text={text} input={typing.input} />
-        </p>
-        {/* Invisible over the text: clicking the text focuses it. */}
+          <p
+            ref={lines}
+            aria-label={dict.textLabel}
+            className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap select-none"
+          >
+            <TextChars text={text} input={typing.input} />
+          </p>
+        </div>
+        {/* Invisible over the text; clicks go through it so the wheel scrolls the text. */}
         <textarea
           ref={field}
           aria-label={dict.typeLabel}
@@ -210,7 +268,7 @@ export function TypingBox({
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="absolute inset-0 size-full cursor-text resize-none bg-transparent text-transparent caret-transparent opacity-0"
+          className="pointer-events-none absolute inset-0 size-full resize-none bg-transparent text-transparent caret-transparent opacity-0"
         />
       </div>
       {!done && <p className="font-mono text-xs text-muted">&gt; {dict.focusHint}</p>}

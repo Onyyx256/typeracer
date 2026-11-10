@@ -69,7 +69,14 @@ test("with only a guest left, the room is deleted and the guest is told", async 
   const { host, code } = await hostRoom(browser);
   const guest = await joins(browser, code, false);
 
+  // The host is the last account, so leaving deletes the room: it asks first.
   await host.getByRole("button", { name: "Leave the room" }).click();
+  const confirm = host.getByRole("dialog", { name: "Delete the room?" });
+  await confirm.getByRole("button", { name: "Stay" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(host).toHaveURL(new RegExp(`/en/rooms/${code}$`));
+  await host.getByRole("button", { name: "Leave the room" }).click();
+  await confirm.getByRole("button", { name: "Leave and delete the room" }).click();
   await expect(host).toHaveURL(/\/en\/rooms$/);
 
   const notice = guest.page.getByRole("dialog", { name: "Your room has been deleted" });

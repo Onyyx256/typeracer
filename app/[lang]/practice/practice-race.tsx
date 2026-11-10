@@ -87,26 +87,30 @@ export function PracticeRace({
     return () => clearInterval(timer);
   }, [refresh]);
 
-  const abandonDict = { ...raceDict, abandonDialog: dict.abandonDialog };
+  const abandon = (
+    <AbandonRace
+      dict={{ ...raceDict, abandonDialog: dict.abandonDialog }}
+      onConfirm={() => {
+        race.abandon(PRACTICE_PLAYER, Date.now());
+        refresh();
+      }}
+    />
+  );
 
   return (
-    <div className="grid gap-6">
-      <div className="flex min-h-14 flex-wrap items-center justify-between gap-4">
+    <div className="grid gap-4">
+      {/* The countdown shows over the garden bed, like in a room. */}
+      <div className="relative">
+        <RaceTrack entries={track} youId={PRACTICE_PLAYER} dict={raceDict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.deadline} dict={raceDict} />
-        <AbandonRace
-          dict={abandonDict}
-          onConfirm={() => {
-            race.abandon(PRACTICE_PLAYER, Date.now());
-            refresh();
-          }}
-        />
       </div>
-
-      <RaceTrack entries={track} youId={PRACTICE_PLAYER} dict={raceDict} roomDict={roomDict} locale={locale} />
       {hasBots && <p className="font-mono text-sm text-muted">&gt; {dict.bots.soon}</p>}
 
       {/* DES-06: no race on a phone, only the track. */}
-      <p className="font-mono text-sm text-accent-text md:hidden">&gt; {raceDict.mobile}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4 md:hidden">
+        <p className="font-mono text-sm text-accent-text">&gt; {raceDict.mobile}</p>
+        {abandon}
+      </div>
       <div className="hidden md:block">
         <TypingBox
           text={race.text}
@@ -117,6 +121,7 @@ export function PracticeRace({
           onKeys={onKeys}
           dict={raceDict}
           locale={locale}
+          action={abandon}
         />
       </div>
     </div>
