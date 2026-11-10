@@ -182,6 +182,28 @@ Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le
 - **Mode d'erreur (CONF-08).** Correction obligatoire : les lettres fausses restent en rouge et le texte n'avance plus tant qu'elles ne sont pas effacées (au plus 8 de suite). Libre : on avance quand même et l'erreur est comptée. Dans les deux modes, un mot est gardé une fois l'espace qui le suit tapé (en correction obligatoire, seulement s'il est juste).
 - **Moteur (`lib/race/engine.ts`).** Une classe pure : chaque méthode reçoit l'heure, donc les tests contrôlent le temps. Elle refuse les touches pendant le décompte, après la limite de temps et d'une personne qui ne court pas. Contre la triche, un « seau » de touches se remplit à 25 touches/s (300 MPM soutenus, au-dessus des meilleurs humains) jusqu'à 40; un lot qui en demande plus est refusé en entier. Elle échantillonne le MPM chaque seconde et calcule le classement final (COURSE-10, `lib/race/ranking.ts`).
 - **Gestionnaire (`lib/race/manager.ts`).** Il fait toutes les transitions avec de vraies minuteries : l'hôte lance (vérifié sur le serveur sous verrou de ligne, au moins 2 coureurs), le texte est généré à ce moment, le décompte dure 3 s, la piste est envoyée 5 fois par seconde, et la course se termine quand tout le monde a fini ou abandonné, ou à la limite de temps. Les résultats sont écrits en une seule transaction avec le passage de la salle à `results`. Si le serveur redémarre, les salles restées en course reviennent en attente.
-- **Messages.** `race:sync` (le navigateur demande la course : texte, piste, et sa propre frappe), `race:keys` (un lot numéroté de touches, toutes les 150 ms au plus, PERF-02), `race:abandon`; le serveur envoie `race:state`, `race:track` et `race:resync`. Tous les messages reçus sont validés avec Zod, et les touches appartiennent toujours à l'utilisateur du socket. Si un lot est refusé, `race:resync` renvoie l'état du serveur et le navigateur rejoue les lots envoyés après celui-là.
+- **Messages.** `race:sync` (le navigateur demande la course : texte, piste, et sa propre frappe), `race:keys` (un lot numéroté de touches, toutes les 150 ms au plus, PERF-02), `race:abandon`; le serveur envoie `race:state`, `race:track`, `race:resync` et `race:text` (nouveau texte après un bonus, au coureur visé seulement). Tous les messages reçus sont validés avec Zod, et les touches appartiennent toujours à l'utilisateur du socket. Si un lot est refusé, `race:resync` renvoie l'état du serveur et le navigateur rejoue les lots envoyés après celui-là.
 - **Départ et reconnexion.** Quitter la salle ou en être retiré pendant une course compte comme un abandon. Après un rechargement, `race:sync` rend sa frappe au coureur ; sans onglet ouvert pendant 30 s, la présence le retire de la salle, ce qui compte comme un abandon (COURSE-08).
 - **Piste (COURSE-05).** Chaque coureur est une fleur (`GrowingStem`) qui pousse avec sa progression et fleurit à l'arrivée. Entre deux mises à jour, la progression affichée rejoint la vraie image par image, pour que les fleurs poussent sans saccades.
+
+## Bonus de rattrapage
+
+Les trois effets viennent des notes de la démarche créative (`docs/DEMARCHE-CREATIVE.md`) : la météo du jardin. Les règles sont des fonctions pures dans `lib/race/bonuses.ts`, appliquées par le moteur ; seul le serveur décide (COURSE-06).
+
+**Règle exacte (BONUS-01).** Quand l'hôte a activé les bonus (CONF-09), chaque fois que la progression du meneur atteint 25 %, 50 % puis 75 %, un effet tombe, une seule fois par point de contrôle. Le serveur le tire au hasard parmi les effets qui ont quelqu'un à viser, avec un générateur à graine (les tests sont reproductibles).
+
+- **En retard** : les coureurs encore en course qui sont derniers (tous, en cas d'égalité) ou à plus de 25 % du meneur. Le meneur n'est jamais en retard.
+- **En tête** : les 3 premiers encore en course, sans les retardataires. À un point de contrôle, un coureur reçoit donc un bonus ou un malus, jamais les deux ; à 2 coureurs, seul le 1er peut recevoir un malus.
+- Un coureur reçoit au plus 3 effets par course, bonus et malus confondus.
+
+| Effet | Type | Qui | Ce qui se passe |
+| --- | --- | --- | --- |
+| Pluie et soleil | bonus | les retardataires | 10 % des mots du texte d'origine en moins, à la fin de leur texte |
+| Nuit | malus | les 3 premiers | 7 %, 5 % et 3 % des mots du texte d'origine en plus, à la fin de leur texte |
+| Soleil aveuglant | malus | les 3 premiers | leurs 3 prochains mots sont cachés par un éblouissement pendant 5 s |
+
+Les pourcentages sont arrondis, avec au moins 1 mot : sur le texte par défaut de 50 mots, la pluie enlève 5 mots et la nuit en ajoute 4, 3 et 2.
+
+**Texte et progression (BONUS-04).** Chaque coureur a son propre texte dans le moteur. Un bonus ne change que la fin : la pluie garde le mot en cours et 2 mots de marge (le navigateur peut avoir tapé un peu plus que ce que le serveur a reçu), et la nuit ajoute ses mots à la fin, pris dans un 2e texte généré au départ avec les mêmes réglages. Ce qui est déjà tapé reste donc valide. La progression est calculée sur le texte actuel du coureur, et le MPM sur les caractères justes tapés, qui ne changent pas. Le serveur envoie le nouveau texte au coureur (`race:text`), et son état de frappe (`race:sync`, `race:resync`) contient aussi son texte.
+
+**Affichage (BONUS-03).** La piste reçoit l'effet de chaque coureur avec sa progression : l'icône météo tombe sur sa fleur et le nom de l'effet remplace son statut, 3 s (ou les 5 s de l'éblouissement). Le coureur visé voit en plus un message lu par les lecteurs d'écran, et l'éblouissement sur son texte. Les résultats listent les effets reçus par chacun (`race_results.bonuses`, RES-02).
