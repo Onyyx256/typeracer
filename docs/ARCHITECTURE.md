@@ -202,20 +202,20 @@ Comme le serveur n'arbitre pas cette course, ses résultats ne sont pas enregist
 
 Les trois effets viennent des notes de la démarche créative (`docs/DEMARCHE-CREATIVE.md`) : la météo du jardin. Les règles sont des fonctions pures dans `lib/race/bonuses.ts`, appliquées par le moteur ; seul le serveur décide (COURSE-06).
 
-**Règle exacte (BONUS-01).** Quand l'hôte a activé les bonus (CONF-09), chaque fois que la progression du meneur atteint 25 %, 50 % puis 75 %, un effet tombe, une seule fois par point de contrôle. Le serveur le tire au hasard parmi les effets qui ont quelqu'un à viser, avec un générateur à graine (les tests sont reproductibles).
+**Règle exacte (BONUS-01).** Quand l'hôte a activé les bonus (CONF-09), chaque fois que la progression du meneur atteint 25 %, 50 % puis 75 % (une seule fois par point de contrôle), deux effets tombent : le bonus (pluie et soleil) pour les retardataires, et un malus pour ceux en tête, nuit ou soleil aveuglant, que le serveur tire au hasard avec un générateur à graine (les tests sont reproductibles). Un effet qui n'a personne à viser est sauté.
 
 - **En retard** : les coureurs encore en course qui sont derniers (tous, en cas d'égalité) ou à plus de 25 % du meneur. Le meneur n'est jamais en retard.
-- **En tête** : les 3 premiers encore en course, sans les retardataires. À un point de contrôle, un coureur reçoit donc un bonus ou un malus, jamais les deux ; à 2 coureurs, seul le 1er peut recevoir un malus.
+- **En tête** : les 3 premiers encore en course, sans les retardataires. À un point de contrôle, un coureur reçoit donc un bonus ou un malus, jamais les deux ; à 2 coureurs, le 2e reçoit le bonus et le 1er le malus. La place d'un coureur en tête (pour les 7 %, 5 % et 3 % de la nuit) ne change pas si un autre a déjà reçu le maximum.
 - Un coureur reçoit au plus 3 effets par course, bonus et malus confondus.
 
 | Effet | Type | Qui | Ce qui se passe |
 | --- | --- | --- | --- |
 | Pluie et soleil | bonus | les retardataires | 10 % des mots du texte d'origine en moins, à la fin de leur texte |
-| Nuit | malus | les 3 premiers | 7 %, 5 % et 3 % des mots du texte d'origine en plus, à la fin de leur texte |
-| Soleil aveuglant | malus | les 3 premiers | leurs 3 prochains mots sont cachés par un éblouissement pendant 5 s |
+| Nuit (au hasard) | malus | les 3 premiers | 7 %, 5 % et 3 % des mots du texte d'origine en plus, à la fin de leur texte |
+| Soleil aveuglant (au hasard) | malus | les 3 premiers | leurs 3 prochains mots sont cachés par un éblouissement pendant 5 s |
 
 Les pourcentages sont arrondis, avec au moins 1 mot : sur le texte par défaut de 50 mots, la pluie enlève 5 mots et la nuit en ajoute 4, 3 et 2.
 
-**Texte et progression (BONUS-04).** Chaque coureur a son propre texte dans le moteur. Un bonus ne change que la fin : la pluie garde le mot en cours et 2 mots de marge (le navigateur peut avoir tapé un peu plus que ce que le serveur a reçu), et la nuit ajoute ses mots à la fin, pris dans un 2e texte généré au départ avec les mêmes réglages. Ce qui est déjà tapé reste donc valide. La progression est calculée sur le texte actuel du coureur, et le MPM sur les caractères justes tapés, qui ne changent pas. Le serveur envoie le nouveau texte au coureur (`race:text`), et son état de frappe (`race:sync`, `race:resync`) contient aussi son texte.
+**Texte et progression (BONUS-04).** Chaque coureur a son propre texte dans le moteur. Un bonus ne change que la fin : la pluie garde le mot en cours et 2 mots de marge (le navigateur peut avoir tapé un peu plus que ce que le serveur a reçu), et la nuit ajoute ses mots à la fin, pris dans un 2e texte généré au départ avec les mêmes réglages. Ce qui est déjà tapé reste donc valide. La progression est calculée sur le texte actuel du coureur, et le MPM sur les caractères justes tapés, qui ne changent pas. Le serveur garde aussi les mots retirés par la pluie, dans l'ordre du texte, et envoie au coureur son nouveau texte avec ces mots (`race:text`) ; son état de frappe (`race:sync`, `race:resync`) les contient aussi, donc ils reviennent après un rechargement.
 
-**Affichage (BONUS-03).** La piste reçoit l'effet de chaque coureur avec sa progression : l'icône météo tombe sur sa fleur et le nom de l'effet remplace son statut, 3 s (ou les 5 s de l'éblouissement). Le coureur visé voit en plus un message lu par les lecteurs d'écran, et l'éblouissement sur son texte. Les résultats listent les effets reçus par chacun (`race_results.bonuses`, RES-02).
+**Affichage (BONUS-03).** La piste reçoit l'effet de chaque coureur avec sa progression : l'icône météo tombe sur sa fleur et le nom de l'effet remplace son statut, 3 s (ou les 5 s de l'éblouissement). Le coureur visé voit en plus un message lu par les lecteurs d'écran. Dans sa zone de frappe, les mots retirés par la pluie restent barrés après la fin du texte (avec « retirés par la pluie » pour les lecteurs d'écran), et l'éblouissement cache ses prochains mots. Les résultats listent les effets reçus par chacun (`race_results.bonuses`, RES-02).
