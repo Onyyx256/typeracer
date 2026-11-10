@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { logout } from "@/app/[lang]/login/actions";
-import { Avatar } from "@/app/components/avatar";
 import { requireUser } from "@/lib/auth/current-user";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { formatNumber, interpolate, plural } from "@/lib/i18n/format";
+import { DEFAULT_COSMETICS } from "@/lib/profile/cosmetics";
+import { getLooks, getPlayerProgress } from "@/lib/profile/profile";
+import { CosmeticsForm } from "./cosmetics-form";
+import { NameForm } from "./name-form";
+import { PhotoForm } from "./photo-form";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dict = await getDictionary();
@@ -26,33 +31,65 @@ export default async function AccountPage() {
   );
 }
 
+function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  return (
+    <section aria-labelledby={id} className="grid gap-4 border-t border-line pt-6">
+      <h2 id={id} className="font-display text-2xl font-semibold">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+/** AUTH-04 (photo), AUTH-05 (display name) and the flower colours. */
 async function Account() {
   const [user, dict, locale] = await Promise.all([
     requireUser(),
     getDictionary(),
     getLocale(),
   ]);
+  const [looks, progress] = await Promise.all([getLooks([user.id]), getPlayerProgress(user.id)]);
+  const look = looks[user.id];
+  const t = dict.accountPage;
+  const c = t.cosmetics;
 
-  // The photo (AUTH-04) and display name (AUTH-05) forms go here.
   return (
-    <>
-      <div className="mt-6 flex items-center gap-4">
-        <Avatar name={user.displayName} className="size-16 text-2xl" />
-        <p className="font-mono text-lg">{user.displayName}</p>
-      </div>
-      <p className="mt-6 font-mono text-sm text-muted">
-        &gt; {dict.accountPage.soon}
-      </p>
-      <form action={logout} className="mt-8 border-t border-line pt-6">
+    <div className="mt-8 grid gap-10">
+      <Section id="photo-heading" title={t.photo.heading}>
+        <PhotoForm name={user.displayName} avatarUrl={look?.avatarUrl ?? null} dict={t} />
+      </Section>
+
+      <Section id="name-heading" title={t.name.heading}>
+        <NameForm displayName={user.displayName} dict={t} />
+      </Section>
+
+      <Section id="flower-heading" title={c.heading}>
+        <p className="text-muted">{c.lead}</p>
+        <p className="font-mono text-sm text-accent-text">
+          &gt; {plural(locale, c.races, progress.races, { count: progress.races })} ·{" "}
+          {plural(locale, c.wins, progress.wins, { count: progress.wins })} ·{" "}
+          {interpolate(c.best, { wpm: formatNumber(locale, progress.bestWpm) })}
+        </p>
+        <CosmeticsForm
+          current={look?.cosmetics ?? DEFAULT_COSMETICS}
+          progress={progress}
+          dict={c}
+          errors={t.errors}
+          locale={locale}
+        />
+      </Section>
+
+      <form action={logout} className="border-t border-line pt-6">
         {/* Server Actions can't read the route's locale, so the form sends it. */}
         <input type="hidden" name="lang" value={locale} />
         <button
           type="submit"
           className="h-11 cursor-pointer border border-line px-6 font-medium transition-colors hover:border-danger hover:text-danger rounded-leaf"
         >
-          {dict.accountPage.logout}
+          {t.logout}
         </button>
       </form>
-    </>
+    </div>
   );
 }
