@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { BonusKind } from "@/lib/race/bonuses";
 import type { ResultStatus, WpmPoint } from "@/lib/race/types";
 import type {
   HostRole,
@@ -270,6 +271,8 @@ export const raceResults = pgTable(
     wpmSeries: jsonb("wpm_series").$type<WpmPoint[]>().notNull(),
     /** Wrong presses per expected character (RES-03). */
     missedKeys: jsonb("missed_keys").$type<Record<string, number>>().notNull(),
+    /** Catch-up effects received, in order (RES-02, BONUS-01). */
+    bonuses: jsonb("bonuses").$type<BonusKind[]>().notNull().default([]),
   },
   (table) => [
     uniqueIndex("race_results_race_rank_idx").on(table.raceId, table.rank),

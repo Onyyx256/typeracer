@@ -57,6 +57,13 @@
       "when": 1794182422585,
       "tag": "0007_abandoned_results_have_no_accuracy",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794270948262,
+      "tag": "0008_add_race_result_bonuses",
+      "breakpoints": true
     }
   ]
 }
