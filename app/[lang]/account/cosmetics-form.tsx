@@ -82,7 +82,7 @@ export function CosmeticsForm({
           selected={choice.stem}
           names={dict.stems}
           swatch={(id) => (
-            <span className={`stem-${id} block h-6 w-2.5 rounded-full bg-stem ring-1 ring-line`} />
+            <span className={`stem-${id} block h-6 w-2.5 shrink-0 rounded-full bg-stem ring-1 ring-line`} />
           )}
           onPick={(stem) => pick({ stem })}
           progress={progress}
@@ -96,7 +96,7 @@ export function CosmeticsForm({
           selected={choice.petal}
           names={dict.petals}
           swatch={(id) => (
-            <span className={`petal-${id} block size-6 rounded-full border-2 border-petal-line bg-petal`} />
+            <span className={`petal-${id} block size-6 shrink-0 rounded-full border-2 border-petal-line bg-petal`} />
           )}
           onPick={(petal) => pick({ petal })}
           progress={progress}
