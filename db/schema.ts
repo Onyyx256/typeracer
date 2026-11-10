@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   index,
   integer,
   jsonb,
@@ -42,6 +43,13 @@ export const users = pgTable(
      * sign in through OAuth.
      */
     passwordHash: text("password_hash"),
+    /**
+     * Cosmetics: the colour of the player's stem and petals, ids from
+     * lib/profile/cosmetics.ts. No check constraint, so the palette can grow
+     * without a migration; an unknown id is shown as the default.
+     */
+    stemColor: text("stem_color").notNull().default("classic"),
+    petalColor: text("petal_color").notNull().default("classic"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -70,6 +78,34 @@ export const users = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+
+/**
+ * AUTH-04: a signed-in user's profile photo, already resized to a small
+ * WebP on upload. In its own table so reading a user never loads the image.
+ */
+export const userAvatars = pgTable(
+  "user_avatars",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    image: bytea("image").notNull(),
+    /** Part of the photo's URL, so a new photo is never served from cache. */
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // The upload is resized to 256 px, a few dozen KB at most.
+    check("user_avatars_size", sql`octet_length(${table.image}) <= 512 * 1024`),
+  ],
+);
+
+export type UserAvatar = typeof userAvatars.$inferSelect;
 
 /**
  * Passages for coherent texts (CONF-03), from public-domain books. A race
