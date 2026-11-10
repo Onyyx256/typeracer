@@ -355,6 +355,13 @@ export async function closeRace(code: string): Promise<void> {
   await finish(runtime);
 }
 
+/** A runner's own text and the words rain removed, for race:text-sync (BONUS-04). */
+export function raceTextFor(code: string, userId: string): RaceTextPayload | null {
+  const runtime = store().byCode.get(code);
+  const you = runtime && !runtime.finishing ? runtime.race.playerState(userId) : null;
+  return you ? { code, text: you.text, removed: you.removed } : null;
+}
+
 /**
  * The race as one viewer sees it, for race:sync; the caller checks they
  * may watch the room. A runner coming back gets their own typing back.

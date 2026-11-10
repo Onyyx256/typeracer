@@ -36,6 +36,12 @@ export const EVENTS = {
   raceResync: "race:resync",
   /** Server → client, to one runner: a catch-up bonus changed their text (BONUS-04). */
   raceText: "race:text",
+  /**
+   * Client → server: send me my text again (answered with race:text). The
+   * track shows the browser it missed a change; unlike race:sync, the
+   * typing is left alone.
+   */
+  raceTextSync: "race:text-sync",
 } as const;
 
 /** TECH-07: every message a client sends is validated. */

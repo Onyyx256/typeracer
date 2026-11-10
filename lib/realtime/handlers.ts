@@ -1,7 +1,13 @@
 import "server-only";
 import type { Server, Socket } from "socket.io";
 import { userIdFromCookieHeader } from "@/lib/auth/session";
-import { abandonRace, handleKeys, raceStateFor, resetInterruptedRaces } from "@/lib/race/manager";
+import {
+  abandonRace,
+  handleKeys,
+  raceStateFor,
+  raceTextFor,
+  resetInterruptedRaces,
+} from "@/lib/race/manager";
 import { canWatchRoom, leaveRoom, listRoomMemberIds } from "@/lib/rooms/rooms";
 import {
   EVENTS,
@@ -80,6 +86,17 @@ function onConnection(socket: Socket): void {
       }
     } catch (error) {
       logFailure("race:sync", error);
+    }
+  });
+  // Only the socket's own text: someone not racing gets nothing.
+  socket.on(EVENTS.raceTextSync, (payload: unknown) => {
+    const parsed = raceSyncSchema.safeParse(payload);
+    if (!userId || !parsed.success) {
+      return;
+    }
+    const text = raceTextFor(parsed.data.code, userId);
+    if (text) {
+      socket.emit(EVENTS.raceText, text);
     }
   });
   // The runner is the socket's user, never someone named in the message.
