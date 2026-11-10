@@ -33,6 +33,13 @@ export const BURST_KEYS = 40;
 /** What's allowed right at the start, before anything has refilled. */
 export const START_KEYS = 8;
 
+/**
+ * How late a batch may arrive and still be judged on when it was typed.
+ * A network stall holds messages and delivers them together; within this
+ * window they are forgiven, older ones count as typed this long ago.
+ */
+export const MAX_LAG_MS = 10_000;
+
 /** Per message; the browser sends about every 150 ms. */
 export const MAX_KEYS_PER_BATCH = 60;
 
@@ -136,8 +143,20 @@ export class Race {
     return [...this.runners.values()].every((runner) => runner.status !== "racing");
   }
 
-  /** Replays a batch of keys; refused whole if it's too fast to be typed by hand. */
-  applyKeys(userId: string, keys: readonly string[], now: number): KeysResult {
+  /**
+   * Replays a batch of keys; refused whole if it's too fast to be typed by
+   * hand. The speed is judged on `typedAt`, when the browser says the batch
+   * was sent, so messages held up by the network and delivered together
+   * aren't taken for fast typing. That time is never trusted beyond the
+   * server's clock: no later than now, no earlier than MAX_LAG_MS ago, and
+   * never before the previous batch, so it can't be used to refill twice.
+   */
+  applyKeys(
+    userId: string,
+    keys: readonly string[],
+    now: number,
+    typedAt: number = now,
+  ): KeysResult {
     const runner = this.runners.get(userId);
     if (!runner || runner.status !== "racing" || !this.isTypingOpen(now)) {
       return { ok: false, reason: "notRacing" };
@@ -145,13 +164,14 @@ export class Race {
     if (keys.length > MAX_KEYS_PER_BATCH) {
       return { ok: false, reason: "tooMany" };
     }
-    const refill = ((now - runner.tokensAt) / 1000) * MAX_KEYS_PER_SECOND;
-    const tokens = Math.min(BURST_KEYS, runner.tokens + Math.max(0, refill));
+    const at = Math.max(runner.tokensAt, Math.min(now, Math.max(now - MAX_LAG_MS, typedAt)));
+    const refill = ((at - runner.tokensAt) / 1000) * MAX_KEYS_PER_SECOND;
+    const tokens = Math.min(BURST_KEYS, runner.tokens + refill);
     if (keys.length > tokens) {
       return { ok: false, reason: "tooFast" };
     }
     runner.tokens = tokens - keys.length;
-    runner.tokensAt = now;
+    runner.tokensAt = at;
 
     runner.typing = applyKeys(runner.text, this.mode, runner.typing, keys);
     if (isComplete(runner.text, this.mode, runner.typing)) {

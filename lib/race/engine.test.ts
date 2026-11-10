@@ -4,6 +4,7 @@ import {
   COUNTDOWN_MS,
   MAX_KEYS_PER_BATCH,
   MAX_KEYS_PER_SECOND,
+  MAX_LAG_MS,
   Race,
   SAMPLE_MS,
   START_KEYS,
@@ -103,6 +104,69 @@ describe("Race", () => {
     );
     // A second later, a normal pace is accepted again.
     expect(big.applyKeys("a", keys(MAX_KEYS_PER_SECOND), START + 6100).ok).toBe(true);
+  });
+
+  describe("speed judged on when the keys were typed", () => {
+    const long = () =>
+      new Race({ text: "a ".repeat(200), errorMode: "strict", timeLimit: 0, participants: PEOPLE, now: T0 });
+    const keys = (count: number) => [..."a ".repeat(count)].slice(0, count);
+
+    test("batches held by a network stall and delivered together are accepted", () => {
+      const race = long();
+      // 30 batches of 3 keys typed 150 ms apart (about 240 WPM) over 4.5 s,
+      // all reaching the server in the same instant.
+      const arrival = START + 10_000;
+      const text = keys(90);
+      for (let index = 0; index < 30; index++) {
+        const typedAt = START + 5_500 + index * 150;
+        const batch = text.slice(index * 3, index * 3 + 3);
+        expect(race.applyKeys("a", batch, arrival, typedAt).ok).toBe(true);
+      }
+      expect(race.playerState("a")?.input).toHaveLength(90);
+    });
+
+    test("the same batches judged on arrival are refused", () => {
+      const race = long();
+      const results = Array.from({ length: 30 }, () => race.applyKeys("a", keys(3), START + 10_000).ok);
+      expect(results.filter((ok) => !ok).length).toBeGreaterThan(0);
+    });
+
+    test("typing too fast is still refused, whatever the times say", () => {
+      const race = long();
+      // 60 keys claimed within half a second.
+      const results = Array.from({ length: 20 }, (_, index) =>
+        race.applyKeys("a", keys(3), START + 5_500, START + 5_000 + index * 25).ok,
+      );
+      expect(results.filter((ok) => !ok).length).toBeGreaterThan(0);
+    });
+
+    test("a time in the future counts as now", () => {
+      const race = long();
+      expect(race.applyKeys("a", keys(BURST_KEYS), START + 5_000).ok).toBe(true);
+      // Claiming the batch was typed a minute from now doesn't refill the bucket.
+      expect(race.applyKeys("a", keys(10), START + 5_100, START + 65_000)).toEqual({
+        ok: false,
+        reason: "tooFast",
+      });
+    });
+
+    test("a time before the previous batch can't refill twice", () => {
+      const race = long();
+      expect(race.applyKeys("a", keys(BURST_KEYS), START + 5_000).ok).toBe(true);
+      expect(race.applyKeys("a", keys(10), START + 5_100, START + 1_000)).toEqual({
+        ok: false,
+        reason: "tooFast",
+      });
+    });
+
+    test("a batch older than the lag window counts as typed at its edge", () => {
+      const race = long();
+      expect(race.applyKeys("a", keys(BURST_KEYS), START + 30_000).ok).toBe(true);
+      // Claimed 20 s ago: judged as typed MAX_LAG_MS ago, which is before the
+      // last batch, so no refill.
+      expect(race.applyKeys("a", keys(5), START + 30_100, START + 10_000).ok).toBe(false);
+      expect(MAX_LAG_MS).toBeLessThan(20_000);
+    });
   });
 
   test("a full race: finish order, WPM, accuracy and the end (COURSE-09)", () => {
