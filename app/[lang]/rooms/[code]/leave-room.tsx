@@ -5,17 +5,12 @@ import type { Locale } from "@/lib/i18n/config";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { leaveClosesRoomAction, leaveRoomAction } from "../actions";
 
-/** Red like the kick dialog: deleting the room can't be undone. */
 const danger =
   "h-11 w-full cursor-pointer bg-danger px-6 font-medium text-on-danger transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 
-/**
- * Leaves the room. When the host is the last account in it, the room would
- * be deleted (SALLE-08), so it asks first. The server checks at click time,
- * since who is connected changes without the page re-rendering.
- */
+/** The server checks at click time, since who is connected changes without a re-render. */
 export function LeaveRoom({ dict, locale }: { dict: RoomDictionary; locale: Locale }) {
   const form = useRef<HTMLFormElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -56,7 +51,6 @@ export function LeaveRoom({ dict, locale }: { dict: RoomDictionary; locale: Loca
           {dict.leave}
         </button>
       </form>
-      {/* Same centered native dialog as the kick confirmation. */}
       <dialog
         ref={dialog}
         aria-labelledby={titleId}

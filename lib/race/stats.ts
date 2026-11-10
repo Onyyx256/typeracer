@@ -13,17 +13,15 @@ function perMinute(chars: number, elapsedMs: number): number {
   return chars / CHARS_PER_WORD / (elapsedMs / MS_PER_MINUTE);
 }
 
-/** Net WPM: correctly typed characters ÷ 5 ÷ elapsed minutes. */
 export function netWpm(correctChars: number, elapsedMs: number): number {
   return perMinute(correctChars, elapsedMs);
 }
 
-/** Raw WPM: every typed character (right or wrong) ÷ 5 ÷ elapsed minutes. */
 export function rawWpm(typedChars: number, elapsedMs: number): number {
   return perMinute(typedChars, elapsedMs);
 }
 
-/** Correct keystrokes ÷ all keystrokes × 100; 100 before the first key. */
+/** 100 before the first key. */
 export function accuracy(correctKeystrokes: number, keystrokes: number): number {
   if (keystrokes === 0) {
     return 100;
@@ -31,7 +29,6 @@ export function accuracy(correctKeystrokes: number, keystrokes: number): number 
   return (correctKeystrokes / keystrokes) * 100;
 }
 
-/** Validated characters ÷ text length, between 0 and 1. */
 export function progressRatio(validatedChars: number, textLength: number): number {
   if (textLength <= 0) {
     return 0;

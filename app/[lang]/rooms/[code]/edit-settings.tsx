@@ -16,11 +16,6 @@ const primary =
 const secondary =
   "flex h-11 cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf";
 
-/**
- * The host's settings editor, between races (CONF-01 to CONF-11). The same
- * fields as on creation, minus the host's name and role. Saving tells
- * everyone in the room and the room browser (CONF-12, JOIN-02).
- */
 export function EditSettings({
   dict,
   fieldsDict,
@@ -96,7 +91,6 @@ export function EditSettings({
               update={update}
             />
           </div>
-          {/* Stays in view while the fields scroll. */}
           <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-line bg-background px-6 py-4">
             <p role="status" className="min-h-5 flex-1 font-mono text-sm text-danger">
               {pending ? (

@@ -12,7 +12,7 @@ Change to make: $ARGUMENTS
 
 ## Setup in this project
 
-- Schema: `db/schema.ts` (Drizzle `pgTable` definitions, with comments that cite requirement IDs).
+- Schema: `db/schema.ts` (Drizzle `pgTable` definitions).
 - Migrations: `db/migrations/` with readable names (`0000_create_users.sql`) and Drizzle's `meta/` folder. Both are committed.
 - Local database: `bun run db:up` (Docker Compose, PostgreSQL 17). `DATABASE_URL` comes from `.env.local`, as in `.env.example`.
 - Scripts: `bun run db:generate`, `bun run db:migrate`, `bun run db:studio`.
@@ -26,7 +26,7 @@ Change to make: $ARGUMENTS
    - foreign keys with an explicit `onDelete`;
    - indexes for columns that are filtered or sorted on (room browser, history pagination).
    Use `timestamp(..., { withTimezone: true })`, `uuid` ids like the `users` table, and export `$inferSelect` / `$inferInsert` types.
-2. **Edit `db/schema.ts`.** Comment non-obvious columns and constraints with the requirement ID they serve.
+2. **Edit `db/schema.ts`.** Add a comment only when a column or constraint would look wrong without one; names should carry the meaning.
 3. **Generate the migration** with a descriptive snake_case name:
    ```bash
    bun run db:generate --name create_rooms

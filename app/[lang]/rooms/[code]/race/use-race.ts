@@ -20,11 +20,7 @@ export type LiveRace = Omit<RaceStatePayload, "startsInMs" | "endsInMs" | "track
 /** Asks again while the server has nothing yet (the page can render a moment before the race exists). */
 const RETRY_MS = 1_000;
 
-/**
- * Follows the room's race: asks for it (race:sync) on mount and after
- * every reconnection, which also gives a runner coming back their typing
- * (COURSE-08), and keeps the track from the 5-per-second updates.
- */
+/** Asks again after every reconnection, which also gives a returning runner their typing back. */
 export function useRace(code: string): { race: LiveRace | null; track: TrackEntry[] } {
   const [race, setRace] = useState<LiveRace | null>(null);
   const [track, setTrack] = useState<TrackEntry[]>([]);

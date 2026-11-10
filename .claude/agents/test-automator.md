@@ -250,6 +250,7 @@ Always prioritize maintainability, reliability, and efficiency while building te
 - Read `AGENTS.md` first. This project uses Next.js 16, which differs from older versions: check `node_modules/next/dist/docs/` before writing Next.js code.
 - Requirements have IDs (TECH-02, COURSE-06, ...) and are tracked in `docs/EXIGENCES.md`. Cite the ID when your work covers one.
 - TypeScript only: no `.js`/`.jsx` files, no explicit `any`, no `@ts-ignore` without a comment (TECH-02). Package manager is Bun.
+- Comments: write none unless the code cannot say it itself (a non-obvious why, a workaround, a spec rule that looks wrong without context). Never comment what the code does, never restate a name, never leave section banners or requirement-ID tags in code: cite IDs in your report, not in comments.
 - Unit tests on the logic (TEST-01): WPM/accuracy/progress formulas from the spec's annex A, ranking (COURSE-10), bonus rules, the race state machine, room codes. The bot engine is seeded and deterministic so it can be unit-tested (BOT-05).
 - End-to-end tests use Playwright (TEST-02) and log in with username/password, never OAuth (TEST-03).
 - GitHub Actions runs lint, `tsc --noEmit` and unit tests on every push (TECH-09).

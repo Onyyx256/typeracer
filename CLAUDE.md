@@ -25,5 +25,6 @@ The commit history is graded: it must be regular and meaningful, and a few huge 
 ## Hard rules
 
 - TECH-02: only `.ts`/`.tsx`, no explicit `any`, no `@ts-ignore` without a justifying comment.
+- Comments: none unless the code cannot say it itself (a non-obvious why, a workaround). No comments that describe what the code does, no section banners, no requirement-ID tags in code.
 - TECH-07: every server-side input (server actions, API routes, real-time messages) is validated with Zod.
 - DES-01, DES-02: the site name and logo are made by the student without AI. Never generate or change them.

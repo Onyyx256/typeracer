@@ -11,10 +11,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: dict.practice.title };
 }
 
-/**
- * Practice is open to everyone: signed in, guest, or no session at all,
- * as long as they aren't in a room. The text action checks that too.
- */
 export default async function PracticePage() {
   const dict = await getDictionary();
 
@@ -22,7 +18,6 @@ export default async function PracticePage() {
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 sm:px-8">
       <h1 className="font-display text-4xl leading-tight font-semibold">{dict.practice.heading}</h1>
       <p className="mt-2 max-w-2xl text-muted">{dict.practice.lead}</p>
-      {/* The runner's name comes from the session cookie, so it streams in. */}
       <Suspense fallback={null}>
         <Practice />
       </Suspense>

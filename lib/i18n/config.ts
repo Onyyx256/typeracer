@@ -21,7 +21,6 @@ export function hasLocale(value: string): value is Locale {
   return localeSchema.safeParse(value).success;
 }
 
-/** Picks the best supported language from an Accept-Language header. */
 export function negotiateLocale(acceptLanguage: string | null): Locale {
   if (!acceptLanguage) {
     return DEFAULT_LOCALE;
@@ -33,7 +32,6 @@ export function negotiateLocale(acceptLanguage: string | null): Locale {
       const [tag = "", ...params] = part.trim().split(";");
       const quality = params.find((param) => param.trim().startsWith("q="));
       return {
-        // "en-US" counts as "en": only the language matters here, not the region.
         language: tag.trim().toLowerCase().split("-")[0] ?? "",
         q: quality ? Number(quality.trim().slice(2)) : 1,
       };
@@ -49,7 +47,7 @@ export function negotiateLocale(acceptLanguage: string | null): Locale {
   return DEFAULT_LOCALE;
 }
 
-/** The locale at the start of a pathname, for Client Components that can't use root params. */
+/** For Client Components, which can't use root params. */
 export function localeFromPathname(pathname: string): Locale {
   const first = pathname.split("/")[1] ?? "";
   return hasLocale(first) ? first : DEFAULT_LOCALE;
@@ -60,7 +58,6 @@ export function localePath(locale: Locale, path: string): string {
   return path === "/" ? `/${locale}` : `/${locale}${path}`;
 }
 
-/** The same page in another language: swaps the first path segment. */
 export function switchLocalePath(pathname: string, locale: Locale): string {
   const [, first = "", ...rest] = pathname.split("/");
   const tail = hasLocale(first) ? rest : [first, ...rest];

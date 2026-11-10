@@ -76,7 +76,6 @@ describe("Race", () => {
   });
 
   test("refuses a batch typed faster than a human could (COURSE-06)", () => {
-    // A whole text sent right at the start is refused, and nothing moves.
     const race = newRace();
     expect(race.applyKeys("a", [...TEXT], START + 1)).toEqual({ ok: false, reason: "tooFast" });
     expect(race.playerState("a")?.input).toBe("");
@@ -102,7 +101,6 @@ describe("Race", () => {
     expect(big.track(START + 5100).find((entry) => entry.userId === "a")?.progress).toBeCloseTo(
       BURST_KEYS / 200,
     );
-    // A second later, a normal pace is accepted again.
     expect(big.applyKeys("a", keys(MAX_KEYS_PER_SECOND), START + 6100).ok).toBe(true);
   });
 
@@ -133,7 +131,6 @@ describe("Race", () => {
 
     test("typing too fast is still refused, whatever the times say", () => {
       const race = long();
-      // 60 keys claimed within half a second.
       const results = Array.from({ length: 20 }, (_, index) =>
         race.applyKeys("a", keys(3), START + 5_500, START + 5_000 + index * 25).ok,
       );
@@ -175,7 +172,6 @@ describe("Race", () => {
     expect(race.track(aliceDone).find((entry) => entry.userId === "a")?.status).toBe("finished");
     expect(race.isOver(aliceDone)).toBe(false);
 
-    // Bruno makes one mistake and fixes it.
     const brunoDone = typeSlowly(race, "b", "ux\b" + TEXT.slice(1), START + 500);
     race.applyKeys("c", ["u", "n"], START + 300);
     expect(race.abandon("c", START + 4000)).toBe(true);
@@ -198,7 +194,6 @@ describe("Race", () => {
     expect(bruno.accuracy).toBeCloseTo((13 / 14) * 100);
     expect(bruno.rawWpm).toBeGreaterThan(bruno.wpm);
     expect(bruno.missedKeys).toEqual({ n: 1 });
-    // Giving up leaves no accuracy (COURSE-07).
     expect(chloe.accuracy).toBeNull();
     expect(chloe.progress).toBeCloseTo(2 / TEXT.length);
     expect(chloe.durationMs).toBe(4000);
@@ -267,7 +262,6 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     });
   }
 
-  /** Alice types the first `chars` characters; Bruno nothing. */
   function leadTo(race: Race, chars: number): number {
     return typeSlowly(race, "a", LONG.slice(0, chars), START);
   }
@@ -298,7 +292,6 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     expect(results.find((row) => row.userId === "b")?.bonuses).toEqual(["rain", "rain", "rain"]);
   });
 
-  /** A seed whose first hindrance is `kind`. */
   function raceWith(kind: string): { race: Race; now: number } {
     for (let seed = 0; seed < 100; seed++) {
       const race = bonusRace(seed);
@@ -325,7 +318,6 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
       race.playerState("a")?.text.length,
     );
 
-    // Bruno now finishes after typing 18 words, and his progress is over his own text.
     const done = typeSlowly(race, "b", bruno?.text ?? "", now);
     const result = race.results(done).find((row) => row.userId === "b");
     expect(result?.status).toBe("finished");

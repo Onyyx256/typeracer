@@ -15,19 +15,16 @@ export type SendAllowance = { tokens: number; at: number };
  */
 export const SEND_BURST = BURST_KEYS - 10;
 
-/** Same start as the server: a few keys when typing opens. */
 export function startAllowance(startsAt: number): SendAllowance {
   return { tokens: START_KEYS, at: startsAt };
 }
 
-/** How many keys can go in a batch sent at `now`. */
 export function keysAllowed(allowance: SendAllowance, now: number): number {
   const refill = (Math.max(0, now - allowance.at) / 1000) * MAX_KEYS_PER_SECOND;
   const tokens = Math.min(SEND_BURST, allowance.tokens + refill);
   return Math.min(MAX_KEYS_PER_BATCH, Math.floor(tokens));
 }
 
-/** The allowance after sending `count` keys at `now`. */
 export function spendAllowance(
   allowance: SendAllowance,
   now: number,

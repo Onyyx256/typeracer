@@ -3,9 +3,8 @@ import { localeSchema } from "@/lib/i18n/config";
 import { COMPLEXITIES } from "./settings";
 
 /**
- * The room browser's filters (JOIN-02), read from the URL so a filtered list
- * can be shared, survives the live refresh and works without JavaScript.
- * A missing or unknown value means "any": a hand-edited URL never errors.
+ * Read from the URL so a filtered list can be shared and works without
+ * JavaScript. An unknown value means "any": a hand-edited URL never errors.
  */
 export const roomFiltersSchema = z.object({
   lang: localeSchema.optional().catch(undefined),
@@ -18,7 +17,6 @@ export const FILTER_KEYS = ["lang", "complexity"] as const satisfies readonly (k
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-/** Validates the page's search params (TECH-07); a repeated key keeps its first value. */
 export function parseRoomFilters(searchParams: SearchParams): RoomFilters {
   const first = (value: string | string[] | undefined) =>
     Array.isArray(value) ? value[0] : value;
@@ -28,7 +26,6 @@ export function parseRoomFilters(searchParams: SearchParams): RoomFilters {
   });
 }
 
-/** The query string for `filters` with one key changed; `undefined` clears it. */
 export function filterQuery(
   filters: RoomFilters,
   key: keyof RoomFilters,

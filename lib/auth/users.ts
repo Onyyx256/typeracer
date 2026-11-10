@@ -18,7 +18,6 @@ export async function createUser(
   return created ?? null;
 }
 
-/** AUTH-02: a guest is a user row with only a nickname. */
 export async function createGuest(nickname: string): Promise<{ id: string }> {
   const [created] = await getDb()
     .insert(users)
@@ -27,7 +26,6 @@ export async function createGuest(nickname: string): Promise<{ id: string }> {
   return created;
 }
 
-/** A guest's default name for the next rooms: the last one they got into a room with. */
 export async function setGuestNickname(id: string, nickname: string): Promise<void> {
   await getDb()
     .update(users)
@@ -46,7 +44,7 @@ export async function findCredentials(
   return found ?? null;
 }
 
-/** What the interface may show of a user; never the password hash. */
+/** Never the password hash. */
 export async function findProfile(
   id: string,
 ): Promise<{ id: string; displayName: string; isGuest: boolean } | null> {

@@ -4,7 +4,7 @@ export type PluralForms = { one: string; other: string };
 
 type Values = Record<string, string | number>;
 
-/** Fills `{name}` placeholders; unknown ones are left as is so a typo shows on screen. */
+/** Unknown placeholders are left as is, so a typo shows on screen. */
 export function interpolate(template: string, values: Values = {}): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => {
     const value = values[key];
@@ -12,7 +12,6 @@ export function interpolate(template: string, values: Values = {}): string {
   });
 }
 
-/** Chooses the singular or plural form by the language's own rules, then fills `{count}`. */
 export function plural(
   locale: Locale,
   forms: PluralForms,
@@ -32,7 +31,6 @@ export function formatPercent(locale: Locale, ratio: number, decimals = 0): stri
   }).format(ratio);
 }
 
-/** A number with a fixed count of decimals, in the language's format (I18N-03). */
 export function formatNumber(locale: Locale, value: number, decimals = 0): string {
   return new Intl.NumberFormat(locale, {
     minimumFractionDigits: decimals,

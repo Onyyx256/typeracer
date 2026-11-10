@@ -13,7 +13,6 @@ const primary =
 const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf";
 
-/** Shown to the host beside each other member with an account; asks before handing over the role. */
 export function MakeHost({
   dict,
   userId,
@@ -58,7 +57,6 @@ export function MakeHost({
       >
         <CrownIcon />
       </button>
-      {/* Same centered native dialog as the kick confirmation. */}
       <dialog
         ref={dialog}
         aria-labelledby={titleId}
@@ -92,7 +90,6 @@ export function MakeHost({
   );
 }
 
-/** A crown: the host role, the same word the member list shows. */
 function CrownIcon() {
   return (
     <svg

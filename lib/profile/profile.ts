@@ -5,7 +5,6 @@ import { raceResults, userAvatars, users } from "@/db/schema";
 import { readCosmetics, type Cosmetics, type PlayerProgress } from "./cosmetics";
 import { avatarPath, type PlayerLooks } from "./look";
 
-/** Races played, wins and best WPM, from the user's saved results (HIST-01). */
 export async function getPlayerProgress(userId: string): Promise<PlayerProgress> {
   const [row] = await getDb()
     .select({
@@ -23,7 +22,6 @@ export async function getPlayerProgress(userId: string): Promise<PlayerProgress>
   };
 }
 
-/** Photos and colours of these users, for the track and the podium. */
 export async function getLooks(userIds: readonly string[]): Promise<PlayerLooks> {
   const ids = [...new Set(userIds)];
   if (ids.length === 0) {
@@ -71,7 +69,7 @@ export async function removeAvatar(userId: string): Promise<void> {
   await getDb().delete(userAvatars).where(eq(userAvatars.userId, userId));
 }
 
-/** AUTH-05: accounts only; a guest's nickname is set when joining a room. */
+/** Accounts only; a guest's nickname is set when joining a room. */
 export async function setDisplayName(userId: string, displayName: string): Promise<void> {
   await getDb()
     .update(users)

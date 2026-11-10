@@ -1,28 +1,23 @@
 import { pick, type Rng } from "@/lib/texts/rng";
 
 /**
- * Catch-up bonuses (BONUS-01, BONUS-02), as pure rules: the engine gives
- * the standings and a seeded random generator, and gets back who receives
- * what. Each checkpoint brings a bonus for the trailing runners and a
- * hindrance for the leaders. The flower theme gives the three effects:
- * - rain: rain and sun, the trailing runners' text gets shorter;
+ * Catch-up bonuses as pure rules. Each checkpoint helps the trailing
+ * runners and slows the leaders:
+ * - rain: the trailing runners' text gets shorter;
  * - night: the leaders' text gets longer;
- * - glare: a blinding sun hides the leaders' next words for a moment.
+ * - glare: the leaders' next words are hidden for a moment.
  */
 export const BONUS_KINDS = ["rain", "night", "glare"] as const;
 
 export type BonusKind = (typeof BONUS_KINDS)[number];
 
-/** The effects that slow the leaders; one of them falls at each checkpoint. */
 export const HINDRANCES = ["night", "glare"] as const satisfies readonly BonusKind[];
 
 /** The leader's progress that fires a bonus, each once per race. */
 export const CHECKPOINTS = [0.25, 0.5, 0.75] as const;
 
-/** Effects one runner can receive in a race. */
 export const MAX_BONUSES_PER_RUNNER = 3;
 
-/** Further behind the leader than this, a runner counts as trailing. */
 export const TRAILING_GAP = 0.25;
 
 /** Rain: share of the original text's words taken off the end. */
@@ -38,32 +33,24 @@ export const GLARE_WORDS = 3;
 /** Words kept after the one being typed, so a rain never cuts what the browser may already have typed. */
 export const RAIN_MARGIN_WORDS = 2;
 
-/** One runner's place in the race, as the rules need it. */
 export type Standing = {
   userId: string;
   progress: number;
-  /** Still typing: neither finished nor abandoned. */
   racing: boolean;
-  /** Effects received so far in this race. */
   received: number;
-  /** Words a rain could take off their text now (see removableWords). */
   removable: number;
 };
 
 export type BonusTarget = { userId: string; words: number };
 
-/** One effect of a checkpoint. `words` is 0 for glare. */
+/** `words` is 0 for glare. */
 export type BonusPlan = { kind: BonusKind; targets: BonusTarget[] };
 
-/** A share of the original text, at least one word. */
 export function shareOfWords(share: number, baseWords: number): number {
   return Math.max(1, Math.round(share * baseWords));
 }
 
-/**
- * Racing runners who are last, or more than TRAILING_GAP behind the
- * leader. The leader never trails, so a lone runner gets nothing.
- */
+/** The leader never trails, so a lone runner gets nothing. */
 export function trailingRunners(standings: readonly Standing[]): Standing[] {
   const leader = Math.max(0, ...standings.map((standing) => standing.progress));
   const leaderId = standings.find((standing) => standing.progress === leader)?.userId;
@@ -77,11 +64,7 @@ export function trailingRunners(standings: readonly Standing[]): Standing[] {
   );
 }
 
-/**
- * The first places still racing, best first, up to the number of night
- * shares. A trailing runner is never in it: a runner gets a bonus or a
- * hindrance, never both.
- */
+/** A trailing runner is never a leader: a runner gets a bonus or a hindrance, never both. */
 export function leadingRunners(standings: readonly Standing[]): Standing[] {
   const trailing = new Set(trailingRunners(standings).map((standing) => standing.userId));
   return standings
@@ -94,12 +77,6 @@ function underCap(standing: Standing): boolean {
   return standing.received < MAX_BONUSES_PER_RUNNER;
 }
 
-/**
- * What a checkpoint does: the bonus (rain) for the trailing runners, and
- * a hindrance for the leaders, night or glare picked at random. Either is
- * left out when it has nobody to apply to. `baseWords` is the original
- * text's word count, the same for everyone.
- */
 export function planBonuses(
   standings: readonly Standing[],
   baseWords: number,
@@ -137,22 +114,17 @@ export function planBonuses(
   return plans;
 }
 
-/** Index of the word the cursor is in (or about to start). */
 function cursorWord(text: string, inputLength: number): number {
   return text.slice(0, inputLength).split(" ").length - 1;
 }
 
-/**
- * How many words a rain can take off the end: everything after the word
- * being typed and RAIN_MARGIN_WORDS more.
- */
 export function removableWords(text: string, inputLength: number): number {
   const words = text.split(" ").length;
   const keep = cursorWord(text, inputLength) + 1 + RAIN_MARGIN_WORDS;
   return Math.max(0, words - keep);
 }
 
-/** The text without its last `count` words (never fewer than one word left), and those words. */
+/** Always leaves at least one word. */
 export function removeLastWords(
   text: string,
   count: number,
@@ -167,15 +139,11 @@ export function joinRemoved(cut: string, before: string): string {
   return [cut, before].filter((part) => part.length > 0).join(" ");
 }
 
-/** The text with these words added at the end. */
 export function appendWords(text: string, words: readonly string[]): string {
   return words.length === 0 ? text : `${text} ${words.join(" ")}`;
 }
 
-/**
- * Where glare covers: from the cursor to the end of the GLARE_WORDS-th
- * word after it, as [start, end) character indexes.
- */
+/** [start, end) character indexes. */
 export function glareRange(text: string, inputLength: number): [number, number] {
   let end = inputLength;
   let words = 0;

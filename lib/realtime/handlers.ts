@@ -29,7 +29,7 @@ function logFailure(action: string, error: unknown): void {
   console.error(`${action} failed:`, cause instanceof Error ? cause.message : "unknown error");
 }
 
-/** Counts as leaving: frees the seat and, for a host, hands the role over (SALLE-08). */
+/** Counts as leaving: frees the seat and, for a host, hands the role over. */
 function memberGone(userId: string): void {
   leaveRoom(userId).catch((error: unknown) => logFailure("leave after disconnect", error));
 }
@@ -46,12 +46,11 @@ function onConnection(socket: Socket): void {
   const { userId } = socket.data as SocketData;
   if (userId) {
     socketOpened(userId);
-    // Lets the server reach this user's tabs, e.g. when they are kicked (SALLE-07).
+    // Lets the server reach this user's tabs, e.g. when they are kicked.
     void socket.join(userChannel(userId));
     socket.on("disconnect", () => socketClosed(userId, memberGone));
   }
 
-  // TECH-07: payloads are validated; a bad one is ignored.
   socket.on(EVENTS.watchRoom, async (payload: unknown) => {
     const parsed = watchRoomSchema.safeParse(payload);
     if (!parsed.success) {
@@ -71,7 +70,6 @@ function onConnection(socket: Socket): void {
   socket.on(EVENTS.watchLobby, () => void socket.join(LOBBY_CHANNEL));
   socket.on(EVENTS.unwatchLobby, () => void socket.leave(LOBBY_CHANNEL));
 
-  // Whoever may watch the room gets the race; a runner also gets their own typing back.
   socket.on(EVENTS.raceSync, async (payload: unknown) => {
     const parsed = raceSyncSchema.safeParse(payload);
     if (!parsed.success) {
@@ -88,7 +86,6 @@ function onConnection(socket: Socket): void {
       logFailure("race:sync", error);
     }
   });
-  // Only the socket's own text: someone not racing gets nothing.
   socket.on(EVENTS.raceTextSync, (payload: unknown) => {
     const parsed = raceSyncSchema.safeParse(payload);
     if (!userId || !parsed.success) {
@@ -118,10 +115,6 @@ function onConnection(socket: Socket): void {
   });
 }
 
-/**
- * Wires the Socket.IO server created by server.ts. Guests may connect (to
- * watch the public room list); the session cookie identifies signed-in users.
- */
 export async function attachHandlers(io: Server): Promise<void> {
   const state = realtimeState();
   if (state.handlersAttached) {

@@ -6,7 +6,6 @@ export const PASSWORD_MIN = 8;
 // Hashing cost grows with input size, so an unbounded password is a cheap way to tie up the server.
 export const PASSWORD_MAX = 128;
 
-/** The values the error messages refer to, e.g. "Enter {usernameMin} to {usernameMax} characters." */
 export const AUTH_LIMITS = {
   usernameMin: USERNAME_MIN,
   usernameMax: USERNAME_MAX,
@@ -65,10 +64,7 @@ export const signupSchema = z
     error: "confirmMismatch",
   });
 
-/**
- * AUTH-02: a guest's nickname, shown in rooms. Letters of any language,
- * digits, spaces and a few separators; inner runs of spaces count as one.
- */
+/** Inner runs of spaces count as one. */
 export const nicknameSchema = z
   .string()
   .trim()
@@ -90,7 +86,6 @@ export const loginSchema = z.object({
 
 export type SignupInput = z.infer<typeof signupSchema>;
 
-/** Keeps the first message of each field, which is all the form has room for. */
 export function toFieldErrors(error: z.ZodError<SignupInput>): FieldErrors {
   const { fieldErrors } = z.flattenError(error);
   const first = (messages: string[] | undefined) => {

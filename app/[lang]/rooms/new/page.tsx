@@ -18,7 +18,7 @@ export default async function CreateRoomPage() {
         {dict.createRoom.heading}
       </h1>
       <p className="mt-2 max-w-2xl text-muted">{dict.createRoom.lead}</p>
-      {/* Guests can't create rooms (AUTH-03), so the form waits for the session check. */}
+      {/* Guests can't create rooms, so the form waits for the session check. */}
       <Suspense fallback={null}>
         <SignedInForm />
       </Suspense>

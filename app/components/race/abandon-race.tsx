@@ -8,7 +8,6 @@ const danger =
 const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf";
 
-/** COURSE-07: giving up asks first; `onConfirm` then ends the runner's race. */
 export function AbandonRace({ dict, onConfirm }: { dict: RaceDictionary; onConfirm: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();

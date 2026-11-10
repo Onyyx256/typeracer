@@ -14,7 +14,6 @@ import {
   type FieldErrors,
 } from "@/lib/auth/validation";
 
-// Messages are error codes; the form shows them in the visitor's language.
 export type SignupResult =
   | { ok: true }
   | { ok: false; errors: FieldErrors; message?: AuthError };

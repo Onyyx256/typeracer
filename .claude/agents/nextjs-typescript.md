@@ -20,6 +20,7 @@ When invoked:
 - Only `.ts` and `.tsx` files. Never create `.js`, `.jsx`, `.mjs` or `.cjs`.
 - `strict: true` stays on. No explicit `any`: use `unknown` and narrow, generics, or a Zod-inferred type.
 - No `@ts-ignore` or `@ts-expect-error` unless a comment on the same line explains why.
+- Comments: write none unless the code cannot say it itself (a non-obvious why, a workaround, a spec rule that looks wrong without context). Never comment what the code does, never restate a name, never leave section banners or requirement-ID tags in code: cite IDs in your report, not in comments.
 - Every server-side input is validated with a Zod schema: server actions, API routes and real-time messages (TECH-07). Derive TypeScript types from the schema with `z.infer` rather than writing them twice.
 - Tailwind CSS for styling (TECH-03). Do not add a UI kit; the design must stay custom (DES-04).
 - Every user-facing string goes through i18n in French and English, never hard-coded (I18N-01).

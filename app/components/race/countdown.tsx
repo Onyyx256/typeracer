@@ -3,7 +3,6 @@
 import type { RaceDictionary } from "@/lib/i18n/dictionaries/fr";
 import { useNow } from "./use-now";
 
-/** COURSE-03: the synchronized 3-2-1, then "Go!", then "Time's up!" at the limit. */
 export function Countdown({
   startsAt,
   endsAt,

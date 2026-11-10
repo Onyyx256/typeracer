@@ -1,9 +1,9 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { e2eName } from "./database";
 
-// SALLE-08: when the host leaves, the role goes to the signed-in member who
-// has been there longest, never to a guest. With only guests left, the
-// room is deleted and their pages say so.
+// When the host leaves, the role goes to the signed-in member who has been
+// there longest, never to a guest. With only guests left, the room is
+// deleted and their pages say so.
 
 const PASSWORD = "e2e-password-1234";
 
@@ -17,7 +17,6 @@ async function signUp(page: Page, username: string): Promise<void> {
   await expect(page).toHaveURL(/\/en$/);
 }
 
-/** A new signed-in host with an open room; returns the page and the room code. */
 async function hostRoom(browser: Browser): Promise<{ host: Page; code: string }> {
   const hostName = e2eName();
   const host = await (await browser.newContext()).newPage();
@@ -29,7 +28,6 @@ async function hostRoom(browser: Browser): Promise<{ host: Page; code: string }>
   return { host, code: host.url().split("/").at(-1) ?? "" };
 }
 
-/** Joins as a runner from a new browser, as a guest or after signing up. */
 async function joins(browser: Browser, code: string, account: boolean) {
   const name = e2eName();
   const page = await (await browser.newContext()).newPage();
@@ -84,7 +82,6 @@ test("with only a guest left, the room is deleted and the guest is told", async 
   await notice.getByRole("link", { name: "Browse rooms" }).click();
   await expect(guest.page).toHaveURL(/\/en\/rooms$/);
 
-  // The room is gone, and the guest is free to join another one.
   await guest.page.goto(`/en/rooms/${code}`);
   await expect(guest.page.getByRole("button", { name: "Join as a runner" })).toHaveCount(0);
 

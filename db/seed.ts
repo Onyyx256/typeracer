@@ -1,7 +1,6 @@
 /**
- * Demo data (TECH-04). For now: the passage corpus for coherent texts, from
- * db/seed/passages.json (built by `bun run texts:build`).
- * Run with `bun run db:seed`; running it again updates rows instead of
+ * Seeds the passage corpus from db/seed/passages.json (built by
+ * `bun run texts:build`). Running it again updates rows instead of
  * duplicating them.
  */
 import { loadEnvConfig } from "@next/env";

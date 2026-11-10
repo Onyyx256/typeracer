@@ -18,7 +18,6 @@ const PODIUM = [
   { index: 2, order: "order-3", height: "h-14", stem: 75, delay: 0 },
 ] as const;
 
-/** RÉSULTATS: the top 3 (RES-01) and the full table (RES-02). */
 export function RaceResults({
   view,
   userId,
@@ -30,7 +29,6 @@ export function RaceResults({
   /** Only what's shown, so a practice race (never saved) can use it too. */
   view: Pick<RaceResultsView, "results" | "source">;
   userId: string | null;
-  /** Photos and flower colours; guests and bots keep the default look. */
   looks?: PlayerLooks;
   dict: ResultsDictionary;
   roomDict: RoomDictionary;

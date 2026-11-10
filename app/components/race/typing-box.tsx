@@ -36,21 +36,14 @@ type TypingOptions = {
 
 export type Typing = {
   typing: TypingState;
-  /** When the text was completed, for the WPM shown; null while typing. */
   finishedAt: number | null;
   /** The latest state, for event handlers between renders. */
   state: RefObject<TypingState>;
-  /** Replaces the state, for a resync with the server. */
   set: (next: TypingState) => void;
   /** Applies keys while typing is open; returns those that changed something. */
   press: (keys: readonly string[]) => string[];
 };
 
-/**
- * What the player typed, from the same reducer the server replays keys
- * through (lib/race/typing.ts), so the feedback is immediate (COURSE-04).
- * Where the keys go next is the caller's business.
- */
 export function useTyping({ text, errorMode, startsAt, endsAt, initial }: TypingOptions): Typing {
   const [typing, setTyping] = useState<TypingState>(initial);
   const [finishedAt, setFinishedAt] = useState<number | null>(null);
@@ -68,8 +61,7 @@ export function useTyping({ text, errorMode, startsAt, endsAt, initial }: Typing
     [text, errorMode],
   );
 
-  // A catch-up bonus can change the text (BONUS-04): whether it's complete
-  // is checked again against the new one.
+  // A catch-up bonus can change the text: whether it's complete is checked again.
   useEffect(() => {
     set(state.current);
   }, [set]);
@@ -100,12 +92,7 @@ export function useTyping({ text, errorMode, startsAt, endsAt, initial }: Typing
   return { typing, finishedAt, state, set, press };
 }
 
-/**
- * COURSE-04: the typing area. Shows the text with right, wrong and the
- * cursor, the live WPM and accuracy, and turns key presses into `onKeys`
- * calls; paste and drop are refused. The text box shows three lines and
- * follows the caret.
- */
+/** Paste and drop are refused. The text box shows three lines and follows the caret. */
 export function TypingBox({
   text,
   errorMode,
@@ -125,13 +112,10 @@ export function TypingBox({
   endsAt: number | null;
   typing: Typing;
   onKeys: (keys: string[]) => void;
-  /** A blinding sun hides the next words (BONUS-03). */
   glare?: boolean;
-  /** Words rain took off the end, shown crossed out after the text (BONUS-03). */
   removed?: string;
   dict: RaceDictionary;
   locale: Locale;
-  /** Shown at the end of the stats row (the give up button). */
   action?: ReactNode;
 }) {
   const field = useRef<HTMLTextAreaElement>(null);
@@ -143,7 +127,7 @@ export function TypingBox({
   const started = useStarted(startsAt, now);
 
   // Native listeners: beforeinput says what the key does, including
-  // accented letters from dead keys, and lets paste be refused (COURSE-04).
+  // accented letters from dead keys, and lets paste be refused.
   useEffect(() => {
     const element = field.current;
     if (!element) {
@@ -176,7 +160,6 @@ export function TypingBox({
           // Can't be cancelled; the result arrives with compositionend.
           return;
         default:
-          // Paste, drop, line breaks, forward deletes...
           event.preventDefault();
       }
     };
@@ -231,7 +214,6 @@ export function TypingBox({
     return () => observer.disconnect();
   }, [caret, started]);
 
-  // Ready to type as soon as the countdown starts.
   useEffect(() => {
     field.current?.focus({ preventScroll: true });
   }, []);
@@ -255,7 +237,6 @@ export function TypingBox({
         {action}
       </div>
 
-      {/* Clicking anywhere in the box focuses the hidden field. */}
       <div
         onClick={() => field.current?.focus({ preventScroll: true })}
         className="relative cursor-text border border-line bg-surface py-6 pr-3 pl-6 rounded-leaf focus-within:border-accent-text"
@@ -328,7 +309,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Right, wrong, the cursor, and what's left. Only re-rendered when the input changes. */
+/** Only re-rendered when the input changes. */
 const TextChars = memo(function TextChars({
   text,
   input,

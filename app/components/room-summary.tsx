@@ -8,11 +8,9 @@ export function formatSeconds(seconds: number): string {
   return seconds < 60 ? `${seconds} s` : `${seconds / 60} min`;
 }
 
-/** The host's role only matters while creating the room. */
 export type SummarySettings = Omit<RoomSettings, "hostRole"> &
   Partial<Pick<RoomSettings, "hostRole">>;
 
-/** Label, value, and whether the value is a raw character list. */
 type Row = [label: string, value: string, chars?: boolean];
 
 type RoomSummaryProps = {
@@ -21,7 +19,6 @@ type RoomSummaryProps = {
   settings: SummarySettings;
 };
 
-/** Every setting as a labelled row, grouped like the create form. */
 export function RoomSummary({ dict, locale, settings }: RoomSummaryProps) {
   const french = settings.language === "fr";
   const random = settings.textType === "random";

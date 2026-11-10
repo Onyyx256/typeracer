@@ -12,7 +12,6 @@ export type PracticeTextResult =
   | {
       ok: false;
       error: PracticeTextError;
-      /** With "inRoom": the room to go back to. */
       currentCode?: string;
     };
 
@@ -22,11 +21,7 @@ function logFailure(error: unknown): void {
   console.error("practiceText failed:", cause instanceof Error ? cause.message : "unknown error");
 }
 
-/**
- * The text of a practice race. Open to everyone, signed in or not, except
- * someone who is in a room: they belong to that room's races. The config
- * is checked like a room's (TECH-07).
- */
+/** Someone in a room belongs to that room's races and can't practice. */
 export async function practiceTextAction(input: unknown): Promise<PracticeTextResult> {
   const parsed = practiceConfigSchema.safeParse(input);
   if (!parsed.success) {

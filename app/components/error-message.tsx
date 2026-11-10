@@ -13,7 +13,6 @@ type ErrorMessageProps = {
   retry: () => void;
 };
 
-/** Body of the error pages (app/[lang]/error.tsx and app/global-error.tsx). */
 export function ErrorMessage({ locale, retry }: ErrorMessageProps) {
   const copy = COPY[locale];
 

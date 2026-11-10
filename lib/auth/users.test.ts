@@ -2,7 +2,6 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { createTestAccount, createTestGuest, deleteTestUsers, uniqueName } from "@/test/db";
 import { findProfile, setGuestNickname } from "./users";
 
-// Runs against the typeracer_test database (see test/setup.ts).
 
 afterAll(deleteTestUsers);
 

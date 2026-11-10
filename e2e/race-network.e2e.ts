@@ -1,10 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { e2eName } from "./database";
 
-// A Wi-Fi stall in the middle of a race: the browser keeps sending, the
-// network holds the messages and delivers them together. The server judges
-// the speed on when they were sent, so nothing typed is lost (COURSE-06,
-// COURSE-08).
+// A Wi-Fi stall in the middle of a race: the network holds the messages and
+// delivers them together. The server judges the speed on when they were
+// sent, so nothing typed is lost.
 
 const PASSWORD = "e2e-password-1234";
 

@@ -9,7 +9,7 @@ const ABBREVIATIONS = new Set([
   "mlle.",
 ]);
 
-/** Whole sentences, in order. A sentence ends at . ! or ? followed by a non-lowercase word. */
+/** A sentence ends at . ! or ? followed by a non-lowercase word. */
 export function splitSentences(content: string): string[] {
   const words = splitWords(content);
   const sentences: string[] = [];
@@ -33,18 +33,14 @@ export function splitSentences(content: string): string[] {
   return sentences;
 }
 
-/** How far from the asked length a run of sentences may be: 15 %, at least 2 words. */
+/** 15 %, at least 2 words. */
 export function lengthTolerance(target: number): number {
   return Math.max(2, Math.round(target * 0.15));
 }
 
 export type SentenceWindow = { text: string; wordCount: number };
 
-/**
- * Every run of consecutive sentences whose word count is within tolerance of
- * the target. If none is, the single closest run, so a passage always gives
- * something.
- */
+/** If no run is within tolerance, the single closest one, so a passage always gives something. */
 export function sentenceWindows(
   sentences: string[],
   target: number,
@@ -82,10 +78,8 @@ export type PassageCandidate = {
 };
 
 /**
- * Picks the excerpt a race uses among candidate passages: a run of whole
- * sentences of about the asked length whose own score matches the asked
- * difficulty. Falls back to any run of the right length, then to the
- * closest length found.
+ * Prefers runs whose own score matches the asked difficulty, then any run
+ * of the right length, then the closest length found.
  */
 export function choosePassageExcerpt<T extends PassageCandidate>(
   candidates: readonly T[],
@@ -127,7 +121,7 @@ export function choosePassageExcerpt<T extends PassageCandidate>(
   return closest ? { passage: closest.passage, text: closest.window.text } : null;
 }
 
-/** Removes punctuation but keeps apostrophes and hyphens inside words ("l'homme", "peut-être"). */
+/** Keeps apostrophes and hyphens inside words ("l'homme", "peut-être"). */
 export function stripPunctuation(text: string): string {
   return splitWords(text)
     .map((word) =>
@@ -139,11 +133,7 @@ export function stripPunctuation(text: string): string {
     .join(" ");
 }
 
-/**
- * Applies the toggles to a passage (CONF-06): without punctuation the marks
- * are removed, without capitals everything is lowercase, without accents
- * letters lose them (é → e). Numbers are handled when choosing the passage.
- */
+/** Numbers are handled when choosing the passage. */
 export function shapePassage(
   text: string,
   config: Pick<RaceConfig, "language" | "punctuation" | "capitals" | "accents">,

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { e2eName } from "./database";
 
-// SALLE-07: the host removes a guest from the room. The guest's page
-// shows it live, and they can't come back in.
+// The host removes a guest from the room. The guest's page shows it live,
+// and they can't come back in.
 
 const PASSWORD = "e2e-password-1234";
 
@@ -38,20 +38,17 @@ test("the host removes a guest, who can't rejoin", async ({ browser }) => {
   await joinDialog.getByRole("button", { name: "Join as a runner" }).click();
   await expect(guest.getByRole("button", { name: "Leave the room" })).toBeVisible();
 
-  // Only the host gets a remove button, and never for themself.
   await expect(guest.getByRole("button", { name: /^Remove / })).toHaveCount(0);
   const remove = host.getByRole("button", { name: `Remove ${nickname} from the room` });
   await expect(remove).toBeVisible();
   await expect(host.getByRole("button", { name: `Remove ${hostName} from the room` })).toHaveCount(0);
 
-  // Cancelling keeps them.
   await remove.click();
   const kickDialog = host.getByRole("dialog", { name: `Remove ${nickname}?` });
   await kickDialog.getByRole("button", { name: "Cancel" }).click();
   await expect(kickDialog).toBeHidden();
   await expect(host.getByRole("listitem").filter({ hasText: nickname })).toBeVisible();
 
-  // Confirming removes them, on both pages without a reload.
   await remove.click();
   await kickDialog.getByRole("button", { name: "Remove from the room" }).click();
   await expect(kickDialog).toBeHidden();
@@ -60,7 +57,6 @@ test("the host removes a guest, who can't rejoin", async ({ browser }) => {
     guest.getByRole("heading", { name: "You were removed from this room" }),
   ).toBeVisible();
 
-  // A reload still shows the notice, with no way to join.
   await guest.reload();
   await expect(
     guest.getByRole("heading", { name: "You were removed from this room" }),

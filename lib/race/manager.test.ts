@@ -10,8 +10,6 @@ import { BACKSPACE } from "./typing";
 import { abandonRace, backToLobby, closeRace, handleKeys, raceStateFor, startRace } from "./manager";
 import { getLatestRaceResults } from "./results";
 
-// Runs against the typeracer_test database (see test/setup.ts). Random
-// texts, so no passage corpus is needed.
 
 const codes: string[] = [];
 
@@ -53,7 +51,6 @@ async function stateOf(code: string): Promise<RoomState | undefined> {
   return room?.state;
 }
 
-/** Waits for the async end of a race (saving the results). */
 async function until(check: () => Promise<boolean>): Promise<void> {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (await check()) {
@@ -103,7 +100,6 @@ describe("startRace", () => {
       keystrokes: 0,
       correctKeystrokes: 0,
     });
-    // A spectator or a visitor sees the race, without a typing state.
     expect(raceStateFor(code, null)?.you).toBeNull();
   });
 });
@@ -129,7 +125,6 @@ describe("during the race", () => {
     const { hostId, code, others } = await roomWithRunners(3);
     await startRace(hostId);
     abandonRace(hostId);
-    // Leaving the room mid-race counts as abandoning (COURSE-07).
     await leaveRoom(others[0]);
     expect(await stateOf(code)).toBe("countdown");
     abandonRace(others[1]);
@@ -138,21 +133,18 @@ describe("during the race", () => {
     const saved = await getLatestRaceResults(code);
     expect(saved?.content.split(" ")).toHaveLength(10);
     expect(saved?.results.map((row) => row.status)).toEqual(["abandoned", "abandoned", "abandoned"]);
-    // Giving up leaves no accuracy (COURSE-07).
     expect(saved?.results.map((row) => row.accuracy)).toEqual([null, null, null]);
     expect(saved?.results.map((row) => row.rank)).toEqual([1, 2, 3]);
-    // Guests keep no history (AUTH-03); accounts do.
+    // Guests keep no history; accounts do.
     const host = saved?.results.find((row) => row.userId === hostId);
     expect(host?.isGuest).toBe(false);
     expect(saved?.results.filter((row) => row.isGuest).every((row) => row.userId === null)).toBe(true);
-    // Nobody typed, so no checkpoint was reached and no bonus fell (RES-02).
     expect(saved?.results.map((row) => row.bonuses)).toEqual([[], [], []]);
 
   });
 });
 
 describe("backToLobby", () => {
-  /** A room of 2 runners whose race is over, everyone having given up. */
   async function roomOnResults() {
     const room = await roomWithRunners(2);
     await startRace(room.hostId);
@@ -180,7 +172,6 @@ describe("backToLobby", () => {
 
   test("the next race starts from the waiting room, with whoever stayed (COURSE-11)", async () => {
     const { hostId, code, others } = await roomOnResults();
-    // No shortcut from the results straight to the countdown.
     expect(await startRace(hostId)).toEqual({ ok: false, error: "notStartable" });
 
     expect(await backToLobby(hostId)).toEqual({ ok: true });

@@ -7,7 +7,6 @@ import { backToLobbyAction, type BackToLobbyActionResult } from "../../actions";
 
 type NewGameError = Extract<BackToLobbyActionResult, { ok: false }>["error"];
 
-/** COURSE-11: on the results, the host's button back to the waiting room. */
 export function NewGame({ dict }: { dict: RaceDictionary }) {
   const router = useRouter();
   const [error, setError] = useState<NewGameError | null>(null);

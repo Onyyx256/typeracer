@@ -54,13 +54,11 @@ async function RoomList({
     listPublicRooms(filters),
   ]);
   const current = viewer ? await findCurrentRoom(viewer.id) : null;
-  // Guests can't create rooms (AUTH-03).
   const canCreate = viewer !== null && !viewer.isGuest;
   const t = dict.roomsPage;
 
   return (
     <>
-      {/* Rooms appear, fill up and close without reloading (JOIN-02). */}
       <LiveLobby />
       {current && (
         <p className="mt-6 flex flex-wrap items-center gap-3 border border-primary-text bg-surface px-4 py-3 rounded-leaf">
@@ -144,10 +142,6 @@ async function RoomList({
 
 type FiltersProps = { dict: Dictionary; locale: Locale; filters: RoomFilters };
 
-/**
- * JOIN-02: plain links that set the URL's search params, so filtering works
- * without JavaScript and the live refresh keeps the current filters.
- */
 function Filters({ dict, locale, filters }: FiltersProps) {
   const t = dict.roomsPage.filters;
   const groups = [

@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 
 type HeaderMenuProps = {
-  /** Accessible name of the toggle button. */
   label: string;
   children: React.ReactNode;
 };

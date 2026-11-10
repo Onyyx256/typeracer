@@ -24,7 +24,6 @@ import { login, signup } from "./actions";
 
 type Mode = "login" | "signup";
 
-/** What the status line shows: a server or validation error, or the OAuth placeholder. */
 type Notice = AuthError | "oauthSoon";
 
 function validate(
@@ -49,7 +48,6 @@ function validate(
   return errors;
 }
 
-/** What still keeps the flower from blooming, or null when the form is complete. */
 function nextStep(
   dict: AuthDictionary,
   locale: Locale,
@@ -153,7 +151,6 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
           return;
         }
       }
-      // Both actions leave a session cookie behind.
       router.replace(localePath(locale, "/"));
     });
   }
@@ -241,7 +238,6 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
               }
               error={errorText(errors.username)}
             />
-            {/* Side by side on wider screens so the signup form fits without scrolling. */}
             <div
               className={`grid gap-4 ${mode === "signup" ? "sm:grid-cols-2" : ""}`}
             >

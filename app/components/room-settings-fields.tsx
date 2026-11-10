@@ -22,7 +22,6 @@ import {
   type RaceConfig,
 } from "@/lib/rooms/settings";
 
-/** Applies the changed settings. */
 export type UpdateSettings = (changes: Partial<EditableSettings>) => void;
 
 type RoomSettingsFieldsProps = {
@@ -30,14 +29,10 @@ type RoomSettingsFieldsProps = {
   locale: Locale;
   settings: EditableSettings;
   update: UpdateSettings;
-  /** Fields only the create form has (the host's name and role), at the top of the room section. */
   roomFields?: ReactNode;
 };
 
-/**
- * Every room setting, in three sections. Used to create a room and, by
- * the host, to change it between races.
- */
+/** Used to create a room and, by the host, to change it between races. */
 export function RoomSettingsFields({
   dict,
   locale,
@@ -87,7 +82,6 @@ export function RoomSettingsFields({
   );
 }
 
-/** The text's settings that matter outside a room too. */
 export type TextSettings = Pick<
   RaceConfig,
   | "language"
@@ -102,7 +96,6 @@ export type TextSettings = Pick<
   | "excludeChars"
 >;
 
-/** The text: language, type, length, complexity and characters (CONF-02 to CONF-07). */
 export function TextSettingsSection({
   dict,
   locale,
@@ -221,7 +214,6 @@ export function TextSettingsSection({
   );
 }
 
-/** The time limit and the error mode (CONF-01, CONF-08). */
 export function RaceRulesFields({
   dict,
   settings,
@@ -287,7 +279,7 @@ type Option<T extends string> = {
   lang?: string;
 };
 
-/** Radio buttons drawn as cards; real inputs, so arrows and Tab work as usual. */
+/** Real inputs, so arrows and Tab work as usual. */
 export function ChoiceGroup<T extends string>({
   legend,
   name,
@@ -301,7 +293,6 @@ export function ChoiceGroup<T extends string>({
   value: T;
   onChange: (value: T) => void;
   options: Option<T>[];
-  /** Short labels without hints, laid out as a row of chips. */
   compact?: boolean;
 }) {
   return (

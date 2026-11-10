@@ -10,7 +10,7 @@ import { getSocket } from "@/lib/realtime/client";
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary } from "@/lib/i18n/dictionaries/fr";
 
-/** Keys go to the server in batches, at most this often (PERF-02: under 10 messages/s). */
+/** Under 10 messages a second. */
 const SEND_EVERY_MS = 150;
 /** Sent batches kept to replay after a refused one (race:resync). */
 const SENT_LOG = 50;
@@ -32,10 +32,8 @@ function fromServer(you: PlayerState): TypingState {
 }
 
 /**
- * The room's typing area: the keys go to the server, which replays them
- * through the same reducer; its numbers are the real ones and correct
- * this browser's if they ever differ (COURSE-06). The text is the
- * runner's own: catch-up bonuses change its end (BONUS-04).
+ * The server replays the keys through the same reducer; its numbers are
+ * the real ones and correct this browser's if they ever differ.
  */
 export function TypingArea({
   code,
@@ -56,13 +54,10 @@ export function TypingArea({
   endsAt: number | null;
   initial: PlayerState;
   syncId: number;
-  /** A blinding sun hides the next words (BONUS-03). */
   glare: boolean;
-  /** This runner's text length on the server, from the track. */
   serverTextLength: number | undefined;
   dict: RaceDictionary;
   locale: Locale;
-  /** Shown at the end of the stats row (the give up button). */
   action?: ReactNode;
 }) {
   const [text, setText] = useState(initial.text);
@@ -94,7 +89,6 @@ export function TypingArea({
     }
   }, [startsAt]);
 
-  /** Applies keys locally and queues the ones that changed something. */
   const onKeys = useCallback(
     (keys: string[]) => {
       const accepted = press(keys);
@@ -158,8 +152,7 @@ export function TypingArea({
 
   // A missed race:text leaves this browser with an outdated text: it could
   // reach its end while the server waits for more. When the server's length
-  // keeps differing, the text is asked for again (race:text-sync); only the
-  // end of the text changes, so the typing stays as it is (BONUS-04).
+  // keeps differing, the text is asked for again.
   useEffect(() => {
     if (serverTextLength === undefined || serverTextLength === text.length) {
       return;

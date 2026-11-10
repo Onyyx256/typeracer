@@ -23,15 +23,12 @@ import { accuracy, netWpm, rawWpm } from "./stats";
 import type { ResultStatus, WpmPoint } from "./types";
 
 /**
- * One race, as the server sees it (COURSE-06). Pure: every method takes
- * the current time, so tests drive the clock. lib/race/manager.ts runs it
- * with real timers and sends its snapshots to the room.
+ * Pure: every method takes the current time, so tests drive the clock.
+ * lib/race/manager.ts runs it with real timers.
  */
 
-/** The synchronized 3-2-1 (COURSE-03). */
 export const COUNTDOWN_MS = 3_000;
 
-/** How often each runner's WPM is sampled for the chart (RES-03). */
 export const SAMPLE_MS = 1_000;
 
 /**
@@ -42,7 +39,6 @@ export const SAMPLE_MS = 1_000;
  */
 export const MAX_KEYS_PER_SECOND = 25;
 export const BURST_KEYS = 40;
-/** What's allowed right at the start, before anything has refilled. */
 export const START_KEYS = 8;
 
 /**
@@ -55,7 +51,6 @@ export const MAX_LAG_MS = 10_000;
 /** Per message; the browser sends about every 150 ms. */
 export const MAX_KEYS_PER_BATCH = 60;
 
-/** How long the track shows a rain or a night after it falls (BONUS-03). */
 export const EFFECT_SHOW_MS = 3_000;
 
 export type RaceParticipant = {
@@ -67,33 +62,27 @@ export type RaceParticipant = {
 export type RunnerStatus = "racing" | "finished" | "abandoned";
 
 type Runner = RaceParticipant & {
-  /** Per runner: catch-up bonuses make it shorter or longer (BONUS-04). */
+  /** Bonuses make it shorter or longer. */
   text: string;
   /** Words rain took off the end, in text order, shown crossed out. */
   removed: string;
   typing: TypingState;
   status: RunnerStatus;
-  /** When they finished or abandoned. */
   endedAt: number | null;
   series: WpmPoint[];
   tokens: number;
   tokensAt: number;
-  /** Effects received, in order (RES-02). */
   bonuses: BonusKind[];
-  /** The latest one, shown until `until` (BONUS-03). */
   effect: { kind: BonusKind; until: number } | null;
   /** Next word of the reserve that a night adds to this runner. */
   reserveAt: number;
 };
 
-/** Catch-up bonuses on (CONF-09): a seed for the random picks and words that night adds. */
 export type BonusOptions = { seed: number; reserve: string };
 
-/** What a checkpoint did, for the manager to tell the runners whose text changed. */
 export type BonusEvent = {
   kind: BonusKind;
   targets: string[];
-  /** New texts, for rain and night, with the words rain removed so far. */
   texts: { userId: string; text: string; removed: string }[];
 };
 
@@ -101,24 +90,20 @@ export type KeysResult =
   | { ok: true; finished: boolean }
   | { ok: false; reason: "notRacing" | "tooFast" | "tooMany" };
 
-/** One line of the live track (COURSE-05). */
 export type TrackEntry = RaceParticipant & {
   progress: number;
   wpm: number;
   status: RunnerStatus;
-  /** An effect that just fell on them, or glare while it lasts (BONUS-03). */
   effect: BonusKind | null;
   /**
-   * Their text's length on the server. A browser whose text differs missed
-   * a race:text and asks for the race again (BONUS-04).
+   * A browser whose text length differs missed a race:text and asks for the
+   * race again.
    */
   textLength: number;
 };
 
-/** A runner's own text and typing, sent back to their browser to resync it. */
 export type PlayerState = {
   text: string;
-  /** Words rain took off the end of their text, shown crossed out. */
   removed: string;
   input: string;
   keystrokes: number;
@@ -130,28 +115,22 @@ export type ParticipantResult = RaceParticipant & {
   status: ResultStatus;
   wpm: number;
   rawWpm: number;
-  /** Null for someone who gave up (COURSE-07). */
   accuracy: number | null;
   errors: number;
   progress: number;
   durationMs: number;
   wpmSeries: WpmPoint[];
   missedKeys: Record<string, number>;
-  /** Effects received, in order (RES-02). */
   bonuses: BonusKind[];
 };
 
 export class Race {
   readonly text: string;
   readonly mode: ErrorMode;
-  /** When the countdown ends and typing opens. */
   readonly startsAt: number;
-  /** When the time limit ends the race, or null without a limit (CONF-01). */
   readonly deadline: number | null;
   private readonly runners = new Map<string, Runner>();
-  /** Null when bonuses are off. */
   private readonly bonus: { rng: Rng; reserve: string[]; baseWords: number } | null;
-  /** Checkpoints already passed by the leader. */
   private fired = 0;
 
   constructor(options: {
@@ -160,9 +139,7 @@ export class Race {
     /** In seconds, 0 for none. */
     timeLimit: number;
     participants: readonly RaceParticipant[];
-    /** When the countdown starts. */
     now: number;
-    /** Null or left out: no catch-up bonuses. */
     bonuses?: BonusOptions | null;
   }) {
     this.text = options.text;
@@ -200,7 +177,6 @@ export class Race {
     return now >= this.startsAt && (this.deadline === null || now < this.deadline);
   }
 
-  /** COURSE-09: everyone finished or abandoned, or the time limit is reached. */
   isOver(now: number): boolean {
     if (this.deadline !== null && now >= this.deadline) {
       return true;
@@ -246,7 +222,7 @@ export class Race {
     return { ok: true, finished: false };
   }
 
-  /** COURSE-07, or leaving the room mid-race. False if they weren't racing. */
+  /** False if they weren't racing. */
   abandon(userId: string, now: number): boolean {
     const runner = this.runners.get(userId);
     if (!runner || runner.status !== "racing") {
@@ -256,10 +232,7 @@ export class Race {
     return true;
   }
 
-  /**
-   * Samples each runner's WPM about once a second, and fires the catch-up
-   * bonus of each checkpoint the leader passed; call it often.
-   */
+  /** Call it often: samples WPM about once a second and fires the checkpoints. */
   tick(now: number): BonusEvent[] {
     if (now < this.startsAt) {
       return [];
@@ -277,7 +250,6 @@ export class Race {
     return this.isTypingOpen(now) ? this.fireCheckpoints(now) : [];
   }
 
-  /** BONUS-01: once per checkpoint, when the leader's progress reaches it. */
   private fireCheckpoints(now: number): BonusEvent[] {
     const events: BonusEvent[] = [];
     while (this.bonus && this.fired < CHECKPOINTS.length) {
@@ -287,7 +259,6 @@ export class Race {
         break;
       }
       this.fired++;
-      // A bonus and a hindrance, on different runners.
       for (const plan of planBonuses(standings, this.bonus.baseWords, this.bonus.rng)) {
         events.push(this.applyBonus(plan.kind, plan.targets, now));
       }
@@ -361,7 +332,6 @@ export class Race {
     return { text: runner.text, removed: runner.removed, input, keystrokes, correctKeystrokes };
   }
 
-  /** The final table, once the race is over (COURSE-10, RES-02). */
   results(now: number): ParticipantResult[] {
     const end = this.deadline === null ? now : Math.min(now, this.deadline);
     const entries = [...this.runners.values()].map((runner) => {

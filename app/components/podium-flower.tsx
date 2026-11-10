@@ -30,7 +30,6 @@ const HEAD_AT = 0.75;
 const PETALS_AT = 0.95;
 const PETAL_STAGGER = 0.04;
 
-/** A point on a cubic Bézier curve, to place the leaves on the stem. */
 function bezier(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
   const u = 1 - t;
   return {
@@ -42,10 +41,8 @@ function bezier(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
 const seconds = (value: number): CSSProperties => ({ animationDelay: `${value.toFixed(2)}s` });
 
 /**
- * RES-01: a podium flower that grows from the step and blooms around the
- * runner's avatar, which becomes the heart of the flower. Pure CSS
- * animation, so it needs no client JavaScript; with reduced motion the
- * flower is simply shown in bloom.
+ * The runner's avatar becomes the heart of the flower. Pure CSS animation,
+ * so it needs no client JavaScript; with reduced motion it is shown in bloom.
  */
 export function PodiumFlower({ name, avatarUrl, stem, delay, className = "" }: PodiumFlowerProps) {
   const height = HEAD_ROOM + stem + BASE_MARGIN;
@@ -100,7 +97,6 @@ export function PodiumFlower({ name, avatarUrl, stem, delay, className = "" }: P
         </g>
       </svg>
 
-      {/* The avatar is HTML on top of the SVG, centred on the head of the stem. */}
       <span
         className="absolute w-[34%] -translate-x-1/2 -translate-y-1/2"
         style={{ left: "50%", top: `${((head.y / height) * 100).toFixed(2)}%` }}

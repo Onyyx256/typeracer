@@ -26,19 +26,15 @@ export type RoomError =
   | "notFound"
   | "notJoinable"
   | "full"
-  /** Someone in the room already goes by that name. */
   | "nameTaken"
-  /** The host kicked this person out of the room (SALLE-07). */
   | "banned";
 
 export type RoomResult =
   | { ok: true; code: string }
   | { ok: false; error: RoomError; currentCode?: string };
 
-/** Codes are random, so a collision is rare; a few retries are plenty. */
 const CODE_ATTEMPTS = 5;
 
-/** True for a unique-index violation on the given index (Postgres error 23505). */
 function isUniqueViolation(error: unknown, index: string): boolean {
   const cause = error instanceof Error ? (error.cause ?? error) : error;
   return (
@@ -51,7 +47,6 @@ function isUniqueViolation(error: unknown, index: string): boolean {
   );
 }
 
-/** The room the user is in right now, if any (SALLE-06). */
 export async function findCurrentRoom(
   userId: string,
 ): Promise<{ roomId: string; code: string } | null> {
@@ -66,10 +61,6 @@ export async function findCurrentRoom(
 
 type RemainingMember = { userId: string; isGuest: boolean };
 
-/**
- * What happens to the room once someone leaves, given who is still in it
- * (oldest first): the next host, or whether it closes (SALLE-08).
- */
 function planLeave(
   wasHost: boolean,
   remaining: RemainingMember[],
@@ -79,10 +70,6 @@ function planLeave(
   return { closes: connected.length === 0 || (wasHost && !next), next };
 }
 
-/**
- * Whether the room would be deleted if the user left it now, so the page
- * can warn the host who is the last account in it before they go.
- */
 export async function leaveClosesRoom(userId: string): Promise<boolean> {
   const current = await findCurrentRoom(userId);
   if (!current) {
@@ -103,11 +90,9 @@ export async function leaveClosesRoom(userId: string): Promise<boolean> {
 }
 
 /**
- * Removes the user from their room. If they were the host, the signed-in
- * connected member who has been there longest takes over (SALLE-08); a
- * guest never does. If nobody can take over, or no connected member is
- * left, the room closes and releases the others, so the one-room rule
- * (SALLE-06) doesn't keep them stuck in it, and their pages are told.
+ * If the host leaves, the connected account that has been there longest
+ * takes over; a guest never does. With nobody to take over, or nobody
+ * connected left, the room closes and releases the others.
  */
 export async function leaveRoom(userId: string): Promise<void> {
   const result = await getDb().transaction(async (tx) => {
@@ -159,7 +144,6 @@ export async function leaveRoom(userId: string): Promise<void> {
     return { code: room.code, released: [], closed: false };
   });
   if (result) {
-    // Leaving mid-race counts as abandoning it (COURSE-07, COURSE-08).
     abandonRace(userId);
     if (result.closed) {
       void closeRace(result.code);
@@ -176,7 +160,6 @@ export async function listRoomMemberIds(): Promise<string[]> {
   return rows.map((row) => row.userId);
 }
 
-/** Who may follow a room's live changes: anyone for a public room, members otherwise. */
 export async function canWatchRoom(userId: string | null, code: string): Promise<boolean> {
   const [room] = await getDb()
     .select({ id: rooms.id, visibility: rooms.visibility })
@@ -198,7 +181,6 @@ export async function canWatchRoom(userId: string | null, code: string): Promise
   return member !== undefined;
 }
 
-/** With `leaveCurrent`, the user first leaves the room they're in (SALLE-06 asks to offer it). */
 async function checkCurrentRoom(
   userId: string,
   leaveCurrent: boolean,
@@ -215,8 +197,6 @@ async function checkCurrentRoom(
   return null;
 }
 
-/** SALLE-01: the creator is the host, as a runner or a spectator. */
-/** `name` is the host's name in this room, already validated. */
 export async function createRoom(
   userId: string,
   settings: RoomSettings,
@@ -274,10 +254,8 @@ async function insertRoom(
 }
 
 /**
- * Joins a public room as a runner or a spectator, under `name` (already
- * validated). Only public rooms for now: code-only and private rooms will
- * need their own checks (SALLE-03, SALLE-04), and until then they answer
- * "not found" so a code reveals nothing.
+ * Only public rooms for now: code and private rooms answer "not found" so a
+ * code reveals nothing.
  */
 export async function joinRoom(
   userId: string,
@@ -307,7 +285,6 @@ export async function joinRoom(
       if (!room || room.state === "closed" || room.visibility !== "public") {
         return { ok: false, error: "notFound" };
       }
-      // SALLE-07: whoever the host kicked out stays out.
       if (await isBannedFrom(tx, room.id, userId)) {
         return { ok: false, error: "banned" };
       }
@@ -320,7 +297,6 @@ export async function joinRoom(
       if (already) {
         return { ok: true, code };
       }
-      // SALLE-09: never during the countdown or the race.
       if (!JOINABLE_STATES.includes(room.state)) {
         return { ok: false, error: "notJoinable" };
       }
@@ -331,7 +307,6 @@ export async function joinRoom(
           .where(
             and(eq(roomMembers.roomId, room.id), eq(roomMembers.role, "participant")),
           );
-        // SALLE-05: spectators don't take a seat.
         if (participants >= room.capacity) {
           return { ok: false, error: "full" };
         }
@@ -364,7 +339,6 @@ async function isBannedFrom(db: Database | Transaction, roomId: string, userId: 
   return ban !== undefined;
 }
 
-/** Whether the host kicked the user out of this room (SALLE-07), for the room page. */
 export async function isBanned(userId: string, code: string): Promise<boolean> {
   const db = getDb();
   const [room] = await db.select({ id: rooms.id }).from(rooms).where(eq(rooms.code, code));
@@ -372,17 +346,11 @@ export async function isBanned(userId: string, code: string): Promise<boolean> {
 }
 
 export type KickError =
-  /** The user isn't the host of an open room. */
   | "notHost"
-  /** The target isn't in the host's room, or is the host. */
   | "notMember";
 
 export type KickResult = { ok: true } | { ok: false; error: KickError };
 
-/**
- * SALLE-07: the host removes a runner or spectator from their room, at any
- * point, and bans them from it. Checked here, not in the interface (SEC-01).
- */
 export async function kickMember(hostId: string, targetId: string): Promise<KickResult> {
   if (hostId === targetId) {
     return { ok: false, error: "notMember" };
@@ -486,19 +454,12 @@ export async function deleteRoom(hostId: string): Promise<DeleteRoomResult> {
 }
 
 export type TransferHostError =
-  /** The user isn't the host of an open room. */
   | "notHost"
-  /** The target isn't in the host's room, or is the host. */
   | "notMember"
-  /** Only an account can host (SALLE-08), never a guest. */
   | "guest";
 
 export type TransferHostResult = { ok: true } | { ok: false; error: TransferHostError };
 
-/**
- * The host hands the role to another member who has an account. Checked
- * here, not in the interface (SEC-01).
- */
 export async function transferHost(
   hostId: string,
   targetId: string,
@@ -547,21 +508,12 @@ export async function transferHost(
 }
 
 export type UpdateSettingsError =
-  /** The user isn't the host of an open room. */
   | "notHost"
-  /** Settings change only between races, never during the countdown or the race. */
   | "notBetweenRaces"
-  /** The new capacity is below the runners already in the room. */
   | "belowRunners";
 
 export type UpdateSettingsResult = { ok: true } | { ok: false; error: UpdateSettingsError };
 
-/**
- * The host changes the room's settings between races (CONF-01 to CONF-11);
- * the next race uses them. Everyone in the room and the room browser are
- * told (CONF-12, JOIN-02). Checked here, not in the interface (SEC-01).
- * `settings` is already validated and normalized.
- */
 export async function updateRoomSettings(
   hostId: string,
   settings: EditableSettings,
@@ -595,7 +547,6 @@ export async function updateRoomSettings(
         .select({ value: count() })
         .from(roomMembers)
         .where(and(eq(roomMembers.roomId, room.id), eq(roomMembers.role, "participant")));
-      // SALLE-05: nobody already seated is pushed out by a smaller room.
       if (capacity < participants) {
         return { ok: false, error: "belowRunners" };
       }
@@ -632,7 +583,6 @@ export type RoomView = {
   members: RoomMemberView[];
 };
 
-/** Everything the room page shows, or null for an unknown or closed room. */
 export async function getRoom(code: string): Promise<RoomView | null> {
   const db = getDb();
   const [room] = await db
@@ -690,10 +640,6 @@ export type PublicRoomSummary = {
   textType: RaceConfig["textType"];
 };
 
-/**
- * The room browser's list (JOIN-02): open public rooms, newest first,
- * optionally only one text language and/or one complexity.
- */
 export async function listPublicRooms(
   filters: RoomFilters = {},
   limit = 50,
@@ -702,7 +648,6 @@ export async function listPublicRooms(
   const rows = await getDb()
     .select({
       code: rooms.code,
-      // The host's name in this room.
       hostName: sql<string>`(select ${roomMembers.name} from ${roomMembers} where ${roomMembers.roomId} = ${rooms.id} and ${roomMembers.userId} = ${rooms.hostId})`,
       participants,
       capacity: rooms.capacity,

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { nicknameSchema } from "./validation";
 
-/** The first error code, or the cleaned-up name when it is accepted. */
 function check(input: string): { name: string } | { error: string } {
   const parsed = nicknameSchema.safeParse(input);
   return parsed.success ? { name: parsed.data } : { error: parsed.error.issues[0].message };

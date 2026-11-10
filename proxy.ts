@@ -3,7 +3,7 @@ import { LOCALE_COOKIE, hasLocale, negotiateLocale } from "@/lib/i18n/config";
 
 /**
  * Every page lives under /fr or /en. A URL without a locale is redirected to
- * the saved choice, or else to the browser's preferred language (I18N-02).
+ * the saved choice, or else to the browser's preferred language.
  */
 export function proxy(request: NextRequest): NextResponse | undefined {
   const { pathname } = request.nextUrl;

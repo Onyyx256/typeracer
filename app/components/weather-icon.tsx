@@ -1,10 +1,6 @@
 import type { BonusKind } from "@/lib/race/bonuses";
 
-/**
- * The catch-up bonuses as garden weather (BONUS-03): rain and sun for
- * the trailing runners, night and a blinding sun for the leaders. Drawn
- * in currentColor so they follow the panel or the page.
- */
+/** Drawn in currentColor so they follow the panel or the page. */
 export function WeatherIcon({ kind, className }: { kind: BonusKind; className?: string }) {
   return (
     <svg

@@ -13,7 +13,6 @@ import {
   setDisplayName,
 } from "@/lib/profile/profile";
 
-// Errors are codes; the account page shows them in the visitor's language.
 export type AccountError =
   | AvatarImageError
   | "signedOut"
@@ -34,10 +33,9 @@ function logFailure(action: string, error: unknown): void {
   );
 }
 
-// TECH-07: the form sends one file field, nothing else is read.
 const avatarFormSchema = z.object({ photo: z.instanceof(File) });
 
-/** AUTH-04, SEC-02: checked and resized on the server, whatever the browser did. */
+/** Checked and resized on the server, whatever the browser did. */
 export async function uploadAvatarAction(formData: FormData): Promise<AccountResult> {
   const user = await getCurrentUser();
   if (!user) {
@@ -77,7 +75,7 @@ export async function removeAvatarAction(): Promise<AccountResult> {
 
 const displayNameSchema = z.object({ displayName: nicknameSchema });
 
-/** AUTH-05: the same rules as a guest's nickname (AUTH-02). */
+/** Same rules as a guest's nickname. */
 export async function updateDisplayNameAction(input: unknown): Promise<AccountResult> {
   const user = await getCurrentUser();
   if (!user) {
@@ -97,7 +95,7 @@ export async function updateDisplayNameAction(input: unknown): Promise<AccountRe
   return { ok: true };
 }
 
-/** Only colours the player has unlocked, checked against their saved races. */
+/** Checked against the player's saved races. */
 export async function updateCosmeticsAction(input: unknown): Promise<AccountResult> {
   const user = await getCurrentUser();
   if (!user) {

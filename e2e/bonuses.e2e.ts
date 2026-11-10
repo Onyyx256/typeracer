@@ -3,9 +3,7 @@ import { e2eName } from "./database";
 
 // Catch-up bonuses in a real race between two browsers: when the host
 // passes 25% of the text, the guest gets a bonus and the host a hindrance,
-// shown on both tracks; the guest sees the words rain removed crossed out,
-// the host's text can change while they type, and the results list what
-// each runner received (BONUS-01 to BONUS-04, RES-02).
+// shown on both tracks, and the results list what each runner received.
 
 const PASSWORD = "e2e-password-1234";
 const EFFECT = /rain and sun|night|blinding sun/;
@@ -26,7 +24,6 @@ async function shownText(page: Page): Promise<string> {
   return (await text.innerText({ timeout: 1_000 }).catch(() => "")).trim();
 }
 
-/** Types the next word (and its space) after `typed` characters; returns the new count. */
 async function typeNextWord(page: Page, typed: number): Promise<number> {
   const text = await shownText(page);
   const space = text.indexOf(" ", typed);
@@ -47,7 +44,6 @@ test("at 25% the last runner gets a bonus and the leader a hindrance", async ({ 
   await host.getByLabel("Your name in this room").fill(hostName);
   await host.getByRole("radio", { name: /^Random/ }).check({ force: true });
   await host.getByLabel("Length").fill("10");
-  // On by default (CONF-09).
   await expect(host.getByRole("switch", { name: /^Catch-up bonuses/ })).toBeChecked();
   await host.getByRole("button", { name: "Create the room" }).click();
   await expect(host).toHaveURL(/\/en\/rooms\/[A-HJKMNP-Z2-9]{6}$/);
@@ -71,20 +67,17 @@ test("at 25% the last runner gets a bonus and the leader a hindrance", async ({ 
   const original = await shownText(guest);
 
   // Past 25% of the characters (progress counts characters, not words),
-  // the guest, last, gets rain and sun, and the host, first, gets night or
-  // a blinding sun; never both on one runner (BONUS-01, BONUS-02).
+  // the guest gets rain and sun, and the host night or a blinding sun.
   await host.getByLabel("Type the text here").focus();
   let typed = 0;
   while (typed < original.length * 0.3) {
     typed = await typeNextWord(host, typed);
   }
-  // Both pages show both effects on the track (BONUS-03).
   for (const page of [host, guest]) {
     await expect(page.getByRole("listitem", { name: EFFECT })).toHaveCount(2);
     await expect(page.getByRole("listitem", { name: new RegExp(`^${nickname}:.*rain and sun`) })).toHaveCount(1);
     await expect(page.getByRole("listitem", { name: new RegExp(`^${hostName}:.*(night|blinding sun)`) })).toHaveCount(1);
   }
-  // Each runner is told what fell on them.
   await expect(guest.getByRole("status").filter({ hasText: "Rain and sun!" })).toBeVisible();
   await expect(host.getByRole("status").filter({ hasText: /Night falls|Blinding sun!/ })).toBeVisible();
   // 10% of 10 words: the guest's last word is now crossed out after the text.
@@ -97,7 +90,7 @@ test("at 25% the last runner gets a bonus and the leader a hindrance", async ({ 
     .getByRole("button", { name: "Give up", exact: true })
     .click();
 
-  // The host types whatever their text has become, word by word, to the end (BONUS-04).
+  // The host types whatever their text has become, word by word, to the end.
   const results = host.getByRole("heading", { name: "Results" });
   for (let step = 0; step < 60 && !(await results.isVisible()); step++) {
     if (typed < (await shownText(host)).length) {
@@ -108,7 +101,6 @@ test("at 25% the last runner gets a bonus and the leader a hindrance", async ({ 
   }
   await expect(results).toBeVisible();
 
-  // RES-02: the bonuses received are in the table.
   const table = host.getByRole("table", { name: "Full ranking of the race" });
   await expect(table.getByRole("columnheader", { name: "Bonuses received" })).toBeVisible();
   await expect(table.getByRole("row").nth(1)).toContainText("Finished");
@@ -118,7 +110,6 @@ test("at 25% the last runner gets a bonus and the leader a hindrance", async ({ 
   await hostContext.close();
 });
 
-/** The text left to type, without the words rain crossed out. */
 async function ownText(page: Page): Promise<string> {
   const box = page.locator('p[aria-label="Text to type"]');
   if ((await box.count()) === 0) {
@@ -202,7 +193,6 @@ test("a runner who misses their new text gets it from the track and can finish",
   const shortened = await ownText(guest);
   expect(shortened.length).toBeLessThan(original.length);
 
-  // Both finish; the race ends for everyone (COURSE-09).
   await host.getByRole("button", { name: "Give up" }).click();
   await host
     .getByRole("dialog", { name: "Give up the race?" })

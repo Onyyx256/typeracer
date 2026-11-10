@@ -14,7 +14,6 @@ if (!new URL(E2E_DATABASE_URL).pathname.endsWith("_test")) {
  */
 export const E2E_PREFIX = "e2e_";
 
-/** A valid name nobody else has, e.g. "e2e_3f9a1c2b". */
 export function e2eName(): string {
   return `${E2E_PREFIX}${randomUUID().slice(0, 8)}`;
 }

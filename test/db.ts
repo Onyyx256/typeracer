@@ -10,7 +10,6 @@ import { users } from "@/db/schema";
  */
 const created: string[] = [];
 
-/** A short name nobody else has, e.g. "t_3f9a1c2b". */
 export function uniqueName(prefix = "t"): string {
   return `${prefix}_${randomUUID().slice(0, 8)}`;
 }

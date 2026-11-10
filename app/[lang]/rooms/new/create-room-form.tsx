@@ -22,7 +22,6 @@ import { createRoomAction, type RoomActionError } from "../actions";
 type CreateRoomFormProps = {
   dict: CreateRoomDictionary;
   locale: Locale;
-  /** The account's display name, the default name in the room. */
   defaultName: string;
 };
 
@@ -41,7 +40,6 @@ export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProp
     defaultRoomSettings(locale),
   );
   const [error, setError] = useState<RoomActionError | null>(null);
-  // The room the user is already in, when the server refused for that reason.
   const [currentCode, setCurrentCode] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const hydrated = useHydrated();
@@ -125,7 +123,7 @@ export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProp
           <RoomSummary dict={dict} locale={locale} settings={settings} />
         </div>
         {elsewhere ? (
-          // SALLE-06: one room at a time, so offer to go back or leave it.
+          // One room at a time, so offer to go back or leave it.
           <div className="mt-6 grid gap-2">
             <p className="text-sm">{interpolate(dict.elsewhere, { code: currentCode })}</p>
             <Link

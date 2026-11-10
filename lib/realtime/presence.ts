@@ -2,16 +2,12 @@ import "server-only";
 import { getIo, realtimeState } from "./state";
 
 /**
- * A member with no open tab for this long counts as having left the room
- * (same delay as COURSE-08's reconnection window), so a reload or a short
- * network drop doesn't cost their seat.
+ * A member with no open tab for this long counts as having left, so a
+ * reload or a short network drop doesn't cost their seat.
  */
 export const DISCONNECT_GRACE_MS = 30_000;
 
-/**
- * Whether the user has the site open (SALLE-08 hands the host role to a
- * connected member). Without the real-time server, everyone counts as connected.
- */
+/** Without the real-time server, everyone counts as connected. */
 export function isConnected(userId: string): boolean {
   if (!getIo()) {
     return true;
