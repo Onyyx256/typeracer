@@ -36,6 +36,10 @@ export async function SiteHeader() {
           <NavLink href={localePath(locale, "/rooms")}>
             {dict.header.join}
           </NavLink>
+          {/* Open to everyone, with or without an account. */}
+          <NavLink href={localePath(locale, "/practice")}>
+            {dict.header.practice}
+          </NavLink>
           {/* Reads the session cookie, so it streams in after the static header. */}
           <Suspense fallback={null}>
             <MemberLinks />
