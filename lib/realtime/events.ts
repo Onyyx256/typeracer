@@ -48,6 +48,12 @@ export const raceKeysSchema = z.object({
   /** Numbers the batches, so a refused one can be replayed around (race:resync). */
   seq: z.int().min(0).max(Number.MAX_SAFE_INTEGER),
   keys: z.array(z.string().length(1)).min(1).max(MAX_KEYS_PER_BATCH),
+  /**
+   * When the batch was sent, in ms since typing opened, on the browser's
+   * clock. Optional for pages loaded before it existed; the engine never
+   * trusts it beyond its own clock.
+   */
+  at: z.int().min(0).max(24 * 60 * 60 * 1000).optional(),
 });
 
 /** What a page needs to show the race, sent when it asks (race:sync). */

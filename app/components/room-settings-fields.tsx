@@ -19,6 +19,7 @@ import {
   TIME_LIMITS,
   VISIBILITIES,
   type EditableSettings,
+  type RaceConfig,
 } from "@/lib/rooms/settings";
 
 /** Applies the changed settings. */
@@ -44,9 +45,6 @@ export function RoomSettingsFields({
   update,
   roomFields,
 }: RoomSettingsFieldsProps) {
-  const french = settings.language === "fr";
-  const random = settings.textType === "random";
-
   return (
     <>
       <Section title={dict.sections.room}>
@@ -73,133 +71,10 @@ export function RoomSettingsFields({
         />
       </Section>
 
-      <Section title={dict.sections.text}>
-        <ChoiceGroup
-          legend={dict.language}
-          name="language"
-          value={settings.language}
-          onChange={(value) => update({ language: value })}
-          options={LOCALES.map((language) => ({
-            value: language,
-            label: LOCALE_NAMES[language],
-            lang: language,
-          }))}
-        />
-        <ChoiceGroup
-          legend={dict.textType.legend}
-          name="textType"
-          value={settings.textType}
-          onChange={(value) => update({ textType: value })}
-          options={TEXT_TYPES.map((type) => ({
-            value: type,
-            label: dict.textType[type],
-            hint: dict.textType[`${type}Hint`],
-          }))}
-        />
-        <RangeField
-          label={dict.length.label}
-          min={LENGTH_MIN}
-          max={LENGTH_MAX}
-          step={LENGTH_STEP}
-          value={settings.length}
-          onChange={(value) => update({ length: value })}
-          format={(count) => plural(locale, dict.length.value, count)}
-        />
-        <ChoiceGroup
-          legend={dict.complexity.legend}
-          name="complexity"
-          value={settings.complexity}
-          onChange={(value) => update({ complexity: value })}
-          options={COMPLEXITIES.map((complexity) => ({
-            value: complexity,
-            label: dict.complexity[complexity],
-            hint: dict.complexity[`${complexity}Hint`],
-          }))}
-        />
-        <fieldset>
-          <legend className="text-sm font-medium">
-            {dict.characters.legend}
-          </legend>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <Toggle
-              label={dict.characters.punctuation}
-              checked={settings.punctuation}
-              onChange={(value) => update({ punctuation: value })}
-            />
-            <Toggle
-              label={dict.characters.numbers}
-              checked={settings.numbers}
-              onChange={(value) => update({ numbers: value })}
-            />
-            <Toggle
-              label={dict.characters.capitals}
-              checked={settings.capitals}
-              onChange={(value) => update({ capitals: value })}
-            />
-            {/* Only French text has accents, so the switch is off for English. */}
-            <Toggle
-              label={dict.characters.accents}
-              hint={french ? undefined : dict.characters.accentsHint}
-              checked={settings.accents && french}
-              disabled={!french}
-              onChange={(value) => update({ accents: value })}
-            />
-          </div>
-        </fieldset>
-        {random ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField
-              label={dict.charset.include}
-              name="includeChars"
-              value={settings.includeChars}
-              onChange={(value) => update({ includeChars: value })}
-              autoComplete="off"
-              maxLength={CHARSET_MAX}
-              hint={dict.charset.hint}
-            />
-            <TextField
-              label={dict.charset.exclude}
-              name="excludeChars"
-              value={settings.excludeChars}
-              onChange={(value) => update({ excludeChars: value })}
-              autoComplete="off"
-              maxLength={CHARSET_MAX}
-              hint={dict.charset.hint}
-            />
-          </div>
-        ) : (
-          <p className="font-mono text-sm text-muted">
-            &gt; {dict.charset.coherentNote}
-          </p>
-        )}
-      </Section>
+      <TextSettingsSection dict={dict} locale={locale} settings={settings} update={update} />
 
       <Section title={dict.sections.race}>
-        <ChoiceGroup
-          legend={dict.timeLimit.legend}
-          name="timeLimit"
-          value={String(settings.timeLimit)}
-          onChange={(value) => {
-            const seconds = TIME_LIMITS.find((limit) => String(limit) === value);
-            if (seconds !== undefined) update({ timeLimit: seconds });
-          }}
-          compact
-          options={TIME_LIMITS.map((seconds) => ({
-            value: String(seconds),
-            label: seconds === 0 ? dict.timeLimit.none : formatSeconds(seconds),
-          }))}
-        />
-        <ChoiceGroup
-          legend={dict.errorMode.legend}
-          name="errorMode"
-          value={settings.errorMode}
-          onChange={(value) => update({ errorMode: value })}
-          options={ERROR_MODES.map((mode) => ({
-            value: mode,
-            label: dict.errorMode[mode],
-            hint: dict.errorMode[`${mode}Hint`],
-          }))}
-        />
+        <RaceRulesFields dict={dict} settings={settings} update={update} />
         <Toggle
           label={dict.bonuses.label}
           hint={dict.bonuses.hint}
@@ -208,6 +83,181 @@ export function RoomSettingsFields({
         />
         <p className="font-mono text-sm text-muted">&gt; {dict.botsNote}</p>
       </Section>
+    </>
+  );
+}
+
+/** The text's settings that matter outside a room too. */
+export type TextSettings = Pick<
+  RaceConfig,
+  | "language"
+  | "textType"
+  | "length"
+  | "complexity"
+  | "punctuation"
+  | "numbers"
+  | "capitals"
+  | "accents"
+  | "includeChars"
+  | "excludeChars"
+>;
+
+/** The text: language, type, length, complexity and characters (CONF-02 to CONF-07). */
+export function TextSettingsSection({
+  dict,
+  locale,
+  settings,
+  update,
+}: {
+  dict: CreateRoomDictionary;
+  locale: Locale;
+  settings: TextSettings;
+  update: (changes: Partial<TextSettings>) => void;
+}) {
+  const french = settings.language === "fr";
+  const random = settings.textType === "random";
+
+  return (
+    <Section title={dict.sections.text}>
+      <ChoiceGroup
+        legend={dict.language}
+        name="language"
+        value={settings.language}
+        onChange={(value) => update({ language: value })}
+        options={LOCALES.map((language) => ({
+          value: language,
+          label: LOCALE_NAMES[language],
+          lang: language,
+        }))}
+      />
+      <ChoiceGroup
+        legend={dict.textType.legend}
+        name="textType"
+        value={settings.textType}
+        onChange={(value) => update({ textType: value })}
+        options={TEXT_TYPES.map((type) => ({
+          value: type,
+          label: dict.textType[type],
+          hint: dict.textType[`${type}Hint`],
+        }))}
+      />
+      <RangeField
+        label={dict.length.label}
+        min={LENGTH_MIN}
+        max={LENGTH_MAX}
+        step={LENGTH_STEP}
+        value={settings.length}
+        onChange={(value) => update({ length: value })}
+        format={(count) => plural(locale, dict.length.value, count)}
+      />
+      <ChoiceGroup
+        legend={dict.complexity.legend}
+        name="complexity"
+        value={settings.complexity}
+        onChange={(value) => update({ complexity: value })}
+        options={COMPLEXITIES.map((complexity) => ({
+          value: complexity,
+          label: dict.complexity[complexity],
+          hint: dict.complexity[`${complexity}Hint`],
+        }))}
+      />
+      <fieldset>
+        <legend className="text-sm font-medium">
+          {dict.characters.legend}
+        </legend>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <Toggle
+            label={dict.characters.punctuation}
+            checked={settings.punctuation}
+            onChange={(value) => update({ punctuation: value })}
+          />
+          <Toggle
+            label={dict.characters.numbers}
+            checked={settings.numbers}
+            onChange={(value) => update({ numbers: value })}
+          />
+          <Toggle
+            label={dict.characters.capitals}
+            checked={settings.capitals}
+            onChange={(value) => update({ capitals: value })}
+          />
+          {/* Only French text has accents, so the switch is off for English. */}
+          <Toggle
+            label={dict.characters.accents}
+            hint={french ? undefined : dict.characters.accentsHint}
+            checked={settings.accents && french}
+            disabled={!french}
+            onChange={(value) => update({ accents: value })}
+          />
+        </div>
+      </fieldset>
+      {random ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            label={dict.charset.include}
+            name="includeChars"
+            value={settings.includeChars}
+            onChange={(value) => update({ includeChars: value })}
+            autoComplete="off"
+            maxLength={CHARSET_MAX}
+            hint={dict.charset.hint}
+          />
+          <TextField
+            label={dict.charset.exclude}
+            name="excludeChars"
+            value={settings.excludeChars}
+            onChange={(value) => update({ excludeChars: value })}
+            autoComplete="off"
+            maxLength={CHARSET_MAX}
+            hint={dict.charset.hint}
+          />
+        </div>
+      ) : (
+        <p className="font-mono text-sm text-muted">
+          &gt; {dict.charset.coherentNote}
+        </p>
+      )}
+    </Section>
+  );
+}
+
+/** The time limit and the error mode (CONF-01, CONF-08). */
+export function RaceRulesFields({
+  dict,
+  settings,
+  update,
+}: {
+  dict: CreateRoomDictionary;
+  settings: Pick<RaceConfig, "timeLimit" | "errorMode">;
+  update: (changes: Partial<Pick<RaceConfig, "timeLimit" | "errorMode">>) => void;
+}) {
+  return (
+    <>
+      <ChoiceGroup
+        legend={dict.timeLimit.legend}
+        name="timeLimit"
+        value={String(settings.timeLimit)}
+        onChange={(value) => {
+          const seconds = TIME_LIMITS.find((limit) => String(limit) === value);
+          if (seconds !== undefined) update({ timeLimit: seconds });
+        }}
+        compact
+        options={TIME_LIMITS.map((seconds) => ({
+          value: String(seconds),
+          label: seconds === 0 ? dict.timeLimit.none : formatSeconds(seconds),
+        }))}
+      />
+      <ChoiceGroup
+        legend={dict.errorMode.legend}
+        name="errorMode"
+        value={settings.errorMode}
+        onChange={(value) => update({ errorMode: value })}
+        options={ERROR_MODES.map((mode) => ({
+          value: mode,
+          label: dict.errorMode[mode],
+          hint: dict.errorMode[`${mode}Hint`],
+        }))}
+      />
     </>
   );
 }

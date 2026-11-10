@@ -19,7 +19,7 @@ import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
 import { LeaveRoom } from "./leave-room";
 import { MakeHost } from "./make-host";
-import { RaceResults } from "./race/race-results";
+import { RaceResults } from "@/app/components/race/race-results";
 import { RaceView } from "./race/race-view";
 import { NewGame } from "./race/new-game";
 import { StartRace } from "./race/start-race";
@@ -33,7 +33,7 @@ export async function generateMetadata({
 
 export default function RoomPage({ params }: PageProps<"/[lang]/rooms/[code]">) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 sm:px-8">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
       {/* The room depends on the code and the session, so it renders per request. */}
       <Suspense fallback={null}>
         <Room params={params} />
@@ -81,11 +81,15 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   const settings = { ...room.config, visibility: room.visibility, capacity: room.capacity };
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+    // During the race the settings can't change, so the race takes the whole width.
+    <div
+      className={`grid gap-10 lg:items-start ${inRace ? "" : "lg:grid-cols-[minmax(0,1fr)_20rem]"}`}
+    >
       {/* Members, host and settings re-render as soon as they change. */}
       <LiveRoom code={room.code} />
-      <div className="grid gap-8">
-        <header className="grid gap-4">
+      {/* Tighter during the race, so the whole race fits on screen. */}
+      <div className={`grid ${inRace ? "gap-5" : "gap-8"}`}>
+        <header className={`grid ${inRace ? "gap-2" : "gap-4"}`}>
           {/* The leave button lines up with the title, not the state below it. */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-display text-4xl leading-tight font-semibold">
@@ -122,6 +126,9 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             locale={locale}
           />
         )}
+        {inRace && !member && (
+          <p className="font-mono text-sm text-accent-text">&gt; {t.errors.notJoinable}</p>
+        )}
         {results && member && !isHost && (
           <p className="font-mono text-sm text-muted">&gt; {dict.results.waitingHost}</p>
         )}
@@ -157,42 +164,44 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
       </div>
 
       {/* The start and join buttons sit under the settings they will race with. */}
-      <div className="grid gap-4 lg:sticky lg:top-6">
-        <aside className="border border-line bg-surface p-6 rounded-leaf">
-          <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
-          <div className="mt-4">
-            <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
-          </div>
-          {/* CONF: the host changes the settings between races, never during one. */}
-          {isHost && !inRace && (
-            <EditSettings
+      {!inRace && (
+        <div className="grid gap-4 lg:sticky lg:top-6">
+          <aside className="border border-line bg-surface p-6 rounded-leaf">
+            <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
+            <div className="mt-4">
+              <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
+            </div>
+            {/* CONF: the host changes the settings between races, never during one. */}
+            {isHost && (
+              <EditSettings
+                dict={t}
+                fieldsDict={dict.createRoom}
+                locale={locale}
+                settings={settings}
+              />
+            )}
+          </aside>
+          {/* COURSE-11: the results go back to the waiting room, where the next race starts. */}
+          {isHost && room.state === "waiting" && (
+            <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
+          )}
+          {isHost && results && <NewGame dict={dict.race} />}
+          {!member && joinable && (
+            <JoinRoom
               dict={t}
-              fieldsDict={dict.createRoom}
               locale={locale}
-              settings={settings}
+              code={room.code}
+              full={runners.length >= room.capacity}
+              elsewhere={current?.code ?? null}
+              defaultName={user?.displayName ?? ""}
+              hasSession={user !== null}
             />
           )}
-        </aside>
-        {/* COURSE-11: the results go back to the waiting room, where the next race starts. */}
-        {isHost && room.state === "waiting" && (
-          <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
-        )}
-        {isHost && results && <NewGame dict={dict.race} />}
-        {!member && joinable && (
-          <JoinRoom
-            dict={t}
-            locale={locale}
-            code={room.code}
-            full={runners.length >= room.capacity}
-            elsewhere={current?.code ?? null}
-            defaultName={user?.displayName ?? ""}
-            hasSession={user !== null}
-          />
-        )}
-        {!member && !joinable && (
-          <p className="font-mono text-sm text-accent-text">&gt; {t.errors.notJoinable}</p>
-        )}
-      </div>
+          {!member && !joinable && (
+            <p className="font-mono text-sm text-accent-text">&gt; {t.errors.notJoinable}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

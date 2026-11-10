@@ -33,3 +33,19 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** dans une fenêtre privée (cache vide, donc hydratation lente en dev), le bouton ne fonctionnait pas et l'URL contenait `?name=…&hostRole=…`. L'IA a reproduit le bug avec un script Playwright qui ralentit le JavaScript, et a repéré le défaut de sa première correction avec un second script avant le commit.
 - **Correction :** le bouton reste désactivé tant que la page n'est pas hydratée (`useSyncExternalStore`), et le formulaire garde `onSubmit` (commit c26c63f).
 - **Leçon :** tester un formulaire avec un JavaScript lent ou un cache vide, et vérifier le chemin d'erreur après chaque correction, pas seulement le cas qui marche.
+
+## 2026-11-09 — Test e2e oublié après l'ajout d'une confirmation
+
+- **Outil / agent :** Claude Code (session précédente; agent exact à compléter), Playwright.
+- **Ce que l'IA a fait :** le commit d6e3683 a ajouté le dialogue « Delete the room? » au bouton « Leave the room » (dernier compte de la salle), sans mettre à jour `e2e/host-leaves.e2e.ts`. Le test cliquait toujours sur « Leave the room » et attendait une redirection qui ne venait plus : il échouait depuis.
+- **Comment je l'ai détecté :** en lançant toute la suite e2e après le travail sur la page de course; l'IA a relancé le test sur le code sans ses changements pour confirmer que l'échec venait d'avant.
+- **Correction :** le test annule le dialogue une fois, puis confirme (commit ce4008c).
+- **Leçon :** relancer la suite e2e, pas seulement les tests unitaires, après avoir changé un parcours que les tests e2e cliquent.
+
+## 2026-11-09 — Test e2e instable à cause d'un calcul de progression faux
+
+- **Outil / agent :** Claude Code (session qui a écrit le test : à compléter), Playwright.
+- **Ce que l'IA a fait :** dans `e2e/race-network.e2e.ts` (commit 2d21e00), le pourcentage attendu sur la piste était calculé jusqu'au dernier mot complet (`lastIndexOf(" ")`), alors que le moteur compte chaque caractère juste. Le test ne passait que si les deux valeurs arrondies tombaient pareil, selon le texte aléatoire.
+- **Comment je l'ai détecté :** en vérifiant la fusion du mode entraînement dans `main`, le test a échoué (« 28 % » reçu, « 27 % » attendu) puis réussi au lancement suivant ; la piste montrait pourtant bien toutes les touches reçues.
+- **Correction :** le test attend 120 caractères sur la longueur du texte, arrondis avec le même `Intl.NumberFormat` que la piste ; 4 passages de suite sans échec.
+- **Leçon :** un test qui dépend d'un texte aléatoire doit être lancé plusieurs fois (`--repeat-each`) avant d'être commité.

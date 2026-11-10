@@ -93,6 +93,12 @@ export type RoomState = (typeof ROOM_STATES)[number];
 /** People can come in only between races (SALLE-09). */
 export const JOINABLE_STATES: readonly RoomState[] = ["waiting", "results"];
 
+/** The settings normalizeSettings() looks at. */
+type TextFilters = Pick<
+  RaceConfig,
+  "language" | "textType" | "accents" | "includeChars" | "excludeChars"
+>;
+
 /**
  * Drops what the chosen options make meaningless, so the stored config says
  * what the race really uses: accents only exist in French, and the
@@ -100,7 +106,8 @@ export const JOINABLE_STATES: readonly RoomState[] = ["waiting", "results"];
  */
 export function normalizeSettings(settings: RoomSettings): RoomSettings;
 export function normalizeSettings(settings: EditableSettings): EditableSettings;
-export function normalizeSettings(settings: EditableSettings): EditableSettings {
+export function normalizeSettings(settings: RaceConfig): RaceConfig;
+export function normalizeSettings<T extends TextFilters>(settings: T): T {
   const random = settings.textType === "random";
   return {
     ...settings,

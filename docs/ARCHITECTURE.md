@@ -185,6 +185,18 @@ Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le
 - **Messages.** `race:sync` (le navigateur demande la course : texte, piste, et sa propre frappe), `race:keys` (un lot numéroté de touches, toutes les 150 ms au plus, PERF-02), `race:abandon`; le serveur envoie `race:state`, `race:track`, `race:resync` et `race:text` (nouveau texte après un bonus, au coureur visé seulement). Tous les messages reçus sont validés avec Zod, et les touches appartiennent toujours à l'utilisateur du socket. Si un lot est refusé, `race:resync` renvoie l'état du serveur et le navigateur rejoue les lots envoyés après celui-là.
 - **Départ et reconnexion.** Quitter la salle ou en être retiré pendant une course compte comme un abandon. Après un rechargement, `race:sync` rend sa frappe au coureur ; sans onglet ouvert pendant 30 s, la présence le retire de la salle, ce qui compte comme un abandon (COURSE-08).
 - **Piste (COURSE-05).** Chaque coureur est une fleur (`GrowingStem`) qui pousse avec sa progression et fleurit à l'arrivée. Entre deux mises à jour, la progression affichée rejoint la vraie image par image, pour que les fleurs poussent sans saccades.
+- **Composants partagés.** La piste, la zone de frappe (`TypingBox` et `useTyping`), le décompte, le dialogue d'abandon et les résultats sont dans `app/components/race/`, sans dépendre d'une salle ni du socket. La zone de frappe d'une salle (`typing-area.tsx`) ajoute seulement l'envoi des touches au serveur et la resynchronisation.
+
+## Mode entraînement
+
+Une course seul, ouverte à tous sauf à quelqu'un qui est dans une salle (`app/[lang]/practice/`) : la page le renvoie vers sa salle, et la server action du texte le refuse aussi. Elle n'a pas de salle : rien en base, pas de socket.
+
+1. **Réglages.** Les mêmes champs que pour une salle pour le texte, la limite de temps et le mode d'erreur (`TextSettingsSection`, `RaceRulesFields`), plus une liste de bots : jusqu'à 5, chacun avec un niveau (`lib/practice/settings.ts`, `lib/bots/levels.ts`).
+2. **Texte.** La server action `practiceTextAction` refuse quelqu'un qui est dans une salle, valide les réglages avec Zod et génère le texte comme pour une salle (`lib/texts/generate.ts`). C'est le seul appel au serveur.
+3. **Course.** Le navigateur crée un `Race` (`lib/race/engine.ts`), le même moteur que le serveur : décompte de 3 s, règles de frappe, limite de temps, échantillons de MPM et classement. Chaque touche acceptée par `useTyping` lui est passée, et la piste est rafraîchie 5 fois par seconde.
+4. **Résultats.** Le tableau et le podium des salles, avec « Recommencer » (nouveau texte, mêmes réglages) et « Changer les réglages ».
+
+Comme le serveur n'arbitre pas cette course, ses résultats ne sont pas enregistrés. Les bots sont configurés mais ne courent pas encore : quand leur moteur existera, chaque bot deviendra un participant du même `Race`, à qui le moteur donnera ses touches au fil du temps.
 
 ## Bonus de rattrapage
 

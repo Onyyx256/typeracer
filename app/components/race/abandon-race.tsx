@@ -2,16 +2,14 @@
 
 import { useId, useRef } from "react";
 import type { RaceDictionary } from "@/lib/i18n/dictionaries/fr";
-import { EVENTS } from "@/lib/realtime/events";
-import { getSocket } from "@/lib/realtime/client";
 
 const danger =
   "h-11 w-full cursor-pointer bg-danger px-6 font-medium text-on-danger transition-[filter] hover:brightness-110 rounded-leaf";
 const secondary =
   "flex h-11 w-full cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf";
 
-/** COURSE-07: giving up asks first; the server marks the runner as abandoned. */
-export function AbandonRace({ dict }: { dict: RaceDictionary }) {
+/** COURSE-07: giving up asks first; `onConfirm` then ends the runner's race. */
+export function AbandonRace({ dict, onConfirm }: { dict: RaceDictionary; onConfirm: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const t = dict.abandonDialog;
@@ -21,7 +19,7 @@ export function AbandonRace({ dict }: { dict: RaceDictionary }) {
       <button
         type="button"
         onClick={() => dialog.current?.showModal()}
-        className="h-11 cursor-pointer border border-danger/50 px-6 font-medium text-danger transition-colors hover:border-danger hover:bg-danger/10 rounded-leaf"
+        className="h-9 cursor-pointer border border-danger/50 px-4 text-sm font-medium text-danger transition-colors hover:border-danger hover:bg-danger/10 rounded-leaf"
       >
         {dict.abandon}
       </button>
@@ -42,7 +40,7 @@ export function AbandonRace({ dict }: { dict: RaceDictionary }) {
               type="button"
               className={danger}
               onClick={() => {
-                getSocket().emit(EVENTS.raceAbandon);
+                onConfirm();
                 dialog.current?.close();
               }}
             >

@@ -300,13 +300,16 @@ export function handleKeys(
   userId: string,
   seq: number,
   keys: readonly string[],
+  /** When the browser sent them, in ms since typing opened (see raceKeysSchema). */
+  at?: number,
 ): RaceResyncPayload | null {
   const runtime = runtimeOf(userId);
   if (!runtime || runtime.finishing) {
     return null;
   }
   const now = Date.now();
-  const result = runtime.race.applyKeys(userId, keys, now);
+  const typedAt = at === undefined ? now : runtime.race.startsAt + at;
+  const result = runtime.race.applyKeys(userId, keys, now, typedAt);
   if (!result.ok) {
     const you = runtime.race.playerState(userId);
     return you ? { code: runtime.code, seq, you } : null;

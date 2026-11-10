@@ -70,8 +70,9 @@ export function RaceTrack({
   const shown = useSmoothProgress(entries);
 
   return (
-    <section aria-label={dict.track} className="bg-panel p-5 text-on-panel rounded-leaf sm:p-6">
-      <ol className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-2 gap-y-6">
+    <section aria-label={dict.track} className="bg-panel p-4 text-on-panel rounded-leaf">
+      {/* Lanes as wide as their flower, centered in the bed. */}
+      <ol className="grid grid-cols-[repeat(auto-fit,minmax(7rem,9rem))] justify-center gap-x-3 gap-y-4">
         {entries.map((entry) => {
           const you = entry.userId === youId;
           const progress = shown[entry.userId] ?? 0;
@@ -85,7 +86,7 @@ export function RaceTrack({
                   wpm: entry.wpm,
                 }) + (entry.effect ? ` · ${dict.bonuses[entry.effect]}` : "")
               }
-              className={`relative flex min-w-0 flex-col items-center gap-2 p-1 rounded-leaf ${
+              className={`relative flex min-w-0 flex-col items-center gap-1.5 px-1 pt-2 pb-2 rounded-leaf ${
                 you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
               } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""}`}
             >
@@ -96,20 +97,35 @@ export function RaceTrack({
                   className="weather-pop absolute top-1 right-1 size-7 text-on-panel"
                 />
               )}
-              <GrowingStem progress={progress} className="h-32 w-auto sm:h-40" />
+              {/* As tall as the window allows: the rest of the race page takes about 36rem. */}
+              <GrowingStem
+                progress={progress}
+                zoomed
+                className="h-[clamp(7rem,calc(100dvh-36.5rem),18rem)] w-auto"
+              />
               <span className="flex max-w-full items-center gap-1.5">
-                <Avatar name={entry.name} className="size-6 text-xs" />
+                <Avatar name={entry.name} className="size-6 shrink-0 text-xs" />
                 <span className="truncate text-sm font-medium" title={entry.name}>
                   {entry.name}
                 </span>
+                {entry.isGuest && (
+                  <span className="shrink-0 font-mono text-[0.65rem] tracking-wide text-on-panel-muted uppercase" aria-hidden="true">
+                    {roomDict.guestBadge}
+                  </span>
+                )}
               </span>
-              <span className="font-mono text-xs text-on-panel-muted tabular-nums" aria-hidden="true">
-                {entry.wpm} {dict.wpm}
-                {you && <> · {roomDict.you}</>}
-              </span>
-              <span className="font-mono text-[0.7rem] tracking-wide text-on-panel-muted uppercase" aria-hidden="true">
-                {entry.isGuest && <>{roomDict.guestBadge} · </>}
-                {entry.effect ? dict.bonuses[entry.effect] : dict.statuses[entry.status]}
+              {/* Two short lines under the flower; the ring already says which one is yours. */}
+              {/* An effect's name is longer than a status: that line may wrap while it shows. */}
+              <span
+                className={`text-center font-mono text-xs text-on-panel-muted tabular-nums ${
+                  entry.effect ? "" : "whitespace-nowrap"
+                }`}
+                aria-hidden="true"
+              >
+                {entry.wpm} {dict.wpm} ·{" "}
+                <span className="text-[0.7rem] tracking-wide uppercase">
+                  {entry.effect ? dict.bonuses[entry.effect] : dict.statuses[entry.status]}
+                </span>
               </span>
             </li>
           );

@@ -2,6 +2,8 @@ type GrowingStemProps = {
   /** 0 = just sprouted, 1 = in bloom. */
   progress: number;
   className?: string;
+  /** Crops the empty space around the flower, so it fills its box (the race track). */
+  zoomed?: boolean;
 };
 
 type Point = { x: number; y: number };
@@ -17,6 +19,10 @@ const LEAVES = [
   { at: 0.48, side: -1 },
   { at: 0.72, side: 1 },
 ] as const;
+
+/** The full drawing, and the part the bloomed flower and the ground line actually use. */
+const VIEW_BOX = "0 0 200 460";
+const ZOOMED_VIEW_BOX = "34 72 132 380";
 
 const PETAL_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315] as const;
 
@@ -37,14 +43,14 @@ function stemPath(until: number): string {
   return commands.join(" ");
 }
 
-export function GrowingStem({ progress, className }: GrowingStemProps) {
+export function GrowingStem({ progress, className, zoomed = false }: GrowingStemProps) {
   const clamped = Math.min(1, Math.max(0, progress));
   const grown = SPROUT + (1 - SPROUT) * clamped;
   const tip = stemPoint(grown);
   const inBloom = clamped >= 1;
 
   return (
-    <svg viewBox="0 0 200 460" className={className} aria-hidden="true">
+    <svg viewBox={zoomed ? ZOOMED_VIEW_BOX : VIEW_BOX} className={className} aria-hidden="true">
       <path
         d="M40 441 H160"
         className="stroke-on-panel-muted"

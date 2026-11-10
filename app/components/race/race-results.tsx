@@ -24,7 +24,8 @@ export function RaceResults({
   roomDict,
   locale,
 }: {
-  view: RaceResultsView;
+  /** Only what's shown, so a practice race (never saved) can use it too. */
+  view: Pick<RaceResultsView, "results" | "source">;
   userId: string | null;
   dict: ResultsDictionary;
   roomDict: RoomDictionary;
