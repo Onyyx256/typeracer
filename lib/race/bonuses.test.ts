@@ -5,13 +5,13 @@ import {
   glareRange,
   leadingRunners,
   MAX_BONUSES_PER_RUNNER,
-  planBonus,
+  planBonuses,
   RAIN_MARGIN_WORDS,
   removableWords,
   removeLastWords,
   shareOfWords,
   trailingRunners,
-  type BonusKind,
+  type BonusPlan,
   type Standing,
 } from "./bonuses";
 
@@ -76,35 +76,50 @@ describe("leadingRunners", () => {
   });
 });
 
-describe("planBonus", () => {
+describe("planBonuses", () => {
   const four = [standing("a", 0.6), standing("b", 0.5), standing("c", 0.45), standing("d", 0.1)];
 
   function plansFor(standings: readonly Standing[], seeds = 50) {
-    return Array.from({ length: seeds }, (_, seed) => planBonus(standings, 50, createRng(seed)));
+    return Array.from({ length: seeds }, (_, seed) => planBonuses(standings, 50, createRng(seed)));
   }
+  const kindsOf = (plans: readonly BonusPlan[]) => plans.map((plan) => plan.kind);
 
-  test("picks each of the three effects, at random", () => {
-    const kinds = new Set(plansFor(four).map((plan) => plan?.kind));
-    expect(kinds).toEqual(new Set<BonusKind | undefined>(["rain", "night", "glare"]));
+  test("each checkpoint brings rain for the trailing runners and a hindrance for the leaders", () => {
+    for (const plans of plansFor(four)) {
+      const [rain, hindrance] = plans;
+      expect(rain?.kind).toBe("rain");
+      expect(["night", "glare"]).toContain(hindrance?.kind);
+      expect(plans).toHaveLength(2);
+    }
+  });
+
+  test("the hindrance is night or glare, at random", () => {
+    const hindrances = new Set(plansFor(four).map((plans) => plans[1]?.kind));
+    expect([...hindrances].sort()).toEqual(["glare", "night"]);
+  });
+
+  test("nobody gets both: the trailing runners are never hindered", () => {
+    for (const [rain, hindrance] of plansFor(four)) {
+      const helped = new Set(ids(rain?.targets ?? []));
+      expect(ids(hindrance?.targets ?? []).some((id) => helped.has(id))).toBe(false);
+    }
   });
 
   test("is the same for the same seed", () => {
-    expect(planBonus(four, 50, createRng(7))).toEqual(planBonus(four, 50, createRng(7)));
+    expect(planBonuses(four, 50, createRng(7))).toEqual(planBonuses(four, 50, createRng(7)));
   });
 
   test("rain takes 10% of the words off the trailing runners", () => {
-    const rain = plansFor(four).find((plan) => plan?.kind === "rain");
-    expect(rain?.targets).toEqual([{ userId: "d", words: 5 }]);
+    expect(planBonuses(four, 50, createRng(1))[0]?.targets).toEqual([{ userId: "d", words: 5 }]);
   });
 
   test("rain never takes more than what can be removed", () => {
     const standings = [standing("a", 0.6), standing("b", 0.1, { removable: 2 })];
-    const rain = plansFor(standings).find((plan) => plan?.kind === "rain");
-    expect(rain?.targets).toEqual([{ userId: "b", words: 2 }]);
+    expect(planBonuses(standings, 50, createRng(1))[0]?.targets).toEqual([{ userId: "b", words: 2 }]);
   });
 
   test("night adds 7%, 5% and 3% to the first three", () => {
-    const night = plansFor(four).find((plan) => plan?.kind === "night");
+    const night = plansFor(four).find((plans) => plans[1]?.kind === "night")?.[1];
     expect(night?.targets).toEqual([
       { userId: "a", words: 4 },
       { userId: "b", words: 3 },
@@ -113,7 +128,7 @@ describe("planBonus", () => {
   });
 
   test("glare goes to the first three, adding no words", () => {
-    const glare = plansFor(four).find((plan) => plan?.kind === "glare");
+    const glare = plansFor(four).find((plans) => plans[1]?.kind === "glare")?.[1];
     expect(glare?.targets).toEqual([
       { userId: "a", words: 0 },
       { userId: "b", words: 0 },
@@ -121,24 +136,25 @@ describe("planBonus", () => {
     ]);
   });
 
-  test("skips runners who already received the maximum", () => {
+  test("skips runners who already received the maximum, keeping the others' places", () => {
     const standings = [
       standing("a", 0.6, { received: MAX_BONUSES_PER_RUNNER }),
-      standing("b", 0.1, { received: MAX_BONUSES_PER_RUNNER }),
+      standing("b", 0.5),
+      standing("c", 0.1, { received: MAX_BONUSES_PER_RUNNER }),
     ];
-    expect(planBonus(standings, 50, createRng(1))).toBeNull();
+    const night = plansFor(standings).find((plans) => kindsOf(plans).includes("night"));
+    // No rain (c is capped); b keeps the 2nd place's 5%.
+    expect(night).toEqual([{ kind: "night", targets: [{ userId: "b", words: 3 }] }]);
   });
 
-  test("only picks an effect that has someone to apply to", () => {
-    // The trailing runner can't lose any word and the leader is capped: nothing is left.
-    const standings = [
+  test("leaves out what has nobody to apply to", () => {
+    const capped = [
       standing("a", 0.6, { received: MAX_BONUSES_PER_RUNNER }),
       standing("b", 0.1, { removable: 0 }),
     ];
-    expect(planBonus(standings, 50, createRng(1))).toBeNull();
-    // Only rain is possible.
+    expect(planBonuses(capped, 50, createRng(1))).toEqual([]);
     const onlyRain = [standing("a", 0.6, { received: MAX_BONUSES_PER_RUNNER }), standing("b", 0.1)];
-    expect(new Set(plansFor(onlyRain).map((plan) => plan?.kind))).toEqual(new Set(["rain"]));
+    expect(kindsOf(planBonuses(onlyRain, 50, createRng(1)))).toEqual(["rain"]);
   });
 });
 

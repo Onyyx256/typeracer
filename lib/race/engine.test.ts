@@ -280,26 +280,29 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     expect(off.tick(leadTo(off, 80))).toEqual([]);
   });
 
-  test("each checkpoint fires once, at most three in a race", () => {
+  test("each checkpoint brings a bonus to the last runner and a hindrance to the leader", () => {
     const race = bonusRace(1);
     const at25 = leadTo(race, 30);
-    expect(race.tick(at25)).toHaveLength(1);
+    const events = race.tick(at25);
+    expect(events.map((event) => event.kind)[0]).toBe("rain");
+    expect(events.map((event) => event.targets)).toEqual([["b"], ["a"]]);
     expect(race.tick(at25 + 200)).toEqual([]);
 
+    // 50% and 75% fire together here, then never again.
     const later = typeSlowly(race, "a", LONG.slice(30, 95), at25);
-    const fired = race.tick(later).length;
-    expect(fired).toBe(2);
+    expect(race.tick(later)).toHaveLength(4);
     expect(race.tick(later + 200)).toEqual([]);
-    const total = race.results(later + 400).reduce((sum, row) => sum + row.bonuses.length, 0);
-    expect(total).toBe(3);
+    const results = race.results(later + 400);
+    expect(results.map((row) => row.bonuses.length)).toEqual([3, 3]);
+    expect(results.find((row) => row.userId === "b")?.bonuses).toEqual(["rain", "rain", "rain"]);
   });
 
-  /** A seed whose first effect is `kind`. */
+  /** A seed whose first hindrance is `kind`. */
   function raceWith(kind: string): { race: Race; now: number } {
     for (let seed = 0; seed < 100; seed++) {
       const race = bonusRace(seed);
       const now = leadTo(race, 30);
-      if (race.tick(now)[0]?.kind === kind) {
+      if (race.tick(now).some((event) => event.kind === kind)) {
         return { race, now };
       }
     }
@@ -307,11 +310,10 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
   }
 
   test("rain shortens the trailing runner's text, keeping progress and WPM consistent", () => {
-    const { race, now } = raceWith("rain");
+    const { race, now } = raceWith("night");
     const bruno = race.playerState("b");
     // 10% of 20 words.
     expect(bruno?.text.split(" ")).toHaveLength(18);
-    expect(race.playerState("a")?.text).toBe(LONG);
     const entry = race.track(now).find((row) => row.userId === "b");
     expect(entry?.effect).toBe("rain");
     expect(entry?.progress).toBe(0);
@@ -328,7 +330,6 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     const { race, now } = raceWith("night");
     // 7% of 20 words, rounded: 1 word.
     expect(race.playerState("a")?.text).toBe(`${LONG} nuit`);
-    expect(race.playerState("b")?.text).toBe(LONG);
     const alice = race.track(now).find((row) => row.userId === "a");
     expect(alice?.effect).toBe("night");
     expect(alice?.progress).toBeCloseTo(30 / (LONG.length + 5));

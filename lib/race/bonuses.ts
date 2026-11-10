@@ -3,7 +3,8 @@ import { pick, type Rng } from "@/lib/texts/rng";
 /**
  * Catch-up bonuses (BONUS-01, BONUS-02), as pure rules: the engine gives
  * the standings and a seeded random generator, and gets back who receives
- * what. The flower theme gives the three effects:
+ * what. Each checkpoint brings a bonus for the trailing runners and a
+ * hindrance for the leaders. The flower theme gives the three effects:
  * - rain: rain and sun, the trailing runners' text gets shorter;
  * - night: the leaders' text gets longer;
  * - glare: a blinding sun hides the leaders' next words for a moment.
@@ -11,6 +12,9 @@ import { pick, type Rng } from "@/lib/texts/rng";
 export const BONUS_KINDS = ["rain", "night", "glare"] as const;
 
 export type BonusKind = (typeof BONUS_KINDS)[number];
+
+/** The effects that slow the leaders; one of them falls at each checkpoint. */
+export const HINDRANCES = ["night", "glare"] as const satisfies readonly BonusKind[];
 
 /** The leader's progress that fires a bonus, each once per race. */
 export const CHECKPOINTS = [0.25, 0.5, 0.75] as const;
@@ -48,7 +52,7 @@ export type Standing = {
 
 export type BonusTarget = { userId: string; words: number };
 
-/** One checkpoint's effect. `words` is 0 for glare. */
+/** One effect of a checkpoint. `words` is 0 for glare. */
 export type BonusPlan = { kind: BonusKind; targets: BonusTarget[] };
 
 /** A share of the original text, at least one word. */
@@ -91,15 +95,18 @@ function underCap(standing: Standing): boolean {
 }
 
 /**
- * What a checkpoint does: one effect picked at random among those that
- * have someone to apply to, or null when none has. `baseWords` is the
- * original text's word count, the same for everyone.
+ * What a checkpoint does: the bonus (rain) for the trailing runners, and
+ * a hindrance for the leaders, night or glare picked at random. Either is
+ * left out when it has nobody to apply to. `baseWords` is the original
+ * text's word count, the same for everyone.
  */
-export function planBonus(
+export function planBonuses(
   standings: readonly Standing[],
   baseWords: number,
   rng: Rng,
-): BonusPlan | null {
+): BonusPlan[] {
+  const plans: BonusPlan[] = [];
+
   const rainWords = shareOfWords(RAIN_SHARE, baseWords);
   const rain = trailingRunners(standings)
     .filter((standing) => underCap(standing) && standing.removable > 0)
@@ -107,23 +114,27 @@ export function planBonus(
       userId: standing.userId,
       words: Math.min(rainWords, standing.removable),
     }));
+  if (rain.length > 0) {
+    plans.push({ kind: "rain", targets: rain });
+  }
 
+  // Places count among all leaders, so a capped 1st doesn't move 2nd up to 7%.
   const leading = leadingRunners(standings);
-  const night = leading.flatMap((standing, place) =>
-    underCap(standing)
-      ? [{ userId: standing.userId, words: shareOfWords(NIGHT_SHARES[place] ?? 0, baseWords) }]
-      : [],
-  );
-  const glare = leading
-    .filter(underCap)
-    .map((standing) => ({ userId: standing.userId, words: 0 }));
-
-  const options: BonusPlan[] = [
-    { kind: "rain" as const, targets: rain },
-    { kind: "night" as const, targets: night },
-    { kind: "glare" as const, targets: glare },
-  ].filter((option) => option.targets.length > 0);
-  return options.length > 0 ? pick(rng, options) : null;
+  const hindered = leading.filter(underCap);
+  if (hindered.length > 0) {
+    const kind = pick(rng, HINDRANCES);
+    plans.push({
+      kind,
+      targets: hindered.map((standing) => ({
+        userId: standing.userId,
+        words:
+          kind === "night"
+            ? shareOfWords(NIGHT_SHARES[leading.indexOf(standing)] ?? 0, baseWords)
+            : 0,
+      })),
+    });
+  }
+  return plans;
 }
 
 /** Index of the word the cursor is in (or about to start). */

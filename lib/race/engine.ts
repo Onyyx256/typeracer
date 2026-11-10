@@ -3,7 +3,7 @@ import {
   appendWords,
   CHECKPOINTS,
   GLARE_MS,
-  planBonus,
+  planBonuses,
   removableWords,
   removeLastWords,
   type BonusKind,
@@ -276,8 +276,8 @@ export class Race {
         break;
       }
       this.fired++;
-      const plan = planBonus(standings, this.bonus.baseWords, this.bonus.rng);
-      if (plan) {
+      // A bonus and a hindrance, on different runners.
+      for (const plan of planBonuses(standings, this.bonus.baseWords, this.bonus.rng)) {
         events.push(this.applyBonus(plan.kind, plan.targets, now));
       }
     }
