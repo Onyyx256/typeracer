@@ -1,6 +1,8 @@
 import { PodiumFlower } from "@/app/components/podium-flower";
 import { WeatherIcon } from "@/app/components/weather-icon";
 import type { RaceResultsView, ResultRow } from "@/lib/race/results";
+import { cosmeticClasses } from "@/lib/profile/cosmetics";
+import type { PlayerLooks } from "@/lib/profile/look";
 import type { Locale } from "@/lib/i18n/config";
 import type { RoomDictionary, ResultsDictionary } from "@/lib/i18n/dictionaries/fr";
 import { formatNumber, formatPercent, interpolate } from "@/lib/i18n/format";
@@ -20,6 +22,7 @@ const PODIUM = [
 export function RaceResults({
   view,
   userId,
+  looks = {},
   dict,
   roomDict,
   locale,
@@ -27,6 +30,8 @@ export function RaceResults({
   /** Only what's shown, so a practice race (never saved) can use it too. */
   view: Pick<RaceResultsView, "results" | "source">;
   userId: string | null;
+  /** Photos and flower colours; guests and bots keep the default look. */
+  looks?: PlayerLooks;
   dict: ResultsDictionary;
   roomDict: RoomDictionary;
   locale: Locale;
@@ -49,9 +54,16 @@ export function RaceResults({
             if (!row) {
               return <li key={index} aria-hidden="true" className={order} />;
             }
+            const look = row.userId ? looks[row.userId] : undefined;
             return (
               <li key={index} className={`grid justify-items-center gap-2 text-center ${order}`}>
-                <PodiumFlower name={row.name} stem={stem} delay={delay} className="max-w-[7.5rem]" />
+                <PodiumFlower
+                  name={row.name}
+                  avatarUrl={look?.avatarUrl}
+                  stem={stem}
+                  delay={delay}
+                  className={`max-w-[7.5rem] ${look ? cosmeticClasses(look.cosmetics) : ""}`}
+                />
                 <span className="max-w-full truncate font-medium" title={row.name}>
                   {row.name}
                   {row.userId === userId && userId !== null && <span className="text-muted"> ({roomDict.you})</span>}

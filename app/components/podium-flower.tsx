@@ -3,6 +3,7 @@ import { Avatar } from "@/app/components/avatar";
 
 type PodiumFlowerProps = {
   name: string;
+  avatarUrl?: string | null;
   /** Length of the stem in viewBox units: the winner's is the longest. */
   stem: number;
   /** Seconds to wait before growing, so the flowers bloom one after another. */
@@ -46,7 +47,7 @@ const seconds = (value: number): CSSProperties => ({ animationDelay: `${value.to
  * animation, so it needs no client JavaScript; with reduced motion the
  * flower is simply shown in bloom.
  */
-export function PodiumFlower({ name, stem, delay, className = "" }: PodiumFlowerProps) {
+export function PodiumFlower({ name, avatarUrl, stem, delay, className = "" }: PodiumFlowerProps) {
   const height = HEAD_ROOM + stem + BASE_MARGIN;
   const base: Point = { x: WIDTH / 2, y: height - BASE_MARGIN };
   const head: Point = { x: WIDTH / 2, y: HEAD_ROOM };
@@ -105,7 +106,7 @@ export function PodiumFlower({ name, stem, delay, className = "" }: PodiumFlower
         style={{ left: "50%", top: `${((head.y / height) * 100).toFixed(2)}%` }}
       >
         <span className="podium-pop block" style={seconds(delay + HEAD_AT)}>
-          <Avatar name={name} className="aspect-square w-full text-lg ring-2 ring-petal-line ring-offset-2 ring-offset-petal" />
+          <Avatar name={name} src={avatarUrl} className="aspect-square w-full text-lg ring-2 ring-petal-line ring-offset-2 ring-offset-petal" />
         </span>
       </span>
     </span>

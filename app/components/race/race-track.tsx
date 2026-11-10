@@ -5,6 +5,8 @@ import { Avatar } from "@/app/components/avatar";
 import { GrowingStem } from "@/app/components/growing-stem";
 import { WeatherIcon } from "@/app/components/weather-icon";
 import type { TrackEntry } from "@/lib/race/engine";
+import { cosmeticClasses } from "@/lib/profile/cosmetics";
+import type { PlayerLooks } from "@/lib/profile/look";
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { formatPercent, interpolate } from "@/lib/i18n/format";
@@ -57,12 +59,15 @@ function useSmoothProgress(entries: TrackEntry[]): Record<string, number> {
 export function RaceTrack({
   entries,
   youId,
+  looks = {},
   dict,
   roomDict,
   locale,
 }: {
   entries: TrackEntry[];
   youId: string | null;
+  /** Photos and flower colours; guests and bots keep the default look. */
+  looks?: PlayerLooks;
   dict: RaceDictionary;
   roomDict: RoomDictionary;
   locale: Locale;
@@ -76,6 +81,7 @@ export function RaceTrack({
         {entries.map((entry) => {
           const you = entry.userId === youId;
           const progress = shown[entry.userId] ?? 0;
+          const look = looks[entry.userId];
           return (
             <li
               key={entry.userId}
@@ -88,7 +94,9 @@ export function RaceTrack({
               }
               className={`relative flex min-w-0 flex-col items-center gap-1.5 px-1 pt-2 pb-2 rounded-leaf ${
                 you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
-              } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""}`}
+              } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""} ${
+                look ? cosmeticClasses(look.cosmetics) : ""
+              }`}
             >
               {/* BONUS-03: the weather that just fell on this flower. */}
               {entry.effect && (
@@ -104,7 +112,7 @@ export function RaceTrack({
                 className="h-[clamp(7rem,calc(100dvh-36.5rem),18rem)] w-auto"
               />
               <span className="flex max-w-full items-center gap-1.5">
-                <Avatar name={entry.name} className="size-6 shrink-0 text-xs" />
+                <Avatar name={entry.name} src={look?.avatarUrl} className="size-6 shrink-0 text-xs" />
                 <span className="truncate text-sm font-medium" title={entry.name}>
                   {entry.name}
                 </span>
