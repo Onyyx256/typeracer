@@ -339,6 +339,11 @@ export const en: Dictionary = {
       night: "night",
       glare: "blinding sun",
     },
+    bonusDescriptions: {
+      rain: "A boost for those at the back: words were taken off the end of their text.",
+      night: "A slowdown for the leaders: words were added to their text.",
+      glare: "A slowdown for the leaders: their next words were hidden for a few seconds.",
+    },
     statuses: {
       finished: "Finished",
       timeUp: "Time's up",

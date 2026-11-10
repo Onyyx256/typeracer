@@ -1,5 +1,5 @@
 import { PodiumFlower } from "@/app/components/podium-flower";
-import { WeatherIcon } from "@/app/components/weather-icon";
+import { BonusTip } from "@/app/components/race/bonus-tip";
 import type { RaceResultsView, ResultRow } from "@/lib/race/results";
 import { cosmeticClasses } from "@/lib/profile/cosmetics";
 import type { PlayerLooks } from "@/lib/profile/look";
@@ -136,10 +136,12 @@ export function RaceResults({
                     ) : (
                       <ul className="flex gap-1 text-accent-text">
                         {row.bonuses.map((kind, index) => (
-                          <li key={index} title={dict.bonusNames[kind]}>
-                            <WeatherIcon kind={kind} className="size-5" />
-                            <span className="sr-only">{dict.bonusNames[kind]}</span>
-                          </li>
+                          <BonusTip
+                            key={index}
+                            kind={kind}
+                            name={dict.bonusNames[kind]}
+                            description={dict.bonusDescriptions[kind]}
+                          />
                         ))}
                       </ul>
                     )}

@@ -341,6 +341,11 @@ export const fr = {
       night: "nuit",
       glare: "soleil aveuglant",
     },
+    bonusDescriptions: {
+      rain: "Un coup de pouce pour les derniers : des mots ont été retirés de la fin de leur texte.",
+      night: "Un frein pour les meneurs : des mots ont été ajoutés à leur texte.",
+      glare: "Un frein pour les meneurs : leurs prochains mots ont été cachés pendant quelques secondes.",
+    },
     statuses: {
       finished: "Terminé",
       timeUp: "Temps écoulé",
