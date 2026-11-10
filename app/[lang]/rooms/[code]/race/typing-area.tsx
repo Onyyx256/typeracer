@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { MAX_KEYS_PER_BATCH, type PlayerState } from "@/lib/race/engine";
+import type { PlayerState } from "@/lib/race/engine";
+import { keysAllowed, spendAllowance, startAllowance } from "@/lib/race/pacing";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import {
   applyKey,
@@ -25,7 +26,7 @@ const SEND_EVERY_MS = 150;
 /** Sent batches kept to replay after a refused one (race:resync). */
 const SENT_LOG = 50;
 
-type Batch = { seq: number; keys: string[] };
+type Batch = { seq: number; keys: string[]; at: number };
 
 function fromServer(you: PlayerState): TypingState {
   return { ...you, missed: {} };
@@ -66,6 +67,7 @@ export function TypingArea({
   const pending = useRef<string[]>([]);
   const sent = useRef<Batch[]>([]);
   const seq = useRef(0);
+  const allowance = useRef(startAllowance(startsAt));
   const field = useRef<HTMLTextAreaElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const lines = useRef<HTMLParagraphElement>(null);
@@ -89,14 +91,22 @@ export function TypingArea({
   const flush = useCallback(() => {
     const socket = getSocket();
     // Kept while offline: after reconnecting, race:sync gives the server's
-    // state and these are replayed on top of it.
+    // state and these are replayed on top of it. Only what the server's
+    // speed check allows goes now; the rest waits for the next send.
     while (socket.connected && pending.current.length > 0) {
-      const keys = pending.current.splice(0, MAX_KEYS_PER_BATCH);
-      const batch = { seq: seq.current++, keys };
+      const now = Date.now();
+      const count = Math.min(pending.current.length, keysAllowed(allowance.current, now));
+      if (count <= 0) {
+        return;
+      }
+      allowance.current = spendAllowance(allowance.current, now, count);
+      const keys = pending.current.splice(0, count);
+      // The send time lets the server tell a network stall from fast typing.
+      const batch = { seq: seq.current++, keys, at: Math.max(0, Math.round(now - startsAt)) };
       sent.current = [...sent.current, batch].slice(-SENT_LOG);
       socket.emit(EVENTS.raceKeys, batch);
     }
-  }, []);
+  }, [startsAt]);
 
   /** Applies keys locally and queues the ones that changed something. */
   const press = useCallback(
