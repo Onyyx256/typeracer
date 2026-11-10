@@ -2,6 +2,9 @@
  * Seeds the passage corpus from db/seed/passages.json (built by
  * `bun run texts:build`). Running it again updates rows instead of
  * duplicating them, and deletes passages the build no longer produces.
+ *
+ * With `--demo`, also creates demo accounts with a race history (see
+ * db/seed/demo.ts). Never on the production server: their password is public.
  */
 import { loadEnvConfig } from "@next/env";
 import { notInArray, sql } from "drizzle-orm";
@@ -61,4 +64,8 @@ async function seedTexts(): Promise<void> {
 }
 
 await seedTexts();
+if (process.argv.includes("--demo")) {
+  const { seedDemoHistory } = await import("./seed/demo");
+  await seedDemoHistory();
+}
 process.exit(0);

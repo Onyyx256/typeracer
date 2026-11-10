@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun db/seed.ts",
+    "db:seed:demo": "bun db/seed.ts --demo",
     "texts:build": "bun scripts/build-texts.ts",
     "test": "bun test",
     "test:e2e": "playwright test",
