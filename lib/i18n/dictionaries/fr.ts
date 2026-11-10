@@ -231,6 +231,16 @@ export const fr = {
       abandoned: "abandon",
     },
     progressLabel: "{name} : {percent}, {wpm} MPM",
+    bonuses: {
+      rain: "pluie et soleil",
+      night: "nuit",
+      glare: "soleil aveuglant",
+    },
+    bonusNotices: {
+      rain: "Pluie et soleil ! Ton texte vient de raccourcir.",
+      night: "La nuit tombe… Ton texte vient de s'allonger.",
+      glare: "Soleil aveuglant ! Tes prochains mots sont difficiles à lire pendant quelques secondes.",
+    },
   },
   results: {
     heading: "Résultats",

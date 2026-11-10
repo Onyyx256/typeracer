@@ -25,6 +25,7 @@
   --stem: #dad873;
   --petal: #f3d3e2;
   --petal-line: #8b2e74;
+  --glare: #fff1a8;
 }
 
 [data-theme="dark"] {
@@ -48,6 +49,7 @@
   --stem: #58b368;
   --petal: #f3d3e2;
   --petal-line: #8b2e74;
+  --glare: #fff1a8;
 }
 
 @theme inline {
@@ -70,6 +72,7 @@
   --color-stem: var(--stem);
   --color-petal: var(--petal);
   --color-petal-line: var(--petal-line);
+  --color-glare: var(--glare);
   --font-display: var(--font-fraunces);
   --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-jetbrains-mono);
@@ -143,4 +146,27 @@ span.podium-pop {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/*
+ * Blinding sun (BONUS-03): the next words wash out in a bright glare.
+ * The letters stay as a faint blur, hard but not impossible to read.
+ */
+.glare {
+  background: var(--glare);
+  color: transparent;
+  text-shadow: 0 0 6px color-mix(in srgb, var(--foreground) 40%, transparent);
+  box-shadow: 0 0 14px 4px var(--glare);
+}
+
+/* A bonus's weather icon drops onto the track (BONUS-03). */
+@keyframes weather-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.6);
+  }
+}
+
+.weather-pop {
+  animation: weather-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }

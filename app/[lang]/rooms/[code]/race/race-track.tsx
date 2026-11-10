@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/app/components/avatar";
 import { GrowingStem } from "@/app/components/growing-stem";
+import { WeatherIcon } from "@/app/components/weather-icon";
 import type { TrackEntry } from "@/lib/race/engine";
 import type { Locale } from "@/lib/i18n/config";
 import type { RaceDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
@@ -77,15 +78,24 @@ export function RaceTrack({
           return (
             <li
               key={entry.userId}
-              aria-label={interpolate(dict.progressLabel, {
-                name: entry.name,
-                percent: formatPercent(locale, entry.progress),
-                wpm: entry.wpm,
-              })}
-              className={`flex min-w-0 flex-col items-center gap-2 p-1 rounded-leaf ${
+              aria-label={
+                interpolate(dict.progressLabel, {
+                  name: entry.name,
+                  percent: formatPercent(locale, entry.progress),
+                  wpm: entry.wpm,
+                }) + (entry.effect ? ` · ${dict.bonuses[entry.effect]}` : "")
+              }
+              className={`relative flex min-w-0 flex-col items-center gap-2 p-1 rounded-leaf ${
                 you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
               } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""}`}
             >
+              {/* BONUS-03: the weather that just fell on this flower. */}
+              {entry.effect && (
+                <WeatherIcon
+                  kind={entry.effect}
+                  className="weather-pop absolute top-1 right-1 size-7 text-on-panel"
+                />
+              )}
               <GrowingStem progress={progress} className="h-32 w-auto sm:h-40" />
               <span className="flex max-w-full items-center gap-1.5">
                 <Avatar name={entry.name} className="size-6 text-xs" />
@@ -99,7 +109,7 @@ export function RaceTrack({
               </span>
               <span className="font-mono text-[0.7rem] tracking-wide text-on-panel-muted uppercase" aria-hidden="true">
                 {entry.isGuest && <>{roomDict.guestBadge} · </>}
-                {dict.statuses[entry.status]}
+                {entry.effect ? dict.bonuses[entry.effect] : dict.statuses[entry.status]}
               </span>
             </li>
           );

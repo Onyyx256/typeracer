@@ -229,6 +229,16 @@ export const en: Dictionary = {
       abandoned: "gave up",
     },
     progressLabel: "{name}: {percent}, {wpm} WPM",
+    bonuses: {
+      rain: "rain and sun",
+      night: "night",
+      glare: "blinding sun",
+    },
+    bonusNotices: {
+      rain: "Rain and sun! Your text just got shorter.",
+      night: "Night falls… Your text just got longer.",
+      glare: "Blinding sun! Your next words are hard to read for a few seconds.",
+    },
   },
   results: {
     heading: "Results",
