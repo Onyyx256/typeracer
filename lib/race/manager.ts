@@ -222,10 +222,11 @@ function emitTrack(runtime: Runtime, now: number): void {
 /** Each runner whose text a bonus changed gets it (BONUS-04); the track shows the effect. */
 function emitTexts(runtime: Runtime, events: readonly BonusEvent[]): void {
   const io = getIo();
-  for (const { userId, text } of events.flatMap((event) => event.texts)) {
+  for (const { userId, text, removed } of events.flatMap((event) => event.texts)) {
     io?.to(userChannel(userId)).emit(EVENTS.raceText, {
       code: runtime.code,
       text,
+      removed,
     } satisfies RaceTextPayload);
   }
 }

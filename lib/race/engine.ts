@@ -3,6 +3,7 @@ import {
   appendWords,
   CHECKPOINTS,
   GLARE_MS,
+  joinRemoved,
   planBonuses,
   removableWords,
   removeLastWords,
@@ -68,6 +69,8 @@ export type RunnerStatus = "racing" | "finished" | "abandoned";
 type Runner = RaceParticipant & {
   /** Per runner: catch-up bonuses make it shorter or longer (BONUS-04). */
   text: string;
+  /** Words rain took off the end, in text order, shown crossed out. */
+  removed: string;
   typing: TypingState;
   status: RunnerStatus;
   /** When they finished or abandoned. */
@@ -90,8 +93,8 @@ export type BonusOptions = { seed: number; reserve: string };
 export type BonusEvent = {
   kind: BonusKind;
   targets: string[];
-  /** New texts, for rain and night. */
-  texts: { userId: string; text: string }[];
+  /** New texts, for rain and night, with the words rain removed so far. */
+  texts: { userId: string; text: string; removed: string }[];
 };
 
 export type KeysResult =
@@ -110,6 +113,8 @@ export type TrackEntry = RaceParticipant & {
 /** A runner's own text and typing, sent back to their browser to resync it. */
 export type PlayerState = {
   text: string;
+  /** Words rain took off the end of their text, shown crossed out. */
+  removed: string;
   input: string;
   keystrokes: number;
   correctKeystrokes: number;
@@ -174,6 +179,7 @@ export class Race {
         series: [],
         tokens: START_KEYS,
         tokensAt: this.startsAt,
+        removed: "",
         bonuses: [],
         effect: null,
         reserveAt: 0,
@@ -306,7 +312,9 @@ export class Race {
         continue;
       }
       if (kind === "rain") {
-        runner.text = removeLastWords(runner.text, target.words);
+        const cut = removeLastWords(runner.text, target.words);
+        runner.text = cut.text;
+        runner.removed = joinRemoved(cut.removed, runner.removed);
       } else if (kind === "night" && this.bonus) {
         const { reserve } = this.bonus;
         const words = Array.from(
@@ -320,7 +328,7 @@ export class Race {
       runner.effect = { kind, until: now + (kind === "glare" ? GLARE_MS : EFFECT_SHOW_MS) };
       event.targets.push(runner.userId);
       if (kind !== "glare") {
-        event.texts.push({ userId: runner.userId, text: runner.text });
+        event.texts.push({ userId: runner.userId, text: runner.text, removed: runner.removed });
       }
     }
     return event;
@@ -344,7 +352,7 @@ export class Race {
       return null;
     }
     const { input, keystrokes, correctKeystrokes } = runner.typing;
-    return { text: runner.text, input, keystrokes, correctKeystrokes };
+    return { text: runner.text, removed: runner.removed, input, keystrokes, correctKeystrokes };
   }
 
   /** The final table, once the race is over (COURSE-10, RES-02). */

@@ -152,10 +152,19 @@ export function removableWords(text: string, inputLength: number): number {
   return Math.max(0, words - keep);
 }
 
-/** The text without its last `count` words (never fewer than one word left). */
-export function removeLastWords(text: string, count: number): string {
+/** The text without its last `count` words (never fewer than one word left), and those words. */
+export function removeLastWords(
+  text: string,
+  count: number,
+): { text: string; removed: string } {
   const words = text.split(" ");
-  return words.slice(0, Math.max(1, words.length - count)).join(" ");
+  const keep = Math.max(1, words.length - count);
+  return { text: words.slice(0, keep).join(" "), removed: words.slice(keep).join(" ") };
+}
+
+/** Words cut by a new rain go before those cut earlier, as in the text. */
+export function joinRemoved(cut: string, before: string): string {
+  return [cut, before].filter((part) => part.length > 0).join(" ");
 }
 
 /** The text with these words added at the end. */

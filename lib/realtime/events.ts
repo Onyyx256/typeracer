@@ -80,7 +80,7 @@ export type RaceTrackPayload = { code: string; track: TrackEntry[] };
 export type RaceResyncPayload = { code: string; seq: number; you: PlayerState };
 
 /** Only words past the runner's cursor change, so their typing stays valid. */
-export type RaceTextPayload = { code: string; text: string };
+export type RaceTextPayload = { code: string; text: string; removed: string };
 
 export type RoomChanged = { code: string };
 export type RoomClosed = { code: string };

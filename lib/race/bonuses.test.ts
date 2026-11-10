@@ -3,6 +3,7 @@ import { createRng } from "@/lib/texts/rng";
 import {
   appendWords,
   glareRange,
+  joinRemoved,
   leadingRunners,
   MAX_BONUSES_PER_RUNNER,
   planBonuses,
@@ -167,9 +168,14 @@ describe("text changes", () => {
     expect(removableWords(text, text.length)).toBe(0);
   });
 
-  test("removes the last words, never the whole text", () => {
-    expect(removeLastWords(text, 2)).toBe("un deux trois quatre cinq");
-    expect(removeLastWords("un deux", 5)).toBe("un");
+  test("removes the last words, never the whole text, and says which", () => {
+    expect(removeLastWords(text, 2)).toEqual({ text: "un deux trois quatre cinq", removed: "six sept" });
+    expect(removeLastWords("un deux", 5)).toEqual({ text: "un", removed: "deux" });
+  });
+
+  test("words cut by a later rain go before those cut earlier", () => {
+    expect(joinRemoved("cinq", "six sept")).toBe("cinq six sept");
+    expect(joinRemoved("six sept", "")).toBe("six sept");
   });
 
   test("appends words at the end", () => {

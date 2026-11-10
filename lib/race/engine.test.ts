@@ -242,6 +242,7 @@ describe("Race", () => {
     race.applyKeys("a", ["u", "x"], START + 500);
     expect(race.playerState("a")).toEqual({
       text: TEXT,
+      removed: "",
       input: "ux",
       keystrokes: 2,
       correctKeystrokes: 1,
@@ -312,8 +313,9 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
   test("rain shortens the trailing runner's text, keeping progress and WPM consistent", () => {
     const { race, now } = raceWith("night");
     const bruno = race.playerState("b");
-    // 10% of 20 words.
+    // 10% of 20 words, kept to be shown crossed out.
     expect(bruno?.text.split(" ")).toHaveLength(18);
+    expect(bruno?.removed).toBe("w018 w019");
     const entry = race.track(now).find((row) => row.userId === "b");
     expect(entry?.effect).toBe("rain");
     expect(entry?.progress).toBe(0);
@@ -326,10 +328,19 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     expect(result?.bonuses).toEqual(["rain"]);
   });
 
+  test("words cut by a later rain come before those cut earlier", () => {
+    const race = bonusRace(3);
+    race.tick(leadTo(race, 30));
+    const later = typeSlowly(race, "a", LONG.slice(30, 60), START + 5_000);
+    race.tick(later);
+    expect(race.playerState("b")?.removed).toBe("w016 w017 w018 w019");
+  });
+
   test("night lengthens the leader's text with the reserve words", () => {
     const { race, now } = raceWith("night");
     // 7% of 20 words, rounded: 1 word.
     expect(race.playerState("a")?.text).toBe(`${LONG} nuit`);
+    expect(race.playerState("a")?.removed).toBe("");
     const alice = race.track(now).find((row) => row.userId === "a");
     expect(alice?.effect).toBe("night");
     expect(alice?.progress).toBeCloseTo(30 / (LONG.length + 5));
