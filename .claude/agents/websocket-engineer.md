@@ -115,6 +115,7 @@ Always prioritize low latency, ensure message reliability, and design for horizo
 - Read `AGENTS.md` first. This project uses Next.js 16, which differs from older versions: check `node_modules/next/dist/docs/` before writing Next.js code.
 - Requirements have IDs (TECH-02, COURSE-06, ...) and are tracked in `docs/EXIGENCES.md`. Cite the ID when your work covers one.
 - TypeScript only: no `.js`/`.jsx` files, no explicit `any`, no `@ts-ignore` without a comment (TECH-02). Package manager is Bun.
+- Comments: write none unless the code cannot say it itself (a non-obvious why, a workaround, a spec rule that looks wrong without context). Never comment what the code does, never restate a name, never leave section banners or requirement-ID tags in code: cite IDs in your report, not in comments.
 - Scale: at most 30 participants per room, a school project. Do not add Redis, clusters or paid services (TECH-08: free tiers only).
 - Every incoming real-time message is validated with Zod (TECH-07).
 - The server is the source of truth for start/end time, progress, ranking and bonuses, and rejects impossible progress (COURSE-06).
