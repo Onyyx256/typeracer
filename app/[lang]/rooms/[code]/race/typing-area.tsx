@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MAX_KEYS_PER_BATCH, type PlayerState } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import {
@@ -24,6 +24,8 @@ import { useNow } from "./use-race";
 const SEND_EVERY_MS = 150;
 /** Sent batches kept to replay after a refused one (race:resync). */
 const SENT_LOG = 50;
+/** Lines of text on screen: the previous one, the current one and the next one. */
+const VISIBLE_LINES = 3;
 
 type Batch = { seq: number; keys: string[] };
 
@@ -64,6 +66,8 @@ export function TypingArea({
   const sent = useRef<Batch[]>([]);
   const seq = useRef(0);
   const field = useRef<HTMLTextAreaElement>(null);
+  const lines = useRef<HTMLParagraphElement>(null);
+  const [scrolled, setScrolled] = useState(0);
 
   const now = useNow(250, finishedAt === null);
   const open = now >= startsAt && (endsAt === null || now < endsAt);
@@ -207,9 +211,38 @@ export function TypingArea({
     };
   }, [press, text, errorMode]);
 
-  // Ready to type as soon as the countdown starts.
+  // A long text scrolls one line at a time: the caret's line stays in the
+  // middle, with the line before it and the one after it always in sight.
+  const caret = typing.input.length;
+  useLayoutEffect(() => {
+    const element = lines.current;
+    if (!element) {
+      return;
+    }
+    const measure = () => {
+      const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+      const chars = element.children;
+      const at = chars[Math.min(caret, chars.length - 1)];
+      if (!(at instanceof HTMLElement) || !lineHeight) {
+        return;
+      }
+      const line = Math.round(at.offsetTop / lineHeight);
+      const total = Math.round(element.scrollHeight / lineHeight);
+      const first = Math.max(0, Math.min(line - 1, total - VISIBLE_LINES));
+      setScrolled(first * lineHeight);
+    };
+    measure();
+    // The lines wrap differently when the window is resized.
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [caret]);
+
+  // Ready to type as soon as the countdown starts, with the text on screen
+  // (scrolled no further than needed, so the track stays in sight too).
   useEffect(() => {
-    field.current?.focus();
+    field.current?.focus({ preventScroll: true });
+    field.current?.scrollIntoView({ block: "nearest" });
   }, []);
 
   const until = finishedAt ?? (endsAt === null ? now : Math.min(now, endsAt));
@@ -229,12 +262,17 @@ export function TypingArea({
       </dl>
 
       <div className="relative border border-line bg-surface p-6 rounded-leaf focus-within:border-accent-text">
-        <p
-          aria-label={dict.textLabel}
-          className="font-mono text-xl leading-relaxed break-words whitespace-pre-wrap select-none"
-        >
-          <TextChars text={text} input={typing.input} />
-        </p>
+        {/* Three lines high (leading-9 = 2.25rem each); a little side room keeps the caret visible. */}
+        <div className="-mx-1 max-h-[6.75rem] overflow-hidden px-1">
+          <p
+            ref={lines}
+            aria-label={dict.textLabel}
+            style={{ transform: `translateY(-${scrolled}px)` }}
+            className="relative font-mono text-xl leading-9 break-words whitespace-pre-wrap transition-transform duration-200 ease-out select-none motion-reduce:transition-none"
+          >
+            <TextChars text={text} input={typing.input} />
+          </p>
+        </div>
         {/* Invisible over the text: clicking the text focuses it. */}
         <textarea
           ref={field}
