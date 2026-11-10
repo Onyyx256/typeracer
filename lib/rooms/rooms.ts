@@ -428,6 +428,63 @@ export async function kickMember(hostId: string, targetId: string): Promise<Kick
   return { ok: true };
 }
 
+export type DeleteRoomError =
+  /** The user isn't the host of an open room. */
+  "notHost";
+
+export type DeleteRoomResult = { ok: true } | { ok: false; error: DeleteRoomError };
+
+/**
+ * The host deletes their room, at any point, instead of having to kick
+ * everyone out first. The room closes like when nobody can take over
+ * (SALLE-08): every member is released and their pages are told. Checked
+ * here, not in the interface (SEC-01).
+ */
+export async function deleteRoom(hostId: string): Promise<DeleteRoomResult> {
+  const result = await getDb().transaction(
+    async (tx): Promise<DeleteRoomResult & { code?: string; released?: string[] }> => {
+      const [membership] = await tx
+        .select({ roomId: roomMembers.roomId })
+        .from(roomMembers)
+        .where(eq(roomMembers.userId, hostId));
+      if (!membership) {
+        return { ok: false, error: "notHost" };
+      }
+      // Locked like leaveRoom, so the host role can't move away mid-delete.
+      const [room] = await tx
+        .select({ id: rooms.id, code: rooms.code, hostId: rooms.hostId, state: rooms.state })
+        .from(rooms)
+        .where(eq(rooms.id, membership.roomId))
+        .for("update");
+      if (!room || room.hostId !== hostId || room.state === "closed") {
+        return { ok: false, error: "notHost" };
+      }
+      const removed = await tx
+        .delete(roomMembers)
+        .where(eq(roomMembers.roomId, room.id))
+        .returning({ userId: roomMembers.userId });
+      await tx
+        .update(rooms)
+        .set({ state: "closed", closedAt: new Date() })
+        .where(eq(rooms.id, room.id));
+      return {
+        ok: true,
+        code: room.code,
+        released: removed.map((member) => member.userId).filter((id) => id !== hostId),
+      };
+    },
+  );
+  if (!result.ok || !result.code) {
+    return result;
+  }
+  // A race in progress ends now, everyone still racing abandoning it.
+  void closeRace(result.code);
+  // Before the room-wide notice, so released pages show why instead of a 404.
+  notifyRoomClosed(result.released ?? [], result.code, "deleted");
+  notifyRoomChanged(result.code);
+  return { ok: true };
+}
+
 export type TransferHostError =
   /** The user isn't the host of an open room. */
   | "notHost"

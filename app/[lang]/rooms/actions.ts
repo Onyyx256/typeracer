@@ -16,12 +16,14 @@ import { roomCodeSchema } from "@/lib/rooms/code";
 import type { NameError } from "@/lib/rooms/names";
 import {
   createRoom,
+  deleteRoom,
   joinRoom,
   kickMember,
   leaveClosesRoom,
   leaveRoom,
   transferHost,
   updateRoomSettings,
+  type DeleteRoomError,
   type KickError,
   type RoomError,
   type RoomResult,
@@ -226,6 +228,24 @@ export async function kickMemberAction(input: unknown): Promise<KickActionResult
     return await kickMember(hostId, parsed.data.userId);
   } catch (error) {
     logFailure("kickMember", error);
+    return { ok: false, error: "unavailable" };
+  }
+}
+
+export type DeleteRoomActionResult =
+  | { ok: true }
+  | { ok: false; error: DeleteRoomError | "unavailable" };
+
+/** No input: deleteRoom checks that the session's user hosts a room (SEC-01). */
+export async function deleteRoomAction(): Promise<DeleteRoomActionResult> {
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    return await deleteRoom(hostId);
+  } catch (error) {
+    logFailure("deleteRoom", error);
     return { ok: false, error: "unavailable" };
   }
 }

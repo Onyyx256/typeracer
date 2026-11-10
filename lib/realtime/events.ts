@@ -89,7 +89,12 @@ export type RaceResyncPayload = { code: string; seq: number; you: PlayerState };
 export type RaceTextPayload = { code: string; text: string; removed: string };
 
 export type RoomChanged = { code: string };
-export type RoomClosed = { code: string };
+export type RoomClosed = {
+  code: string;
+  /** "hostLeft": nobody could take over (SALLE-08); "deleted": the host deleted it. */
+  reason: RoomClosedReason;
+};
+export type RoomClosedReason = "hostLeft" | "deleted";
 
 /** Socket.IO channel names. */
 export const roomChannel = (code: string) => `room:${code}`;

@@ -1,5 +1,5 @@
 import "server-only";
-import { EVENTS, LOBBY_CHANNEL, roomChannel, userChannel, type RoomClosed } from "./events";
+import { EVENTS, LOBBY_CHANNEL, roomChannel, userChannel, type RoomClosed, type RoomClosedReason } from "./events";
 import { getIo } from "./state";
 
 /** Tells everyone watching the room, and the room list, that it changed (CONF-12, JOIN-02). */
@@ -27,17 +27,21 @@ export function notifyKicked(userId: string, code: string): void {
 }
 
 /**
- * SALLE-08: the room closed under its remaining members (nobody signed in
- * could take over as host). Takes their tabs off the room's channel and
- * tells them, so the page says the room was deleted.
+ * The room closed under its remaining members: nobody signed in could take
+ * over as host (SALLE-08), or the host deleted it. Takes their tabs off the
+ * room's channel and tells them, so the page says the room was deleted.
  */
-export function notifyRoomClosed(userIds: string[], code: string): void {
+export function notifyRoomClosed(
+  userIds: string[],
+  code: string,
+  reason: RoomClosedReason = "hostLeft",
+): void {
   const io = getIo();
   if (!io) {
     return;
   }
   for (const userId of userIds) {
     io.in(userChannel(userId)).socketsLeave(roomChannel(code));
-    io.to(userChannel(userId)).emit(EVENTS.roomClosed, { code } satisfies RoomClosed);
+    io.to(userChannel(userId)).emit(EVENTS.roomClosed, { code, reason } satisfies RoomClosed);
   }
 }
