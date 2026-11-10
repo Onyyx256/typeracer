@@ -8,6 +8,7 @@ import { installFakeIo, resetRealtime } from "@/test/realtime";
 import { ROOM_CODE_PATTERN } from "./code";
 import {
   createRoom,
+  deleteRoom,
   findCurrentRoom,
   getRoom,
   isBanned,
@@ -494,6 +495,64 @@ describe("kickMember (SALLE-07)", () => {
     await leaveRoom(hostId);
     expect(await kickMember(hostId, runner.userId)).toEqual({ ok: false, error: "notHost" });
     expect(await kickMember(next.userId, runner.userId)).toEqual({ ok: true });
+  });
+});
+
+describe("deleteRoom", () => {
+  test("the host deletes the room, which releases everyone and tells them", async () => {
+    const emitted = installFakeIo();
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const guest = await guestJoins(code);
+    const account = await accountJoins(code, "spectator");
+    socketOpened(guest.userId);
+    socketOpened(account.userId);
+    expect(await deleteRoom(hostId)).toEqual({ ok: true });
+
+    expect(await getRoom(code)).toBeNull();
+    for (const userId of [hostId, guest.userId, account.userId]) {
+      expect(await findCurrentRoom(userId)).toBeNull();
+    }
+    // An account was there to take over, but the room closes anyway.
+    const closed = emitted.filter((entry) => entry.event === "room:closed");
+    expect(closed.map((entry) => entry.target).sort()).toEqual(
+      [`user:${guest.userId}`, `user:${account.userId}`].sort(),
+    );
+    expect(closed.map((entry) => entry.payload)).toEqual([
+      { code, reason: "deleted" },
+      { code, reason: "deleted" },
+    ]);
+  });
+
+  test("works for a host alone in the room, and during a race", async () => {
+    const alone = await hostRoom();
+    expect(await deleteRoom(alone.hostId)).toEqual({ ok: true });
+    expect(await getRoom(alone.code)).toBeNull();
+
+    const racing = await hostRoom();
+    await guestJoins(racing.code);
+    await setState(racing.code, "racing");
+    expect(await deleteRoom(racing.hostId)).toEqual({ ok: true });
+    expect(await getRoom(racing.code)).toBeNull();
+  });
+
+  test("a member who isn't the host can't delete the room (SEC-01)", async () => {
+    const { code } = await hostRoom({ capacity: 5 });
+    const guest = await guestJoins(code);
+    const account = await accountJoins(code);
+    expect(await deleteRoom(guest.userId)).toEqual({ ok: false, error: "notHost" });
+    expect(await deleteRoom(account.userId)).toEqual({ ok: false, error: "notHost" });
+    expect(await membersOf(code)).toHaveLength(3);
+  });
+
+  test("someone in no room, or a former host, can't delete anything", async () => {
+    const nobody = await createTestAccount();
+    expect(await deleteRoom(nobody.id)).toEqual({ ok: false, error: "notHost" });
+
+    const { hostId, code } = await hostRoom({ capacity: 5 });
+    const next = await accountJoins(code);
+    await transferHost(hostId, next.userId);
+    expect(await deleteRoom(hostId)).toEqual({ ok: false, error: "notHost" });
+    expect(await membersOf(code)).toHaveLength(2);
   });
 });
 
