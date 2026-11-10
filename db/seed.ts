@@ -1,10 +1,10 @@
 /**
  * Seeds the passage corpus from db/seed/passages.json (built by
  * `bun run texts:build`). Running it again updates rows instead of
- * duplicating them.
+ * duplicating them, and deletes passages the build no longer produces.
  */
 import { loadEnvConfig } from "@next/env";
-import { sql } from "drizzle-orm";
+import { notInArray, sql } from "drizzle-orm";
 import * as z from "zod";
 import { localeSchema } from "@/lib/i18n/config";
 import { COMPLEXITIES } from "@/lib/rooms/settings";
@@ -48,7 +48,16 @@ async function seedTexts(): Promise<void> {
         },
       });
   }
-  console.log(`texts: ${passages.length} passages`);
+  const removed = await db
+    .delete(texts)
+    .where(
+      notInArray(
+        texts.sourceRef,
+        passages.map((passage) => passage.sourceRef),
+      ),
+    )
+    .returning({ id: texts.id });
+  console.log(`texts: ${passages.length} passages, ${removed.length} removed`);
 }
 
 await seedTexts();
