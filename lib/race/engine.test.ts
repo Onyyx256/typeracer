@@ -319,6 +319,11 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     const entry = race.track(now).find((row) => row.userId === "b");
     expect(entry?.effect).toBe("rain");
     expect(entry?.progress).toBe(0);
+    // The track says how long the text is now, so a browser can tell it missed the change.
+    expect(entry?.textLength).toBe(bruno?.text.length);
+    expect(race.track(now).find((row) => row.userId === "a")?.textLength).toBe(
+      race.playerState("a")?.text.length,
+    );
 
     // Bruno now finishes after typing 18 words, and his progress is over his own text.
     const done = typeSlowly(race, "b", bruno?.text ?? "", now);

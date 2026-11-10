@@ -108,6 +108,11 @@ export type TrackEntry = RaceParticipant & {
   status: RunnerStatus;
   /** An effect that just fell on them, or glare while it lasts (BONUS-03). */
   effect: BonusKind | null;
+  /**
+   * Their text's length on the server. A browser whose text differs missed
+   * a race:text and asks for the race again (BONUS-04).
+   */
+  textLength: number;
 };
 
 /** A runner's own text and typing, sent back to their browser to resync it. */
@@ -343,6 +348,7 @@ export class Race {
       wpm: Math.round(this.wpm(runner, now)),
       status: runner.status,
       effect: runner.effect && now < runner.effect.until ? runner.effect.kind : null,
+      textLength: runner.text.length,
     }));
   }
 
