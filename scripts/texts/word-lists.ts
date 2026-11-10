@@ -1,5 +1,5 @@
 import type { Locale } from "@/lib/i18n/config";
-import { BLOCKLIST } from "./blocklist";
+import { BLOCKLIST, containsSlur } from "./blocklist";
 
 export const WORD_LIST_SIZE = 10000;
 
@@ -101,7 +101,12 @@ export function buildWordList({
 
   for (const line of frequencyList.split("\n")) {
     const word = line.split(" ")[0]?.trim() ?? "";
-    if (!LETTERS[language].test(word) || seen.has(word) || blocked.has(word)) {
+    if (
+      !LETTERS[language].test(word) ||
+      seen.has(word) ||
+      blocked.has(word) ||
+      containsSlur(word, language)
+    ) {
       continue;
     }
     // Other one-letter tokens are subtitle noise ("I" is always a capital).

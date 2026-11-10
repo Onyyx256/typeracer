@@ -6,6 +6,7 @@ import {
 } from "@/lib/texts/complexity";
 import { hasDigit, splitWords } from "@/lib/texts/text-utils";
 import type { Book } from "./sources";
+import { containsSlur } from "./blocklist";
 import { isProse, normalizeParagraph } from "./books";
 
 /** A race takes a run of sentences out of a passage, up to LENGTH_MAX (200) words. */
@@ -78,10 +79,20 @@ export function bookPassages(
   const chunks = chunkParagraphs(paragraphs);
   const step = Math.max(1, chunks.length / limit);
   const passages: Passage[] = [];
+  let next = 0;
 
   for (let position = 0; position < chunks.length && passages.length < limit; position += step) {
-    const index = Math.floor(position);
-    const content = chunks[index] ?? "";
+    // A chunk with a slur gives way to the next clean one, so the other
+    // picks keep their source refs and old races keep their text.
+    let index = Math.max(Math.floor(position), next);
+    while (index < chunks.length && containsSlur(chunks[index] ?? "", book.language)) {
+      index += 1;
+    }
+    const content = chunks[index];
+    if (content === undefined) {
+      break;
+    }
+    next = index + 1;
     const { score } = measureComplexity(content, commonWords);
     passages.push({
       language: book.language,

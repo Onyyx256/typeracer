@@ -3,6 +3,30 @@ import type { Locale } from "@/lib/i18n/config";
 const words = (list: string) => list.split(/\s+/).filter(Boolean);
 
 /**
+ * Slurs that rule out a whole book passage, not just a word in the random
+ * lists. Kept separate from BLOCKLIST, which also holds harmless noise
+ * ("black", first names) and words that are fine in the other language
+ * ("retard" means "delay" in French).
+ */
+export const SLURS: Record<Locale, string[]> = {
+  en: words(`nigger nigga niggah negro negress coon darky darkey darkie
+    kike spic chink wetback faggot fag dyke tranny`),
+  fr: words(`nègre négresse négro bougnoule bicot youpin youpine pédé
+    tarlouze gouine`),
+};
+
+/** Whole words only, plus their plural, so "niggard" or "cooney" stay allowed. */
+export function containsSlur(text: string, language: Locale): boolean {
+  const slurs = new Set(SLURS[language]);
+  for (const [token] of text.toLowerCase().matchAll(/\p{L}+/gu)) {
+    if (slurs.has(token) || (token.endsWith("s") && slurs.has(token.slice(0, -1)))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Words removed by hand after reading the generated lists. Subtitles are the
  * frequency source, so most of the noise comes from them: swear words and
  * slurs, slang and interjections, sound captions ("sighs"), first names,
