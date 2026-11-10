@@ -70,7 +70,8 @@ export function RaceTrack({
 
   return (
     <section aria-label={dict.track} className="bg-panel p-5 text-on-panel rounded-leaf sm:p-6">
-      <ol className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-2 gap-y-6">
+      {/* Lanes as wide as their flower, centered in the bed. */}
+      <ol className="grid grid-cols-[repeat(auto-fit,minmax(7rem,9rem))] justify-center gap-x-3 gap-y-8">
         {entries.map((entry) => {
           const you = entry.userId === youId;
           const progress = shown[entry.userId] ?? 0;
@@ -82,11 +83,11 @@ export function RaceTrack({
                 percent: formatPercent(locale, entry.progress),
                 wpm: entry.wpm,
               })}
-              className={`flex min-w-0 flex-col items-center gap-2 p-1 rounded-leaf ${
+              className={`flex min-w-0 flex-col items-center gap-2 px-1 pt-3 pb-2 rounded-leaf ${
                 you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
               } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""}`}
             >
-              <GrowingStem progress={progress} className="h-32 w-auto sm:h-40" />
+              <GrowingStem progress={progress} zoomed className="h-56 w-auto lg:h-64" />
               <span className="flex max-w-full items-center gap-1.5">
                 <Avatar name={entry.name} className="size-6 text-xs" />
                 <span className="truncate text-sm font-medium" title={entry.name}>
