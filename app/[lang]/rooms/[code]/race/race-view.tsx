@@ -6,6 +6,8 @@ import { AbandonRace } from "@/app/components/race/abandon-race";
 import { Countdown } from "@/app/components/race/countdown";
 import { RaceTrack } from "@/app/components/race/race-track";
 import { TypingArea } from "./typing-area";
+import { EVENTS } from "@/lib/realtime/events";
+import { getSocket } from "@/lib/realtime/client";
 import { useRace } from "./use-race";
 
 /**
@@ -38,7 +40,10 @@ export function RaceView({
     <div className="grid gap-6">
       <div className="flex min-h-14 flex-wrap items-center justify-between gap-4">
         <Countdown startsAt={race.startsAt} endsAt={race.endsAt} dict={dict} />
-        {racing && <AbandonRace dict={dict} />}
+        {racing && (
+          // The server marks the runner as abandoned.
+          <AbandonRace dict={dict} onConfirm={() => getSocket().emit(EVENTS.raceAbandon)} />
+        )}
       </div>
 
       <RaceTrack entries={track} youId={userId} dict={dict} roomDict={roomDict} locale={locale} />
