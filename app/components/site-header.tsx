@@ -18,7 +18,6 @@ export async function SiteHeader() {
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-3 border-b border-line px-5 py-3 sm:px-8">
       <Link href={localePath(locale, "/")} className="flex items-center gap-2">
-        {/* Same file as the favicon (DES-02). */}
         <Image src={logo} alt="" width={44} height={44} priority className="size-11" />
         <span className="font-display text-xl font-semibold tracking-tight">
           Nelumbo<span className="text-accent-text">Type</span>
@@ -37,7 +36,6 @@ export async function SiteHeader() {
           <NavLink href={localePath(locale, "/rooms")}>
             {dict.header.join}
           </NavLink>
-          {/* Open to everyone, with or without an account. */}
           <NavLink href={localePath(locale, "/practice")}>
             {dict.header.practice}
           </NavLink>
@@ -65,7 +63,7 @@ export async function SiteHeader() {
   );
 }
 
-/** Links only signed-in users get: guests can't create rooms (AUTH-03) or keep stats. */
+/** Guests can't create rooms or keep stats. */
 async function MemberLinks() {
   const [user, dict, locale] = await Promise.all([
     getCurrentUser(),

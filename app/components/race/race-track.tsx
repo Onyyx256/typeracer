@@ -12,13 +12,11 @@ import type { RaceDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr"
 import { formatPercent, interpolate } from "@/lib/i18n/format";
 
 /**
- * How fast the drawn progress catches up with the server's: updates come
- * 5 times a second, and easing between them keeps every flower growing
- * smoothly instead of jumping (COURSE-05).
+ * Updates come 5 times a second; easing between them keeps every flower
+ * growing smoothly instead of jumping.
  */
 const EASE_MS = 180;
 
-/** Eases each runner's progress toward the latest value, one frame at a time. */
 function useSmoothProgress(entries: TrackEntry[]): Record<string, number> {
   const [shown, setShown] = useState<Record<string, number>>({});
   const current = useRef<Record<string, number>>({});
@@ -51,11 +49,7 @@ function useSmoothProgress(entries: TrackEntry[]): Record<string, number> {
   return shown;
 }
 
-/**
- * COURSE-05, DES-04: the track is a garden bed, one flower per runner,
- * that grows with their progress and blooms at the finish. Runners keep
- * their place (order of arrival in the room) so nobody jumps around.
- */
+/** Runners keep their place (order of arrival in the room), so nobody jumps around. */
 export function RaceTrack({
   entries,
   youId,
@@ -66,7 +60,6 @@ export function RaceTrack({
 }: {
   entries: TrackEntry[];
   youId: string | null;
-  /** Photos and flower colours; guests and bots keep the default look. */
   looks?: PlayerLooks;
   dict: RaceDictionary;
   roomDict: RoomDictionary;
@@ -76,7 +69,6 @@ export function RaceTrack({
 
   return (
     <section aria-label={dict.track} className="bg-panel p-4 text-on-panel rounded-leaf">
-      {/* Lanes as wide as their flower, centered in the bed. */}
       <ol className="grid grid-cols-[repeat(auto-fit,minmax(7rem,9rem))] justify-center gap-x-3 gap-y-4">
         {entries.map((entry) => {
           const you = entry.userId === youId;
@@ -98,7 +90,6 @@ export function RaceTrack({
                 look ? cosmeticClasses(look.cosmetics) : ""
               }`}
             >
-              {/* BONUS-03: the weather that just fell on this flower. */}
               {entry.effect && (
                 <WeatherIcon
                   kind={entry.effect}
@@ -122,7 +113,6 @@ export function RaceTrack({
                   </span>
                 )}
               </span>
-              {/* Two short lines under the flower; the ring already says which one is yours. */}
               {/* An effect's name is longer than a status: that line may wrap while it shows. */}
               <span
                 className={`text-center font-mono text-xs text-on-panel-muted tabular-nums ${

@@ -8,10 +8,8 @@ import { EVENTS } from "@/lib/realtime/events";
 import { getSocket } from "@/lib/realtime/client";
 
 /**
- * SALLE-08: tells a member that their room was deleted while they were in
- * it (the host left and no signed-in member could take over). The server
- * sends this to their own tabs only. Mounted in the layout, so a room page
- * re-rendering into a 404 at the same moment doesn't take the notice away.
+ * Mounted in the layout, so a room page re-rendering into a 404 at the same
+ * moment doesn't take the notice away.
  */
 export function RoomClosed({
   dict,

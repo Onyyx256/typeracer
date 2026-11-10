@@ -5,13 +5,11 @@ import { usePathname } from "next/navigation";
 
 type NavLinkProps = {
   href: string;
-  /** "primary" is the filled call to action; "plain" is a regular tab. */
   variant?: "plain" | "primary";
   className?: string;
   children: React.ReactNode;
 };
 
-/** A header link that marks itself as the current page. */
 export function NavLink({
   href,
   variant = "plain",

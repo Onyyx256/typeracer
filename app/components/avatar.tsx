@@ -2,7 +2,6 @@ import Image from "next/image";
 
 type AvatarProps = {
   name: string;
-  /** The profile photo (AUTH-04); without one, the initial on a coloured disc. */
   src?: string | null;
   className?: string;
 };
