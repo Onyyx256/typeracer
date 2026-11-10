@@ -49,3 +49,11 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** en vérifiant la fusion du mode entraînement dans `main`, le test a échoué (« 28 % » reçu, « 27 % » attendu) puis réussi au lancement suivant ; la piste montrait pourtant bien toutes les touches reçues.
 - **Correction :** le test attend 120 caractères sur la longueur du texte, arrondis avec le même `Intl.NumberFormat` que la piste ; 4 passages de suite sans échec.
 - **Leçon :** un test qui dépend d'un texte aléatoire doit être lancé plusieurs fois (`--repeat-each`) avant d'être commité.
+
+## 2026-11-09 — Course qui ne se termine jamais après un bonus manqué
+
+- **Outil / agent :** Claude Code (session principale des bonus de rattrapage), Playwright.
+- **Ce que l'IA a fait :** quand un bonus change le texte d'un coureur, le serveur l'envoie une seule fois (`race:text`). Si le navigateur rate ce message, il garde l'ancien texte : il peut arriver au bout pendant que le serveur attend des mots ajoutés par la nuit, et la course ne finit jamais. Les tests e2e ne le voyaient pas, car aucun message ne s'y perdait.
+- **Comment je l'ai détecté :** dans une vraie course sur localhost:3000 (salle W5GFHC), l'invité avait tout tapé en vert, mais la piste le montrait toujours « en course » et les résultats n'arrivaient pas. Ce serveur de dev tournait depuis 19 h 06, avant les bonus, avec un mélange d'anciennes et de nouvelles versions du code. Premier essai de correction de l'IA : redemander toute la course (`race:sync`), mais ça remettait la frappe à l'état du serveur et perdait des touches en route, ce qu'un test répété a montré.
+- **Correction :** la piste donne la longueur du texte de chaque coureur ; si elle diffère pendant plus de 0,5 s, le navigateur redemande seulement son texte (`race:text-sync`). Test e2e qui jette les `race:text` de l'invité (commits dabfd6d, c578245, 4e3b1f1, 9fe5663).
+- **Leçon :** un état envoyé une seule fois doit pouvoir être retrouvé ; tester aussi le cas où un message se perd.
