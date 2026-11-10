@@ -54,10 +54,12 @@ test("keys typed during a network stall all reach the server", async ({ browser 
   await host.keyboard.type(text.slice(20, 120), { delay: 50 });
   await hostContext.setOffline(false);
 
-  // The guest's track shows what the server has: everything typed, up to
-  // the last finished word.
-  const done = text.slice(0, 120).lastIndexOf(" ") + 1;
-  const percent = `${Math.round((done / text.length) * 100)}%`;
+  // The guest's track shows what the server has: all 120 characters, typed
+  // without a mistake. Progress counts every correct character, not whole
+  // words, and is rounded the way the track rounds it.
+  const percent = new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 0 }).format(
+    120 / text.length,
+  );
   await expect(guest.getByRole("listitem", { name: new RegExp(`^${hostName}:`) })).toHaveAttribute(
     "aria-label",
     new RegExp(`: ${percent},`),

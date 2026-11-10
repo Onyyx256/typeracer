@@ -41,3 +41,11 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** en lançant toute la suite e2e après le travail sur la page de course; l'IA a relancé le test sur le code sans ses changements pour confirmer que l'échec venait d'avant.
 - **Correction :** le test annule le dialogue une fois, puis confirme (commit ce4008c).
 - **Leçon :** relancer la suite e2e, pas seulement les tests unitaires, après avoir changé un parcours que les tests e2e cliquent.
+
+## 2026-11-09 — Test e2e instable à cause d'un calcul de progression faux
+
+- **Outil / agent :** Claude Code (session qui a écrit le test : à compléter), Playwright.
+- **Ce que l'IA a fait :** dans `e2e/race-network.e2e.ts` (commit 2d21e00), le pourcentage attendu sur la piste était calculé jusqu'au dernier mot complet (`lastIndexOf(" ")`), alors que le moteur compte chaque caractère juste. Le test ne passait que si les deux valeurs arrondies tombaient pareil, selon le texte aléatoire.
+- **Comment je l'ai détecté :** en vérifiant la fusion du mode entraînement dans `main`, le test a échoué (« 28 % » reçu, « 27 % » attendu) puis réussi au lancement suivant ; la piste montrait pourtant bien toutes les touches reçues.
+- **Correction :** le test attend 120 caractères sur la longueur du texte, arrondis avec le même `Intl.NumberFormat` que la piste ; 4 passages de suite sans échec.
+- **Leçon :** un test qui dépend d'un texte aléatoire doit être lancé plusieurs fois (`--repeat-each`) avant d'être commité.
