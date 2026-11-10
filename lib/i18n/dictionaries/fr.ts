@@ -10,6 +10,7 @@ export const fr = {
     nav: "Navigation principale",
     menu: "Menu",
     join: "Rejoindre",
+    practice: "Entraînement",
     createRoom: "Créer une salle",
     stats: "Statistiques",
     account: "Mon compte",
@@ -257,6 +258,49 @@ export const fr = {
     seconds: "{value} s",
     waitingHost: "l'hôte peut lancer une nouvelle partie",
   },
+  practice: {
+    title: "Entraînement",
+    heading: "Entraînement",
+    lead: "Une course rien que pour toi, avec ou sans compte. Choisis ton texte, et ajoute des bots si tu veux de la compagnie.",
+    you: "Toi",
+    bots: {
+      heading: "Les bots",
+      lead: "Des adversaires contrôlés par l'ordinateur, chacun avec son niveau.",
+      add: "Ajouter un bot",
+      remove: "Retirer {name}",
+      removeShort: "Retirer",
+      name: "Bot {number}",
+      level: "Niveau",
+      badge: "bot",
+      empty: "aucun bot : tu cours seul",
+      full: "{max} bots au maximum",
+      soon: "les bots ne courent pas encore : ils arriveront sur la piste avec leur moteur",
+      levels: {
+        noob: "Noob",
+        beginner: "Débutant",
+        intermediate: "Intermédiaire",
+        expert: "Expert",
+        impossible: "Impossible",
+      },
+      speed: "{min} à {max} MPM",
+    },
+    start: "Commencer",
+    starting: "préparation du texte",
+    again: "Recommencer",
+    settings: "Changer les réglages",
+    notSaved: "Les résultats d'entraînement ne sont pas enregistrés.",
+    abandonDialog: {
+      title: "Abandonner l'entraînement ?",
+      lead: "La course s'arrête ici et tu vois tes résultats.",
+      confirm: "Abandonner",
+      cancel: "Continuer",
+    },
+    errors: {
+      invalid: "un réglage n'est pas valide",
+      noWords: "aucun mot ne correspond à ces filtres de lettres",
+      unavailable: "impossible de préparer le texte pour le moment, réessaie plus tard",
+    },
+  },
   createRoom: {
     title: "Créer une salle",
     heading: "Créer une salle",
@@ -437,3 +481,4 @@ export type CreateRoomDictionary = Dictionary["createRoom"];
 export type RoomDictionary = Dictionary["room"];
 export type RaceDictionary = Dictionary["race"];
 export type ResultsDictionary = Dictionary["results"];
+export type PracticeDictionary = Dictionary["practice"];
