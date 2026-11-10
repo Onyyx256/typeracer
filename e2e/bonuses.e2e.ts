@@ -2,9 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 import { e2eName } from "./database";
 
 // Catch-up bonuses in a real race between two browsers: when the host
-// passes 25% of the text, an effect falls on someone and shows on the
-// track; the host's text can change while they type, and the results list
-// what each runner received (BONUS-01 to BONUS-04, RES-02).
+// passes 25% of the text, the guest gets a bonus and the host a hindrance,
+// shown on both tracks; the guest sees the words rain removed crossed out,
+// the host's text can change while they type, and the results list what
+// each runner received (BONUS-01 to BONUS-04, RES-02).
 
 const PASSWORD = "e2e-password-1234";
 const EFFECT = /rain and sun|night|blinding sun/;
@@ -34,7 +35,7 @@ async function typeNextWord(page: Page, typed: number): Promise<number> {
   return typed + chunk.length;
 }
 
-test("a bonus falls when the leader passes 25%, and the results list it", async ({ browser }) => {
+test("at 25% the last runner gets a bonus and the leader a hindrance", async ({ browser }) => {
   test.slow();
   const hostName = e2eName();
   const nickname = e2eName();
@@ -67,23 +68,28 @@ test("a bonus falls when the leader passes 25%, and the results list it", async 
   await expect(host.getByText("The race starts in")).toBeVisible();
   await expect(host.getByText("The race starts in")).toBeHidden({ timeout: 6_000 });
 
-  // 3 words of 10 is past 25%: the guest, last, gets rain and sun, or the
-  // host, first, gets night or a blinding sun (BONUS-01, BONUS-02).
+  const original = await shownText(guest);
+
+  // Past 25% of the characters (progress counts characters, not words),
+  // the guest, last, gets rain and sun, and the host, first, gets night or
+  // a blinding sun; never both on one runner (BONUS-01, BONUS-02).
   await host.getByLabel("Type the text here").focus();
   let typed = 0;
-  for (let word = 0; word < 3; word++) {
+  while (typed < original.length * 0.3) {
     typed = await typeNextWord(host, typed);
   }
-  // Both pages show it on the track (BONUS-03).
+  // Both pages show both effects on the track (BONUS-03).
   for (const page of [host, guest]) {
-    await expect(page.getByRole("listitem", { name: EFFECT })).toHaveCount(1);
+    await expect(page.getByRole("listitem", { name: EFFECT })).toHaveCount(2);
+    await expect(page.getByRole("listitem", { name: new RegExp(`^${nickname}:.*rain and sun`) })).toHaveCount(1);
+    await expect(page.getByRole("listitem", { name: new RegExp(`^${hostName}:.*(night|blinding sun)`) })).toHaveCount(1);
   }
-  // The runner it fell on is told.
-  const label = await host.getByRole("listitem", { name: EFFECT }).getAttribute("aria-label");
-  const target = label?.startsWith(`${hostName}:`) ? host : guest;
-  await expect(
-    target.getByRole("status").filter({ hasText: /Rain and sun!|Night falls|Blinding sun!/ }),
-  ).toBeVisible();
+  // Each runner is told what fell on them.
+  await expect(guest.getByRole("status").filter({ hasText: "Rain and sun!" })).toBeVisible();
+  await expect(host.getByRole("status").filter({ hasText: /Night falls|Blinding sun!/ })).toBeVisible();
+  // 10% of 10 words: the guest's last word is now crossed out after the text.
+  const lastWord = original.split(" ").at(-1) ?? "";
+  await expect(guest.locator('p[aria-label="Text to type"] .line-through')).toContainText(lastWord);
 
   await guest.getByRole("button", { name: "Give up" }).click();
   await guest
