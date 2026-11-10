@@ -14,6 +14,11 @@ import type { RaceDictionary } from "@/lib/i18n/dictionaries/fr";
 const SEND_EVERY_MS = 150;
 /** Sent batches kept to replay after a refused one (race:resync). */
 const SENT_LOG = 50;
+/**
+ * How long the server's text length may differ from this browser's before
+ * the text is asked for again; race:text normally lands before the track.
+ */
+const TEXT_MISMATCH_MS = 500;
 
 type Batch = { seq: number; keys: string[]; at: number };
 
@@ -40,6 +45,7 @@ export function TypingArea({
   initial,
   syncId,
   glare,
+  serverTextLength,
   dict,
   locale,
   action,
@@ -52,6 +58,8 @@ export function TypingArea({
   syncId: number;
   /** A blinding sun hides the next words (BONUS-03). */
   glare: boolean;
+  /** This runner's text length on the server, from the track. */
+  serverTextLength: number | undefined;
   dict: RaceDictionary;
   locale: Locale;
   /** Shown at the end of the stats row (the give up button). */
@@ -147,6 +155,19 @@ export function TypingArea({
       flush();
     };
   }, [code, errorMode, flush, set]);
+
+  // A missed race:text leaves this browser with an outdated text: it could
+  // reach its end while the server waits for more. When the server's length
+  // keeps differing, the text is asked for again (race:text-sync); only the
+  // end of the text changes, so the typing stays as it is (BONUS-04).
+  useEffect(() => {
+    if (serverTextLength === undefined || serverTextLength === text.length) {
+      return;
+    }
+    // Asked again while it lasts, in case an answer is lost too.
+    const timer = setInterval(() => getSocket().emit(EVENTS.raceTextSync, { code }), TEXT_MISMATCH_MS);
+    return () => clearInterval(timer);
+  }, [serverTextLength, text.length, code]);
 
   return (
     <TypingBox

@@ -78,6 +78,7 @@ export function RaceView({
               initial={race.you}
               syncId={race.syncId}
               glare={mine.effect === "glare"}
+              serverTextLength={mine.textLength}
               dict={dict}
               locale={locale}
               // Next to the stats, far from "Leave the room", which doesn't ask first.
