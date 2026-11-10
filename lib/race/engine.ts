@@ -1,3 +1,14 @@
+import { createRng, type Rng } from "@/lib/texts/rng";
+import {
+  appendWords,
+  CHECKPOINTS,
+  GLARE_MS,
+  planBonus,
+  removableWords,
+  removeLastWords,
+  type BonusKind,
+  type Standing,
+} from "./bonuses";
 import type { ErrorMode, TypingState } from "./typing";
 import {
   applyKeys,
@@ -36,6 +47,9 @@ export const START_KEYS = 8;
 /** Per message; the browser sends about every 150 ms. */
 export const MAX_KEYS_PER_BATCH = 60;
 
+/** How long the track shows a rain or a night after it falls (BONUS-03). */
+export const EFFECT_SHOW_MS = 3_000;
+
 export type RaceParticipant = {
   userId: string;
   name: string;
@@ -45,7 +59,7 @@ export type RaceParticipant = {
 export type RunnerStatus = "racing" | "finished" | "abandoned";
 
 type Runner = RaceParticipant & {
-  /** Per runner, since catch-up bonuses will change one player's text (BONUS-04). */
+  /** Per runner: catch-up bonuses make it shorter or longer (BONUS-04). */
   text: string;
   typing: TypingState;
   status: RunnerStatus;
@@ -54,6 +68,23 @@ type Runner = RaceParticipant & {
   series: WpmPoint[];
   tokens: number;
   tokensAt: number;
+  /** Effects received, in order (RES-02). */
+  bonuses: BonusKind[];
+  /** The latest one, shown until `until` (BONUS-03). */
+  effect: { kind: BonusKind; until: number } | null;
+  /** Next word of the reserve that a night adds to this runner. */
+  reserveAt: number;
+};
+
+/** Catch-up bonuses on (CONF-09): a seed for the random picks and words that night adds. */
+export type BonusOptions = { seed: number; reserve: string };
+
+/** What a checkpoint did, for the manager to tell the runners whose text changed. */
+export type BonusEvent = {
+  kind: BonusKind;
+  targets: string[];
+  /** New texts, for rain and night. */
+  texts: { userId: string; text: string }[];
 };
 
 export type KeysResult =
@@ -65,10 +96,17 @@ export type TrackEntry = RaceParticipant & {
   progress: number;
   wpm: number;
   status: RunnerStatus;
+  /** An effect that just fell on them, or glare while it lasts (BONUS-03). */
+  effect: BonusKind | null;
 };
 
-/** A runner's own typing, sent back to their browser to resync it. */
-export type PlayerState = { input: string; keystrokes: number; correctKeystrokes: number };
+/** A runner's own text and typing, sent back to their browser to resync it. */
+export type PlayerState = {
+  text: string;
+  input: string;
+  keystrokes: number;
+  correctKeystrokes: number;
+};
 
 export type ParticipantResult = RaceParticipant & {
   rank: number;
@@ -82,6 +120,8 @@ export type ParticipantResult = RaceParticipant & {
   durationMs: number;
   wpmSeries: WpmPoint[];
   missedKeys: Record<string, number>;
+  /** Effects received, in order (RES-02). */
+  bonuses: BonusKind[];
 };
 
 export class Race {
@@ -92,6 +132,10 @@ export class Race {
   /** When the time limit ends the race, or null without a limit (CONF-01). */
   readonly deadline: number | null;
   private readonly runners = new Map<string, Runner>();
+  /** Null when bonuses are off. */
+  private readonly bonus: { rng: Rng; reserve: string[]; baseWords: number } | null;
+  /** Checkpoints already passed by the leader. */
+  private fired = 0;
 
   constructor(options: {
     text: string;
@@ -101,11 +145,18 @@ export class Race {
     participants: readonly RaceParticipant[];
     /** When the countdown starts. */
     now: number;
+    /** Null or left out: no catch-up bonuses. */
+    bonuses?: BonusOptions | null;
   }) {
     this.text = options.text;
     this.mode = options.errorMode;
     this.startsAt = options.now + COUNTDOWN_MS;
     this.deadline = options.timeLimit > 0 ? this.startsAt + options.timeLimit * 1000 : null;
+    const reserve = options.bonuses?.reserve.split(" ").filter((word) => word.length > 0) ?? [];
+    this.bonus =
+      options.bonuses && reserve.length > 0
+        ? { rng: createRng(options.bonuses.seed), reserve, baseWords: this.text.split(" ").length }
+        : null;
     for (const participant of options.participants) {
       this.runners.set(participant.userId, {
         ...participant,
@@ -116,6 +167,9 @@ export class Race {
         series: [],
         tokens: START_KEYS,
         tokensAt: this.startsAt,
+        bonuses: [],
+        effect: null,
+        reserveAt: 0,
       });
     }
   }
@@ -171,10 +225,13 @@ export class Race {
     return true;
   }
 
-  /** Samples each runner's WPM about once a second; call it often. */
-  tick(now: number): void {
+  /**
+   * Samples each runner's WPM about once a second, and fires the catch-up
+   * bonus of each checkpoint the leader passed; call it often.
+   */
+  tick(now: number): BonusEvent[] {
     if (now < this.startsAt) {
-      return;
+      return [];
     }
     for (const runner of this.runners.values()) {
       if (runner.status !== "racing") {
@@ -186,6 +243,67 @@ export class Race {
         runner.series.push({ t: elapsed, wpm: this.wpm(runner, now) });
       }
     }
+    return this.isTypingOpen(now) ? this.fireCheckpoints(now) : [];
+  }
+
+  /** BONUS-01: once per checkpoint, when the leader's progress reaches it. */
+  private fireCheckpoints(now: number): BonusEvent[] {
+    const events: BonusEvent[] = [];
+    while (this.bonus && this.fired < CHECKPOINTS.length) {
+      const standings = this.standings();
+      const leader = Math.max(0, ...standings.map((standing) => standing.progress));
+      if (leader < (CHECKPOINTS[this.fired] ?? 1)) {
+        break;
+      }
+      this.fired++;
+      const plan = planBonus(standings, this.bonus.baseWords, this.bonus.rng);
+      if (plan) {
+        events.push(this.applyBonus(plan.kind, plan.targets, now));
+      }
+    }
+    return events;
+  }
+
+  private standings(): Standing[] {
+    return [...this.runners.values()].map((runner) => ({
+      userId: runner.userId,
+      progress: typingProgress(runner.text, this.mode, runner.typing),
+      racing: runner.status === "racing",
+      received: runner.bonuses.length,
+      removable: removableWords(runner.text, runner.typing.input.length),
+    }));
+  }
+
+  private applyBonus(
+    kind: BonusKind,
+    targets: readonly { userId: string; words: number }[],
+    now: number,
+  ): BonusEvent {
+    const event: BonusEvent = { kind, targets: [], texts: [] };
+    for (const target of targets) {
+      const runner = this.runners.get(target.userId);
+      if (!runner) {
+        continue;
+      }
+      if (kind === "rain") {
+        runner.text = removeLastWords(runner.text, target.words);
+      } else if (kind === "night" && this.bonus) {
+        const { reserve } = this.bonus;
+        const words = Array.from(
+          { length: target.words },
+          (_, index) => reserve[(runner.reserveAt + index) % reserve.length] ?? "",
+        );
+        runner.reserveAt += target.words;
+        runner.text = appendWords(runner.text, words);
+      }
+      runner.bonuses.push(kind);
+      runner.effect = { kind, until: now + (kind === "glare" ? GLARE_MS : EFFECT_SHOW_MS) };
+      event.targets.push(runner.userId);
+      if (kind !== "glare") {
+        event.texts.push({ userId: runner.userId, text: runner.text });
+      }
+    }
+    return event;
   }
 
   track(now: number): TrackEntry[] {
@@ -196,6 +314,7 @@ export class Race {
       progress: typingProgress(runner.text, this.mode, runner.typing),
       wpm: Math.round(this.wpm(runner, now)),
       status: runner.status,
+      effect: runner.effect && now < runner.effect.until ? runner.effect.kind : null,
     }));
   }
 
@@ -205,7 +324,7 @@ export class Race {
       return null;
     }
     const { input, keystrokes, correctKeystrokes } = runner.typing;
-    return { input, keystrokes, correctKeystrokes };
+    return { text: runner.text, input, keystrokes, correctKeystrokes };
   }
 
   /** The final table, once the race is over (COURSE-10, RES-02). */
@@ -233,6 +352,7 @@ export class Race {
         durationMs,
         wpmSeries: series,
         missedKeys: { ...missed },
+        bonuses: [...runner.bonuses],
       };
     });
     return rank(entries);

@@ -176,7 +176,112 @@ describe("Race", () => {
   test("gives back a runner's own typing, to resync their browser", () => {
     const race = newRace();
     race.applyKeys("a", ["u", "x"], START + 500);
-    expect(race.playerState("a")).toEqual({ input: "ux", keystrokes: 2, correctKeystrokes: 1 });
+    expect(race.playerState("a")).toEqual({
+      text: TEXT,
+      input: "ux",
+      keystrokes: 2,
+      correctKeystrokes: 1,
+    });
     expect(race.playerState("nobody")).toBeNull();
+  });
+});
+
+describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
+  // 20 words of 4 letters: 99 characters, 25% is about 5 words.
+  const LONG = Array.from({ length: 20 }, (_, index) => `w${String(index).padStart(3, "0")}`).join(" ");
+  const RESERVE = "nuit noire lune ciel";
+
+  function bonusRace(seed: number, bonuses = true) {
+    return new Race({
+      text: LONG,
+      errorMode: "strict",
+      timeLimit: 0,
+      participants: PEOPLE.slice(0, 2),
+      now: T0,
+      bonuses: bonuses ? { seed, reserve: RESERVE } : null,
+    });
+  }
+
+  /** Alice types the first `chars` characters; Bruno nothing. */
+  function leadTo(race: Race, chars: number): number {
+    return typeSlowly(race, "a", LONG.slice(0, chars), START);
+  }
+
+  test("nothing happens before the leader reaches 25%, or with bonuses off", () => {
+    const race = bonusRace(1);
+    const now = leadTo(race, 20);
+    expect(race.tick(now)).toEqual([]);
+
+    const off = bonusRace(1, false);
+    expect(off.tick(leadTo(off, 80))).toEqual([]);
+  });
+
+  test("each checkpoint fires once, at most three in a race", () => {
+    const race = bonusRace(1);
+    const at25 = leadTo(race, 30);
+    expect(race.tick(at25)).toHaveLength(1);
+    expect(race.tick(at25 + 200)).toEqual([]);
+
+    const later = typeSlowly(race, "a", LONG.slice(30, 95), at25);
+    const fired = race.tick(later).length;
+    expect(fired).toBe(2);
+    expect(race.tick(later + 200)).toEqual([]);
+    const total = race.results(later + 400).reduce((sum, row) => sum + row.bonuses.length, 0);
+    expect(total).toBe(3);
+  });
+
+  /** A seed whose first effect is `kind`. */
+  function raceWith(kind: string): { race: Race; now: number } {
+    for (let seed = 0; seed < 100; seed++) {
+      const race = bonusRace(seed);
+      const now = leadTo(race, 30);
+      if (race.tick(now)[0]?.kind === kind) {
+        return { race, now };
+      }
+    }
+    throw new Error(`No seed gives ${kind}.`);
+  }
+
+  test("rain shortens the trailing runner's text, keeping progress and WPM consistent", () => {
+    const { race, now } = raceWith("rain");
+    const bruno = race.playerState("b");
+    // 10% of 20 words.
+    expect(bruno?.text.split(" ")).toHaveLength(18);
+    expect(race.playerState("a")?.text).toBe(LONG);
+    const entry = race.track(now).find((row) => row.userId === "b");
+    expect(entry?.effect).toBe("rain");
+    expect(entry?.progress).toBe(0);
+
+    // Bruno now finishes after typing 18 words, and his progress is over his own text.
+    const done = typeSlowly(race, "b", bruno?.text ?? "", now);
+    const result = race.results(done).find((row) => row.userId === "b");
+    expect(result?.status).toBe("finished");
+    expect(result?.progress).toBe(1);
+    expect(result?.bonuses).toEqual(["rain"]);
+  });
+
+  test("night lengthens the leader's text with the reserve words", () => {
+    const { race, now } = raceWith("night");
+    // 7% of 20 words, rounded: 1 word.
+    expect(race.playerState("a")?.text).toBe(`${LONG} nuit`);
+    expect(race.playerState("b")?.text).toBe(LONG);
+    const alice = race.track(now).find((row) => row.userId === "a");
+    expect(alice?.effect).toBe("night");
+    expect(alice?.progress).toBeCloseTo(30 / (LONG.length + 5));
+  });
+
+  test("glare only shows on the track while it lasts, and never changes the text", () => {
+    const { race, now } = raceWith("glare");
+    expect(race.playerState("a")?.text).toBe(LONG);
+    expect(race.track(now + 4_000).find((row) => row.userId === "a")?.effect).toBe("glare");
+    expect(race.track(now + 6_000).find((row) => row.userId === "a")?.effect).toBeNull();
+  });
+
+  test("the same seed gives the same bonuses", () => {
+    const kinds = (seed: number) => {
+      const race = bonusRace(seed);
+      return race.tick(leadTo(race, 30)).map((event) => event.kind);
+    };
+    expect(kinds(42)).toEqual(kinds(42));
   });
 });
