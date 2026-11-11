@@ -94,6 +94,7 @@ erDiagram
         uuid id PK
         uuid race_id FK
         uuid user_id FK "null pour un invité"
+        uuid guest_id FK "invité seulement : retrouver sa ligne"
         text name
         boolean is_guest
         int rank
