@@ -85,6 +85,13 @@
       "when": 1794357819612,
       "tag": "0011_create_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794364586042,
+      "tag": "0012_add_race_result_bot_level",
+      "breakpoints": true
     }
   ]
 }

@@ -97,6 +97,7 @@ erDiagram
         uuid guest_id FK "invité seulement : retrouver sa ligne"
         text name
         boolean is_guest
+        text bot_level "null pour un humain"
         int rank
         text status
         real wpm
