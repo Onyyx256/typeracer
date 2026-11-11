@@ -426,7 +426,6 @@ export const en: Dictionary = {
       wpmSummary: "Chart of each runner's WPM during the race. Left and right arrows move through time.",
       keysHeading: "Missed keys",
       keysLead: "The keys with mistakes, darker for more of them.",
-      runner: "Runner",
       none: "no missed keys, well done",
       fewer: "fewer",
       more: "more",

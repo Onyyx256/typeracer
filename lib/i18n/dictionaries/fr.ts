@@ -428,7 +428,6 @@ export const fr = {
       wpmSummary: "Graphique du MPM de chaque coureur pendant la course. Flèches gauche et droite pour parcourir le temps.",
       keysHeading: "Touches ratées",
       keysLead: "Les touches où il y a eu des erreurs, plus foncées quand il y en a eu plus.",
-      runner: "Coureur",
       none: "aucune touche ratée, bravo",
       fewer: "moins",
       more: "plus",

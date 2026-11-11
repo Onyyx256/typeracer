@@ -1,16 +1,9 @@
 "use client";
 
-import { Fragment, useId, useState } from "react";
+import { Fragment } from "react";
 import { heatLevel, KEYBOARD_ROWS, missesByKey, SPACE_KEY } from "@/lib/race/keyboard";
 
-export type MissedKeysRunner = {
-  id: string;
-  name: string;
-  missedKeys: Record<string, number>;
-};
-
 export type MissedKeysLabels = {
-  runner: string;
   none: string;
   fewer: string;
   more: string;
@@ -39,23 +32,15 @@ function textClass(level: number): string {
 }
 
 export function MissedKeys({
-  runners,
-  defaultId,
+  missedKeys,
   labels,
   locale,
 }: {
-  runners: MissedKeysRunner[];
-  defaultId: string;
+  missedKeys: Record<string, number>;
   labels: MissedKeysLabels;
   locale: string;
 }) {
-  const selectId = useId();
-  const [selected, setSelected] = useState(defaultId);
-  const runner = runners.find((entry) => entry.id === selected) ?? runners[0];
-  if (!runner) {
-    return null;
-  }
-  const { keys, others } = missesByKey(runner.missedKeys);
+  const { keys, others } = missesByKey(missedKeys);
   const most = Math.max(0, ...keys.values(), ...others.map((entry) => entry.misses));
   const format = (value: number) => new Intl.NumberFormat(locale).format(value);
   const describe = (key: string, count: number) =>
@@ -67,26 +52,6 @@ export function MissedKeys({
 
   return (
     <div className="grid gap-4">
-      {runners.length > 1 && (
-        <div className="flex flex-wrap items-center gap-3">
-          <label htmlFor={selectId} className="text-sm text-muted">
-            {labels.runner}
-          </label>
-          <select
-            id={selectId}
-            value={runner.id}
-            onChange={(event) => setSelected(event.target.value)}
-            className="h-10 border border-line bg-background px-3 text-sm rounded-leaf"
-          >
-            {runners.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {most === 0 ? (
         <p className="font-mono text-sm text-muted">&gt; {labels.none}</p>
       ) : (
