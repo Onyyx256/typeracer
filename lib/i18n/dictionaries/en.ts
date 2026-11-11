@@ -629,7 +629,6 @@ export const en: Dictionary = {
     hide: "hide",
     justVisiting: "Just passing through?",
     playAsGuest: "Play as a guest",
-    oauthSoon: "sign-in coming soon",
     steps: {
       username: "username: {remaining}",
       password: "password: {remaining}",

@@ -631,7 +631,6 @@ export const fr = {
     hide: "masquer",
     justVisiting: "Juste de passage ?",
     playAsGuest: "Jouer en tant qu'invité",
-    oauthSoon: "authentification bientôt disponible",
     steps: {
       username: "nom d'utilisateur : {remaining}",
       password: "mot de passe : {remaining}",
