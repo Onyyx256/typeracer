@@ -1,6 +1,16 @@
 import "server-only";
+import * as z from "zod";
 
-export const MAX_CODE_MISSES = 10;
+/**
+ * 10 unless CODE_MISS_LIMIT says otherwise: the end-to-end tests raise it,
+ * because all their browsers share one address without a proxy.
+ */
+export const MAX_CODE_MISSES = z.coerce
+  .number()
+  .int()
+  .positive()
+  .catch(10)
+  .parse(process.env.CODE_MISS_LIMIT ?? 10);
 export const CODE_MISS_WINDOW_MS = 60_000;
 const PRUNE_ABOVE = 10_000;
 
