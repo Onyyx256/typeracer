@@ -139,6 +139,14 @@ describe("during the race", () => {
     const host = saved?.results.find((row) => row.userId === hostId);
     expect(host?.isGuest).toBe(false);
     expect(saved?.results.filter((row) => row.isGuest).every((row) => row.userId === null)).toBe(true);
+    // A guest can still find their own row on the room's results.
+    expect(host?.guestId).toBeNull();
+    expect(
+      saved?.results
+        .filter((row) => row.isGuest)
+        .map((row) => row.guestId)
+        .sort(),
+    ).toEqual([...others].sort());
     expect(saved?.results.map((row) => row.bonuses)).toEqual([[], [], []]);
 
   });

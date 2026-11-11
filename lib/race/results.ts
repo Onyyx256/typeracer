@@ -35,6 +35,7 @@ export async function saveRace(race: {
           raceId: row.id,
           // Guests keep no history.
           userId: result.isGuest ? null : result.userId,
+          guestId: result.isGuest ? result.userId : null,
           name: result.name,
           isGuest: result.isGuest,
           rank: result.rank,
@@ -61,6 +62,7 @@ export async function saveRace(race: {
 
 export type ResultRow = {
   userId: string | null;
+  guestId?: string | null;
   name: string;
   isGuest: boolean;
   rank: number;
@@ -132,6 +134,7 @@ async function loadRaceResults(raceId: string): Promise<RaceResultsView | null> 
   const results = await db
     .select({
       userId: raceResults.userId,
+      guestId: raceResults.guestId,
       name: raceResults.name,
       isGuest: raceResults.isGuest,
       rank: raceResults.rank,

@@ -239,7 +239,8 @@ export type NewRace = typeof races.$inferInsert;
 
 /**
  * Guests get a row too, so the full table can be shown again, but without
- * `user_id`: it never becomes their history.
+ * `user_id`: it never becomes their history. `guest_id` only lets a guest
+ * find their own row on the room's results.
  */
 export const raceResults = pgTable(
   "race_results",
@@ -250,6 +251,7 @@ export const raceResults = pgTable(
       .references(() => races.id, { onDelete: "cascade" }),
     /** Null for a guest, or for an account deleted since. */
     userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    guestId: uuid("guest_id").references(() => users.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     isGuest: boolean("is_guest").notNull(),
     rank: integer("rank").notNull(),
@@ -282,6 +284,7 @@ export const raceResults = pgTable(
       sql`(${table.status} = 'abandoned') = (${table.accuracy} is null)`,
     ),
     check("race_results_guest_has_no_user", sql`not (${table.isGuest} and ${table.userId} is not null)`),
+    check("race_results_only_guests_have_guest_id", sql`${table.isGuest} or ${table.guestId} is null`),
   ],
 );
 

@@ -1,0 +1,3 @@
+ALTER TABLE "race_results" ADD COLUMN "guest_id" uuid;--> statement-breakpoint
+ALTER TABLE "race_results" ADD CONSTRAINT "race_results_guest_id_users_id_fk" FOREIGN KEY ("guest_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "race_results" ADD CONSTRAINT "race_results_only_guests_have_guest_id" CHECK ("race_results"."is_guest" or "race_results"."guest_id" is null);
