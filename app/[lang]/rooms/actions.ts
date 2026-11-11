@@ -46,6 +46,7 @@ export type RoomActionError =
   | "invalid"
   | "noWords"
   | "notSignedIn"
+  | "tooMany"
   | "unavailable";
 
 export type RoomActionResult = {

@@ -123,11 +123,15 @@ describe("joinRoom", () => {
     expect((await guestJoins(code)).result).toEqual({ ok: false, error: "notFound" });
   });
 
-  test("code-only and private rooms answer not found for now", async () => {
-    for (const visibility of ["code", "private"] as const) {
-      const { code } = await hostRoom({ visibility });
-      expect((await guestJoins(code)).result).toEqual({ ok: false, error: "notFound" });
-    }
+  test("a code-only room opens with its code (SALLE-03)", async () => {
+    const { code } = await hostRoom({ visibility: "code" });
+    expect((await guestJoins(code)).result).toEqual({ ok: true, code });
+  });
+
+  test("the code alone is never enough for a private room (SALLE-03)", async () => {
+    const { code } = await hostRoom({ visibility: "private" });
+    expect((await guestJoins(code)).result).toEqual({ ok: false, error: "notFound" });
+    expect((await accountJoins(code)).result).toEqual({ ok: false, error: "notFound" });
   });
 });
 
