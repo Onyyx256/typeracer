@@ -9,9 +9,10 @@ import { interpolate } from "@/lib/i18n/format";
 import { filterQuery, parseRoomFilters, type RoomFilters } from "@/lib/rooms/filters";
 import { findCurrentRoom, listPublicRooms } from "@/lib/rooms/rooms";
 import { COMPLEXITIES } from "@/lib/rooms/settings";
+import { JoinByCode } from "./join-by-code";
 
 export default async function Home({ searchParams }: PageProps<"/[lang]">) {
-  const dict = await getDictionary();
+  const [dict, locale] = await Promise.all([getDictionary(), getLocale()]);
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10 sm:px-8">
@@ -22,14 +23,12 @@ export default async function Home({ searchParams }: PageProps<"/[lang]">) {
           </h1>
           <p className="mt-2 max-w-2xl text-muted">{dict.roomsPage.lead}</p>
         </div>
+        <JoinByCode dict={dict.roomsPage.joinByCode} locale={locale} />
       </div>
       {/* The list changes all the time, so it renders on each request. */}
       <Suspense fallback={null}>
         <RoomList searchParams={searchParams} />
       </Suspense>
-      <p className="mt-6 font-mono text-sm text-muted">
-        &gt; {dict.roomsPage.codeSoon}
-      </p>
     </main>
   );
 }
