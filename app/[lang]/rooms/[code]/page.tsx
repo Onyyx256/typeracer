@@ -190,7 +190,12 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             )}
           </aside>
           {isHost && room.state === "waiting" && (
-            <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
+            <StartRace
+              dict={dict.race}
+              runners={runners.length}
+              bots={settings.bots.length}
+              minRunners={MIN_RUNNERS}
+            />
           )}
           {isHost && results && <NewGame dict={dict.race} />}
           {!member && joinable && (

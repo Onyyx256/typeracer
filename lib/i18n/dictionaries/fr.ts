@@ -358,9 +358,11 @@ export const fr = {
       unavailable: "impossible pour le moment, réessaie plus tard",
     },
     needRunners: "il faut au moins {min} coureurs pour lancer la course",
+    needHuman: "il faut au moins un coureur humain : les bots ne courent pas seuls",
     startErrors: {
       notHost: "seul l'hôte peut lancer la course",
       notEnoughRunners: "il faut au moins 2 coureurs pour lancer la course",
+      noHuman: "il faut au moins un coureur humain",
       notStartable: "une course est déjà lancée",
       unavailable: "impossible pour le moment, réessaie plus tard",
     },

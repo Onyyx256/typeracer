@@ -356,9 +356,11 @@ export const en: Dictionary = {
       unavailable: "not possible right now, try again later",
     },
     needRunners: "at least {min} runners are needed to start the race",
+    needHuman: "at least one human runner is needed: bots don't race alone",
     startErrors: {
       notHost: "only the host can start the race",
       notEnoughRunners: "at least 2 runners are needed to start the race",
+      noHuman: "at least one human runner is needed",
       notStartable: "a race has already started",
       unavailable: "not possible right now, try again later",
     },
