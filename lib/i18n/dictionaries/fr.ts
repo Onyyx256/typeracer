@@ -653,6 +653,9 @@ export const fr = {
       badCredentials: "nom d'utilisateur ou mot de passe incorrect",
       signupUnavailable: "inscription impossible pour le moment, réessaie plus tard",
       loginUnavailable: "connexion impossible pour le moment, réessaie plus tard",
+      oauthCancelled: "connexion annulée",
+      oauthFailed: "la connexion a échoué, réessaie",
+      oauthUnavailable: "cette connexion n'est pas disponible pour le moment",
     },
   },
 };

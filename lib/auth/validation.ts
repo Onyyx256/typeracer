@@ -28,8 +28,14 @@ export const AUTH_ERRORS = [
   "badCredentials",
   "signupUnavailable",
   "loginUnavailable",
+  "oauthCancelled",
+  "oauthFailed",
+  "oauthUnavailable",
 ] as const;
 export type AuthError = (typeof AUTH_ERRORS)[number];
+
+export const OAUTH_ERRORS = ["oauthCancelled", "oauthFailed", "oauthUnavailable"] as const;
+export type OAuthError = (typeof OAUTH_ERRORS)[number];
 
 function isAuthError(value: string | undefined): value is AuthError {
   return AUTH_ERRORS.some((code) => code === value);
