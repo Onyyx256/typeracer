@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { BOTS_MAX } from "@/lib/bots/levels";
 import {
   CAPACITY_MAX,
   CAPACITY_MIN,
@@ -111,5 +112,25 @@ describe("room settings schema", () => {
     expect(config).not.toHaveProperty("hostRole");
     expect(config).not.toHaveProperty("visibility");
     expect(config).not.toHaveProperty("capacity");
+  });
+});
+
+describe("room bots (CONF-10)", () => {
+  test("up to the limit, with known levels only", () => {
+    const five = Array.from({ length: BOTS_MAX }, () => ({ level: "expert" }));
+    expect(accepts({ bots: five })).toBe(true);
+    expect(accepts({ bots: [...five, { level: "expert" }] })).toBe(false);
+    expect(accepts({ bots: [{ level: "god" }] })).toBe(false);
+  });
+
+  test("a config saved before bots existed has none", () => {
+    const old: Partial<RoomSettings> = raceConfigSchema.parse(base);
+    delete old.bots;
+    expect(raceConfigSchema.parse(old).bots).toEqual([]);
+  });
+
+  test("are kept in the stored race config", () => {
+    const config = raceConfigSchema.parse({ ...base, bots: [{ level: "noob" }] });
+    expect(config.bots).toEqual([{ level: "noob" }]);
   });
 });
