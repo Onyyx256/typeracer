@@ -185,6 +185,9 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               userId={user?.id ?? null}
               kickDict={isHost ? t : null}
             />
+            {invites && (
+              <InviteLinks dict={t.invites} invites={invites} codeOnly={room.visibility === "code"} />
+            )}
           </>
         )}
       </div>
@@ -206,7 +209,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               />
             )}
           </aside>
-          {invites && <InviteLinks dict={t.invites} invites={invites} codeOnly={room.visibility === "code"} />}
           {isHost && room.state === "waiting" && (
             <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
           )}

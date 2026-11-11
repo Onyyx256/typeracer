@@ -63,18 +63,22 @@ export function InviteLinks({ dict, invites, codeOnly }: InviteLinksProps) {
   }
 
   return (
-    <section className="border border-line bg-surface p-6 rounded-leaf">
-      <h2 className="font-display text-xl font-semibold">{dict.heading}</h2>
-      <p className="mt-2 text-sm text-muted">{codeOnly ? dict.leadCode : dict.lead}</p>
+    <section>
+      <h2 className="flex items-center gap-4 font-display text-2xl font-semibold">
+        {dict.heading}
+        <span className="font-mono text-sm font-normal text-muted">{invites.length}</span>
+        <span className="h-px flex-1 bg-line" aria-hidden="true" />
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm text-muted">{codeOnly ? dict.leadCode : dict.lead}</p>
 
       {invites.length === 0 ? (
         <p className="mt-4 font-mono text-sm text-muted">&gt; {dict.empty}</p>
       ) : (
-        <ol className="mt-4 grid gap-3">
+        <ol className="mt-3 grid gap-2 sm:grid-cols-2">
           {invites.map((invite, index) => {
             const number = String(index + 1);
             return (
-              <li key={invite.url} className="grid gap-1.5">
+              <li key={invite.url} className="grid content-start gap-1.5 border border-line bg-background px-4 py-3 rounded-leaf">
                 <div className="flex items-baseline justify-between gap-2 text-sm">
                   <span className="font-medium">{interpolate(dict.number, { number })}</span>
                   <span
@@ -90,7 +94,7 @@ export function InviteLinks({ dict, invites, codeOnly }: InviteLinksProps) {
                       value={invite.url}
                       aria-label={interpolate(dict.number, { number })}
                       onFocus={(event) => event.currentTarget.select()}
-                      className="h-9 min-w-0 flex-1 border border-line bg-background px-2 font-mono text-xs rounded-leaf"
+                      className="h-9 min-w-0 flex-1 border border-line bg-surface px-2 font-mono text-xs rounded-leaf"
                     />
                     <button
                       type="button"
@@ -117,7 +121,7 @@ export function InviteLinks({ dict, invites, codeOnly }: InviteLinksProps) {
         type="button"
         onClick={create}
         disabled={pending}
-        className="mt-4 h-11 w-full cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
+        className="mt-3 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
       >
         {dict.create}
       </button>
