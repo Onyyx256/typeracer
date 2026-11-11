@@ -200,7 +200,18 @@ export const fr = {
     },
     noMatch: "aucune salle publique ne correspond à ces filtres",
     clearFilters: "Voir toutes les salles",
-    codeSoon: "rejoindre avec un code bientôt disponible",
+    joinByCode: {
+      heading: "Tu as un code ?",
+      label: "Code de la salle",
+      hint: "6 lettres ou chiffres, donné par l'hôte",
+      submit: "Rejoindre",
+      errors: {
+        invalid: "un code de salle fait 6 lettres ou chiffres, sans 0, O, 1, I ni L",
+        notFound: "aucune salle ouverte avec ce code",
+        tooMany: "trop de codes essayés, attends une minute",
+        unavailable: "impossible pour le moment, réessaie plus tard",
+      },
+    },
   },
   room: {
     title: "Salle {code}",
@@ -292,6 +303,33 @@ export const fr = {
       guest: "un invité ne peut pas être hôte",
       invalid: "demande invalide",
       unavailable: "impossible pour le moment, réessaie plus tard",
+    },
+    tooMany: {
+      title: "Trop de codes essayés",
+      lead: "Tu as essayé beaucoup de codes de salle en peu de temps. Attends une minute, puis réessaie.",
+    },
+    invites: {
+      heading: "Liens d'invitation",
+      lead: "Cette salle est privée : on n'y entre qu'avec un lien. Crée un lien par personne ; il ne sert qu'à la première personne qui l'ouvre.",
+      create: "Créer un lien",
+      empty: "aucun lien pour l'instant",
+      number: "Lien {number}",
+      copy: "Copier",
+      copyLabel: "Copier le lien {number}",
+      copied: "lien copié",
+      copyFailed: "copie impossible, sélectionne le lien à la main",
+      status: {
+        pending: "en attente",
+        accepted: "accepté par {name}",
+        acceptedAnon: "accepté",
+        revoked: "révoqué",
+      },
+      errors: {
+        notHost: "seul l'hôte peut créer des liens",
+        notPrivate: "les liens servent seulement aux salles privées",
+        tooMany: "cette salle a déjà le maximum de liens",
+        unavailable: "impossible pour le moment, réessaie plus tard",
+      },
     },
     kicked: {
       title: "Tu as été retiré de cette salle",
@@ -511,7 +549,7 @@ export const fr = {
       public: "Publique",
       publicHint: "Listée, tout le monde peut entrer.",
       code: "Par code",
-      codeHint: "Non listée, on entre avec le code ou un lien.",
+      codeHint: "Non listée, on entre avec le code.",
       private: "Privée",
       privateHint: "Sur invitation, un lien par personne.",
     },
@@ -605,6 +643,20 @@ export const fr = {
       inviteUsed: "ce lien d'invitation a déjà servi",
       tooMany: "trop d'essais, attends une minute",
     },
+  },
+  invitePage: {
+    title: "Invitation",
+    heading: "Invitation dans la salle",
+    lead: "{host} t'invite dans sa salle privée. Choisis comment entrer.",
+    invalid: {
+      title: "Ce lien ne marche plus",
+      lead: "L'hôte a fermé la salle, ou ce lien a été révoqué. Demande un nouveau lien à l'hôte.",
+    },
+    used: {
+      title: "Ce lien a déjà servi",
+      lead: "Un lien d'invitation ne sert qu'à une personne, depuis un seul appareil. Demande ton propre lien à l'hôte.",
+    },
+    back: "Voir les salles",
   },
   loginPage: {
     title: "Connexion",

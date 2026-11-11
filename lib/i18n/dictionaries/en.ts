@@ -198,7 +198,18 @@ export const en: Dictionary = {
     },
     noMatch: "no public room matches these filters",
     clearFilters: "Show all rooms",
-    codeSoon: "joining with a code coming soon",
+    joinByCode: {
+      heading: "Got a code?",
+      label: "Room code",
+      hint: "6 letters or digits, from the host",
+      submit: "Join",
+      errors: {
+        invalid: "a room code is 6 letters or digits, without 0, O, 1, I or L",
+        notFound: "no open room has this code",
+        tooMany: "too many codes tried, wait a minute",
+        unavailable: "not possible right now, try again later",
+      },
+    },
   },
   room: {
     title: "Room {code}",
@@ -290,6 +301,33 @@ export const en: Dictionary = {
       guest: "a guest can't be host",
       invalid: "invalid request",
       unavailable: "not possible right now, try again later",
+    },
+    tooMany: {
+      title: "Too many codes tried",
+      lead: "You tried a lot of room codes in a short time. Wait a minute, then try again.",
+    },
+    invites: {
+      heading: "Invite links",
+      lead: "This room is private: the only way in is a link. Make one link per person; it only works for the first person who opens it.",
+      create: "Make a link",
+      empty: "no links yet",
+      number: "Link {number}",
+      copy: "Copy",
+      copyLabel: "Copy link {number}",
+      copied: "link copied",
+      copyFailed: "couldn't copy, select the link by hand",
+      status: {
+        pending: "pending",
+        accepted: "accepted by {name}",
+        acceptedAnon: "accepted",
+        revoked: "revoked",
+      },
+      errors: {
+        notHost: "only the host can make links",
+        notPrivate: "links are only for private rooms",
+        tooMany: "this room already has the most links it can",
+        unavailable: "not possible right now, try again later",
+      },
     },
     kicked: {
       title: "You were removed from this room",
@@ -509,7 +547,7 @@ export const en: Dictionary = {
       public: "Public",
       publicHint: "Listed, anyone can come in.",
       code: "By code",
-      codeHint: "Not listed, enter with the code or a link.",
+      codeHint: "Not listed, enter with the code.",
       private: "Private",
       privateHint: "Invite only, one link per person.",
     },
@@ -603,6 +641,20 @@ export const en: Dictionary = {
       inviteUsed: "this invite link was already used",
       tooMany: "too many tries, wait a minute",
     },
+  },
+  invitePage: {
+    title: "Invitation",
+    heading: "Invitation to room",
+    lead: "{host} invites you to their private room. Choose how to join.",
+    invalid: {
+      title: "This link doesn't work anymore",
+      lead: "The host closed the room, or this link was revoked. Ask the host for a new link.",
+    },
+    used: {
+      title: "This link was already used",
+      lead: "An invite link only works for one person, from one device. Ask the host for your own link.",
+    },
+    back: "See the rooms",
   },
   loginPage: {
     title: "Log in",
