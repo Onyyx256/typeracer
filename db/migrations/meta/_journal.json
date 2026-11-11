@@ -85,6 +85,13 @@
       "when": 1794357819612,
       "tag": "0011_create_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794364058261,
+      "tag": "0012_create_room_invites",
+      "breakpoints": true
     }
   ]
 }

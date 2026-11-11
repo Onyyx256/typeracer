@@ -243,6 +243,41 @@ export const roomBans = pgTable(
 export type RoomBan = typeof roomBans.$inferSelect;
 export type NewRoomBan = typeof roomBans.$inferInsert;
 
+/**
+ * One link per person invited. The first person to use it (and the address
+ * they used it from) is recorded; after that, only they can use it again.
+ */
+export const roomInvites = pgTable(
+  "room_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => rooms.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    usedBy: uuid("used_by").references(() => users.id, { onDelete: "set null" }),
+    usedIp: text("used_ip"),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("room_invites_token_idx").on(table.token),
+    index("room_invites_room_idx").on(table.roomId, table.createdAt),
+    // 32 random bytes in base64url: 256 bits.
+    check("room_invites_token_format", sql`${table.token} ~ '^[A-Za-z0-9_-]{43}$'`),
+    check(
+      "room_invites_used_together",
+      sql`(${table.usedAt} is null) = (${table.usedIp} is null)`,
+    ),
+  ],
+);
+
+export type RoomInvite = typeof roomInvites.$inferSelect;
+export type NewRoomInvite = typeof roomInvites.$inferInsert;
+
 export const races = pgTable(
   "races",
   {
