@@ -34,6 +34,11 @@ export async function createTestGuest(nickname = uniqueName("g")): Promise<{ id:
   return { id: row.id };
 }
 
+/** For users a test creates through app code rather than the helpers above. */
+export function trackTestUser(id: string): void {
+  created.push(id);
+}
+
 export async function deleteTestUsers(): Promise<void> {
   if (created.length > 0) {
     await getDb().delete(users).where(inArray(users.id, created.splice(0)));
