@@ -1,8 +1,8 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { e2eName } from "./database";
 
-// The ways into a room that isn't listed: a code-only room with its code,
-// a private room with a one-time invite link.
+// The ways into a room that isn't listed: a code-only room with its code
+// (or a link), a private room only with a one-time invite link.
 
 const PASSWORD = "e2e-password-1234";
 
@@ -40,6 +40,7 @@ async function joinAsGuest(page: Page, nickname: string): Promise<void> {
 
 test("a guest joins a code-only room with its code from the home page", async ({ browser }) => {
   const host = await hostRoom(browser, "By code");
+  await expect(host.page.getByRole("button", { name: "Make a link" })).toBeVisible();
 
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
