@@ -12,13 +12,15 @@ import { interpolate, plural } from "@/lib/i18n/format";
 import { MIN_RUNNERS } from "@/lib/race/manager";
 import { getLatestRaceResults } from "@/lib/race/results";
 import { getLooks } from "@/lib/profile/profile";
-import { requestIp } from "@/lib/request";
+import { requestIp, requestOrigin } from "@/lib/request";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { recordCodeMiss, tooManyCodeMisses } from "@/lib/rooms/code-attempts";
+import { listInvites } from "@/lib/rooms/invites";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { DeleteRoom } from "./delete-room";
 import { EditSettings } from "./edit-settings";
+import { InviteLinks, type InviteLink } from "./invite-links";
 import { JoinRoom } from "./join-room";
 import { KickMember } from "./kick-member";
 import { LeaveRoom } from "./leave-room";
@@ -97,6 +99,8 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
     ...(results?.results.flatMap((row) => (row.userId ? [row.userId] : [])) ?? []),
   ]);
   const settings = { ...room.config, visibility: room.visibility, capacity: room.capacity };
+  const invites =
+    isHost && room.visibility === "private" && !inRace ? await inviteLinks(user.id, room.code) : null;
 
   return (
     // During the race the settings can't change, so the race takes the whole width.
@@ -202,6 +206,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               />
             )}
           </aside>
+          {invites && <InviteLinks dict={t.invites} invites={invites} />}
           {isHost && room.state === "waiting" && (
             <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
           )}
@@ -288,4 +293,10 @@ function MemberList({
       )}
     </section>
   );
+}
+
+/** Without the locale, so the link opens in the guest's own language. */
+async function inviteLinks(hostId: string, code: string): Promise<InviteLink[]> {
+  const [invites, origin] = await Promise.all([listInvites(hostId, code), requestOrigin()]);
+  return invites.map(({ token, status, name }) => ({ url: `${origin}/invite/${token}`, status, name }));
 }
