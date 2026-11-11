@@ -311,6 +311,7 @@ export const fr = {
     invites: {
       heading: "Liens d'invitation",
       lead: "Cette salle est privée : on n'y entre qu'avec un lien. Crée un lien par personne ; il ne sert qu'à la première personne qui l'ouvre.",
+      leadCode: "On entre avec le code, ou avec un lien. Crée un lien par personne ; il ne sert qu'à la première personne qui l'ouvre.",
       create: "Créer un lien",
       empty: "aucun lien pour l'instant",
       number: "Lien {number}",
@@ -326,7 +327,7 @@ export const fr = {
       },
       errors: {
         notHost: "seul l'hôte peut créer des liens",
-        notPrivate: "les liens servent seulement aux salles privées",
+        publicRoom: "une salle publique n'a pas besoin de lien, tout le monde peut y entrer",
         tooMany: "cette salle a déjà le maximum de liens",
         unavailable: "impossible pour le moment, réessaie plus tard",
       },
@@ -549,7 +550,7 @@ export const fr = {
       public: "Publique",
       publicHint: "Listée, tout le monde peut entrer.",
       code: "Par code",
-      codeHint: "Non listée, on entre avec le code.",
+      codeHint: "Non listée, on entre avec le code ou un lien.",
       private: "Privée",
       privateHint: "Sur invitation, un lien par personne.",
     },

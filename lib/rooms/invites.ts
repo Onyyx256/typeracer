@@ -15,13 +15,13 @@ export function generateInviteToken(): string {
   return randomBytes(TOKEN_BYTES).toString("base64url");
 }
 
-export type CreateInviteError = "notHost" | "notPrivate" | "tooMany";
+export type CreateInviteError = "notHost" | "publicRoom" | "tooMany";
 
 export type CreateInviteResult =
   | { ok: true; token: string }
   | { ok: false; error: CreateInviteError };
 
-/** Only the host of an open private room makes links (SEC-01). */
+/** Only the host of an open code-only or private room makes links (SEC-01). */
 export async function createInvite(hostId: string): Promise<CreateInviteResult> {
   return getDb().transaction(async (tx): Promise<CreateInviteResult> => {
     const [membership] = await tx
@@ -40,8 +40,9 @@ export async function createInvite(hostId: string): Promise<CreateInviteResult> 
     if (!room || room.hostId !== hostId || room.state === "closed") {
       return { ok: false, error: "notHost" };
     }
-    if (room.visibility !== "private") {
-      return { ok: false, error: "notPrivate" };
+    // Anyone can walk into a public room, so a link would add nothing.
+    if (room.visibility === "public") {
+      return { ok: false, error: "publicRoom" };
     }
     const [{ value: existing } = { value: 0 }] = await tx
       .select({ value: count() })

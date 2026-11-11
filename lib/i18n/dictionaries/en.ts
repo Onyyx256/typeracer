@@ -309,6 +309,7 @@ export const en: Dictionary = {
     invites: {
       heading: "Invite links",
       lead: "This room is private: the only way in is a link. Make one link per person; it only works for the first person who opens it.",
+      leadCode: "People can join with the code, or with a link. Make one link per person; it only works for the first person who opens it.",
       create: "Make a link",
       empty: "no links yet",
       number: "Link {number}",
@@ -324,7 +325,7 @@ export const en: Dictionary = {
       },
       errors: {
         notHost: "only the host can make links",
-        notPrivate: "links are only for private rooms",
+        publicRoom: "a public room needs no link, anyone can join it",
         tooMany: "this room already has the most links it can",
         unavailable: "not possible right now, try again later",
       },
@@ -547,7 +548,7 @@ export const en: Dictionary = {
       public: "Public",
       publicHint: "Listed, anyone can come in.",
       code: "By code",
-      codeHint: "Not listed, enter with the code.",
+      codeHint: "Not listed, enter with the code or a link.",
       private: "Private",
       privateHint: "Invite only, one link per person.",
     },

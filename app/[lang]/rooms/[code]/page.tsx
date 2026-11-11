@@ -100,7 +100,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   ]);
   const settings = { ...room.config, visibility: room.visibility, capacity: room.capacity };
   const invites =
-    isHost && room.visibility === "private" && !inRace ? await inviteLinks(user.id, room.code) : null;
+    isHost && room.visibility !== "public" && !inRace ? await inviteLinks(user.id, room.code) : null;
 
   return (
     // During the race the settings can't change, so the race takes the whole width.
@@ -206,7 +206,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               />
             )}
           </aside>
-          {invites && <InviteLinks dict={t.invites} invites={invites} />}
+          {invites && <InviteLinks dict={t.invites} invites={invites} codeOnly={room.visibility === "code"} />}
           {isHost && room.state === "waiting" && (
             <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
           )}

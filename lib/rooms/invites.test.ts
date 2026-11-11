@@ -66,11 +66,19 @@ describe("createInvite (SALLE-04, SEC-01)", () => {
     expect(await createInvite((await createTestAccount()).id)).toEqual({ ok: false, error: "notHost" });
   });
 
-  test("only private rooms have links", async () => {
-    for (const visibility of ["public", "code"] as const) {
-      const { hostId } = await hostRoom({ visibility });
-      expect(await createInvite(hostId)).toEqual({ ok: false, error: "notPrivate" });
-    }
+  test("a public room has no links", async () => {
+    const { hostId } = await hostRoom({ visibility: "public" });
+    expect(await createInvite(hostId)).toEqual({ ok: false, error: "publicRoom" });
+  });
+
+  test("a code-only room has single-use links too (SALLE-03)", async () => {
+    const { hostId, code } = await hostRoom({ visibility: "code" });
+    const token = await invite(hostId);
+    expect(await joinWith((await createTestGuest()).id, code, token)).toEqual({ ok: true, code });
+    expect(await joinWith((await createTestGuest()).id, code, token)).toEqual({
+      ok: false,
+      error: "inviteUsed",
+    });
   });
 });
 

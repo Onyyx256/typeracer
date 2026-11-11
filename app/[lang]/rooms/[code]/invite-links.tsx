@@ -16,6 +16,8 @@ export type InviteLink = {
 type InviteLinksProps = {
   dict: RoomDictionary["invites"];
   invites: InviteLink[];
+  /** A code-only room can also be joined with its code. */
+  codeOnly: boolean;
 };
 
 type CreateError = Extract<CreateInviteActionResult, { ok: false }>["error"];
@@ -26,7 +28,7 @@ const STATUS_STYLE: Record<InviteStatus, string> = {
   revoked: "text-accent-text",
 };
 
-export function InviteLinks({ dict, invites }: InviteLinksProps) {
+export function InviteLinks({ dict, invites, codeOnly }: InviteLinksProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<CreateError | null>(null);
@@ -63,7 +65,7 @@ export function InviteLinks({ dict, invites }: InviteLinksProps) {
   return (
     <section className="border border-line bg-surface p-6 rounded-leaf">
       <h2 className="font-display text-xl font-semibold">{dict.heading}</h2>
-      <p className="mt-2 text-sm text-muted">{dict.lead}</p>
+      <p className="mt-2 text-sm text-muted">{codeOnly ? dict.leadCode : dict.lead}</p>
 
       {invites.length === 0 ? (
         <p className="mt-4 font-mono text-sm text-muted">&gt; {dict.empty}</p>
