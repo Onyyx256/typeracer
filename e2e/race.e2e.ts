@@ -89,6 +89,11 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   }
   // One wrong key out of all of them, so accuracy is below 100 %.
   await expect(host.getByRole("row").nth(1).getByRole("cell").nth(4)).not.toHaveText("100.0%");
+  // Each runner sees only their own missed keys, the guest included.
+  await expect(guest.getByRole("row").nth(2)).toContainText("(you)");
+  await expect(host.getByText("Most missed:")).toBeVisible();
+  await expect(guest.getByText("no missed keys, well done")).toBeVisible();
+  await expect(guest.getByText("Most missed:")).toHaveCount(0);
   await expect(host.getByRole("button", { name: "Start the race" })).toHaveCount(0);
   await expect(guest.getByText("the host can start a new game")).toBeVisible();
   await host.getByRole("button", { name: "New game" }).click();

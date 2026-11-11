@@ -20,6 +20,10 @@ const PODIUM = [
   { index: 2, order: "order-3", height: "h-14", stem: 75, delay: 0 },
 ] as const;
 
+function isViewer(row: ResultRow, userId: string | null): boolean {
+  return userId !== null && (row.userId === userId || row.guestId === userId);
+}
+
 export function RaceResults({
   view,
   userId,
@@ -66,7 +70,7 @@ export function RaceResults({
                 />
                 <span className="max-w-full truncate font-medium" title={row.name}>
                   {row.name}
-                  {row.userId === userId && userId !== null && <span className="text-muted"> ({roomDict.you})</span>}
+                  {isViewer(row, userId) && <span className="text-muted"> ({roomDict.you})</span>}
                 </span>
                 <span className="font-mono text-sm text-muted tabular-nums">
                   {formatNumber(locale, row.wpm)} {dict.columns.wpm}
@@ -103,7 +107,7 @@ export function RaceResults({
           </thead>
           <tbody className="tabular-nums">
             {view.results.map((row) => {
-              const you = userId !== null && row.userId === userId;
+              const you = isViewer(row, userId);
               return (
                 <tr key={row.rank} className={`border-t border-line ${you ? "bg-primary/10" : ""}`}>
                   <td className="px-4 py-3 font-mono">{row.rank}</td>
@@ -181,7 +185,7 @@ function RaceCharts({
 }) {
   const t = dict.charts;
   const id = (row: ResultRow) => String(row.rank);
-  const you = (row: ResultRow) => userId !== null && row.userId === userId;
+  const you = (row: ResultRow) => isViewer(row, userId);
   // Missed keys are private: only the player's own reach the page.
   const own = view.results.find(you);
 
