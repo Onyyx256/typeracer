@@ -8,7 +8,7 @@ import { RoomSummary } from "@/app/components/room-summary";
 import { TextField } from "@/app/components/text-field";
 import { localePath, type Locale } from "@/lib/i18n/config";
 import { USERNAME_MAX, USERNAME_MIN } from "@/lib/auth/validation";
-import type { CreateRoomDictionary } from "@/lib/i18n/dictionaries/fr";
+import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 import {
   HOST_ROLES,
@@ -21,6 +21,7 @@ import { createRoomAction, type RoomActionError } from "../actions";
 
 type CreateRoomFormProps = {
   dict: CreateRoomDictionary;
+  botsDict: RoomDictionary["bots"];
   locale: Locale;
   defaultName: string;
 };
@@ -34,7 +35,7 @@ function useHydrated(): boolean {
   return useSyncExternalStore(noSubscribe, () => true, () => false);
 }
 
-export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProps) {
+export function CreateRoomForm({ dict, botsDict, locale, defaultName }: CreateRoomFormProps) {
   const [name, setName] = useState(defaultName);
   const [settings, setSettings] = useState<RoomSettings>(() =>
     defaultRoomSettings(locale),
@@ -78,6 +79,7 @@ export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProp
     >
       <div className="grid gap-10">
         <RoomSettingsFields
+          botsDict={botsDict}
           dict={dict}
           locale={locale}
           settings={settings}
@@ -120,7 +122,7 @@ export function CreateRoomForm({ dict, locale, defaultName }: CreateRoomFormProp
           {dict.summary.heading}
         </h2>
         <div className="mt-4">
-          <RoomSummary dict={dict} locale={locale} settings={settings} />
+          <RoomSummary dict={dict} botsDict={botsDict} locale={locale} settings={settings} />
         </div>
         {elsewhere ? (
           // One room at a time, so offer to go back or leave it.

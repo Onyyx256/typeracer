@@ -248,6 +248,7 @@ export const en: Dictionary = {
     guestBadge: "guest",
     bots: {
       heading: "Bots",
+      none: "None",
       lead: "Computer-controlled opponents, each with its own level.",
       add: "Add a bot",
       remove: "Remove {name}",
@@ -572,7 +573,6 @@ export const en: Dictionary = {
       label: "Catch-up bonuses",
       hint: "Help the last ones, slow down the leader.",
     },
-    botsNote: "you can add bots in the room once it's created",
     summary: {
       heading: "At a glance",
       lettersOnly: "Letters only",

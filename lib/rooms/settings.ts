@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { botsSchema } from "@/lib/bots/levels";
 import { localeSchema, type Locale } from "@/lib/i18n/config";
 
 export const HOST_ROLES = ["participant", "spectator"] as const;
@@ -46,6 +47,8 @@ export const roomSettingsSchema = z.object({
   excludeChars: z.string().max(CHARSET_MAX),
   errorMode: z.enum(ERROR_MODES),
   bonuses: z.boolean(),
+  /** Rooms saved before bots existed have none. They don't take human places. */
+  bots: botsSchema.default([]),
 });
 
 export type RoomSettings = z.infer<typeof roomSettingsSchema>;
@@ -123,5 +126,6 @@ export function defaultRoomSettings(language: Locale): RoomSettings {
     excludeChars: "",
     errorMode: "strict",
     bonuses: true,
+    bots: [],
   };
 }

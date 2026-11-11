@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { botLevelSchema, type BotLevel } from "@/lib/bots/levels";
+import { BOTS_MAX, botsSchema } from "@/lib/bots/levels";
 import type { Locale } from "@/lib/i18n/config";
 import {
   defaultRoomSettings,
@@ -13,19 +13,14 @@ import {
  * and the bots.
  */
 
-/** Enough for a full track without hiding the player's flower. */
-export const PRACTICE_BOTS_MAX = 5;
+export const PRACTICE_BOTS_MAX = BOTS_MAX;
 
-export const practiceBotSchema = z.object({ level: botLevelSchema });
-
-export type PracticeBot = z.infer<typeof practiceBotSchema>;
-
-export const practiceConfigSchema = raceConfigSchema.omit({ bonuses: true });
+export const practiceConfigSchema = raceConfigSchema.omit({ bonuses: true, bots: true });
 
 export type PracticeConfig = z.infer<typeof practiceConfigSchema>;
 
 export const practiceSettingsSchema = practiceConfigSchema.extend({
-  bots: z.array(practiceBotSchema).max(PRACTICE_BOTS_MAX),
+  bots: botsSchema,
 });
 
 export type PracticeSettings = z.infer<typeof practiceSettingsSchema>;
@@ -36,27 +31,5 @@ export function defaultPracticeSettings(language: Locale): PracticeSettings {
 }
 
 export function practiceRaceConfig(config: PracticeConfig): RaceConfig {
-  return normalizeSettings({ ...practiceConfigSchema.parse(config), bonuses: false });
-}
-
-export function addBot(settings: PracticeSettings, level: BotLevel): PracticeSettings {
-  if (settings.bots.length >= PRACTICE_BOTS_MAX) {
-    return settings;
-  }
-  return { ...settings, bots: [...settings.bots, { level }] };
-}
-
-export function removeBot(settings: PracticeSettings, index: number): PracticeSettings {
-  return { ...settings, bots: settings.bots.filter((_, at) => at !== index) };
-}
-
-export function setBotLevel(
-  settings: PracticeSettings,
-  index: number,
-  level: BotLevel,
-): PracticeSettings {
-  return {
-    ...settings,
-    bots: settings.bots.map((bot, at) => (at === index ? { level } : bot)),
-  };
+  return normalizeSettings({ ...practiceConfigSchema.parse(config), bonuses: false, bots: [] });
 }

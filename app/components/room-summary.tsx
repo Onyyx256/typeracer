@@ -1,5 +1,5 @@
 import { LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
-import type { CreateRoomDictionary } from "@/lib/i18n/dictionaries/fr";
+import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { plural } from "@/lib/i18n/format";
 import type { RoomSettings } from "@/lib/rooms/settings";
 
@@ -15,11 +15,12 @@ type Row = [label: string, value: string, chars?: boolean];
 
 type RoomSummaryProps = {
   dict: CreateRoomDictionary;
+  botsDict: RoomDictionary["bots"];
   locale: Locale;
   settings: SummarySettings;
 };
 
-export function RoomSummary({ dict, locale, settings }: RoomSummaryProps) {
+export function RoomSummary({ dict, botsDict, locale, settings }: RoomSummaryProps) {
   const french = settings.language === "fr";
   const random = settings.textType === "random";
   const enabledCharacters = (
@@ -68,6 +69,12 @@ export function RoomSummary({ dict, locale, settings }: RoomSummaryProps) {
         ],
         [dict.errorMode.legend, dict.errorMode[settings.errorMode]],
         [dict.bonuses.label, settings.bonuses ? dict.summary.on : dict.summary.off],
+        [
+          botsDict.heading,
+          settings.bots.length > 0
+            ? settings.bots.map((bot) => botsDict.levels[bot.level]).join(", ")
+            : botsDict.none,
+        ],
       ],
     },
   ];

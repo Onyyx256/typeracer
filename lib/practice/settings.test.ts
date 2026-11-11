@@ -1,13 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { BOT_LEVELS, BOT_PROFILES } from "@/lib/bots/levels";
+import { addBot, removeBot, setBotLevel } from "@/lib/bots/list";
 import {
   PRACTICE_BOTS_MAX,
-  addBot,
   defaultPracticeSettings,
   practiceRaceConfig,
   practiceSettingsSchema,
-  removeBot,
-  setBotLevel,
 } from "./settings";
 
 const base = defaultPracticeSettings("fr");
@@ -33,7 +31,7 @@ describe("practice settings", () => {
     const config = practiceRaceConfig({ ...base, language: "en", accents: true });
     expect(config.bonuses).toBe(false);
     expect(config.accents).toBe(false);
-    expect(config).not.toHaveProperty("bots");
+    expect(config.bots).toEqual([]);
   });
 });
 

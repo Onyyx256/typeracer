@@ -250,6 +250,7 @@ export const fr = {
     guestBadge: "invité",
     bots: {
       heading: "Les bots",
+      none: "Aucun",
       lead: "Des adversaires contrôlés par l'ordinateur, chacun avec son niveau.",
       add: "Ajouter un bot",
       remove: "Retirer {name}",
@@ -574,7 +575,6 @@ export const fr = {
       label: "Bonus de rattrapage",
       hint: "Aident les derniers, freinent le premier.",
     },
-    botsNote: "les bots s'ajoutent depuis la salle, une fois créée",
     summary: {
       heading: "En bref",
       lettersOnly: "Lettres seulement",

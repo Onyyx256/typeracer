@@ -7,6 +7,15 @@ export type BotLevel = (typeof BOT_LEVELS)[number];
 
 export const botLevelSchema = z.enum(BOT_LEVELS);
 
+/** Enough for a full track without hiding the humans' flowers. */
+export const BOTS_MAX = 5;
+
+export const botSchema = z.object({ level: botLevelSchema });
+
+export type Bot = z.infer<typeof botSchema>;
+
+export const botsSchema = z.array(botSchema).max(BOTS_MAX);
+
 /**
  * Speed and error rate from the spec's table. `hesitation` is how often a
  * word starts with a pause, so slower levels stop to think more.

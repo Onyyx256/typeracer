@@ -178,7 +178,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           <aside className="border border-line bg-surface p-6 rounded-leaf">
             <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
             <div className="mt-4">
-              <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
+              <RoomSummary dict={dict.createRoom} botsDict={t.bots} locale={locale} settings={settings} />
             </div>
             {isHost && (
               <EditSettings

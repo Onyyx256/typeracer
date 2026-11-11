@@ -18,13 +18,11 @@ import type {
   ResultsDictionary,
   RoomDictionary,
 } from "@/lib/i18n/dictionaries/fr";
+import { addBot, removeBot, setBotLevel } from "@/lib/bots/list";
 import {
-  addBot,
   defaultPracticeSettings,
   PRACTICE_BOTS_MAX,
   practiceSettingsSchema,
-  removeBot,
-  setBotLevel,
   type PracticeSettings,
 } from "@/lib/practice/settings";
 import { practiceTextAction, type PracticeTextError } from "./actions";
