@@ -44,21 +44,6 @@ export function RaceView({
       <div className="relative">
         <RaceTrack entries={track} youId={userId} looks={looks} dict={dict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.endsAt} dict={dict} />
-        {/* The targeted runner is told what fell on them, over the track like the countdown. */}
-        {racing && (
-          <p
-            role="status"
-            aria-live="polite"
-            className="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-4"
-          >
-            {mine.effect && (
-              <span className="flex items-center gap-2 bg-background/95 px-4 py-2 font-mono text-sm text-accent-text shadow-lg rounded-leaf">
-                <WeatherIcon kind={mine.effect} className="size-5 shrink-0" />
-                {dict.bonusNotices[mine.effect]}
-              </span>
-            )}
-          </p>
-        )}
       </div>
 
       {racing && race.you !== null && (
@@ -82,6 +67,14 @@ export function RaceView({
               locale={locale}
               // Next to the stats, far from "Leave the room", which doesn't ask first.
               action={abandon}
+              notice={
+                mine.effect && (
+                  <>
+                    <WeatherIcon kind={mine.effect} className="size-4 shrink-0" />
+                    {dict.bonusNotices[mine.effect]}
+                  </>
+                )
+              }
             />
           </div>
         </>
