@@ -7,7 +7,7 @@ import { RoomSummary } from "@/app/components/room-summary";
 import { getViewer } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
-import { changeClock } from "@/lib/realtime/notify";
+import { renderTime } from "@/lib/realtime/render-time";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import { MIN_RUNNERS } from "@/lib/race/manager";
@@ -65,7 +65,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   }
 
   // Before reading the room, so a change made while it loads still counts as newer.
-  const renderedAt = changeClock();
+  const renderedAt = await renderTime();
   const room = await getRoom(parsed.data);
   const member = user ? room?.members.find((entry) => entry.userId === user.id) : undefined;
   const t = dict.room;
