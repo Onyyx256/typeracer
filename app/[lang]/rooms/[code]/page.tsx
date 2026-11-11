@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { Suspense } from "react";
 import { LiveRoom } from "@/app/components/live-updates";
+import { Notice } from "@/app/components/notice";
 import { RoomSummary } from "@/app/components/room-summary";
 import { getViewer } from "@/lib/auth/current-user";
-import { localePath, type Locale } from "@/lib/i18n/config";
+import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import { MIN_RUNNERS } from "@/lib/race/manager";
 import { getLatestRaceResults } from "@/lib/race/results";
 import { getLooks } from "@/lib/profile/profile";
+import { requestIp } from "@/lib/request";
 import { roomCodeSchema } from "@/lib/rooms/code";
+import { recordCodeMiss, tooManyCodeMisses } from "@/lib/rooms/code-attempts";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { DeleteRoom } from "./delete-room";
@@ -61,12 +63,24 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
 
   const room = await getRoom(parsed.data);
   const member = user ? room?.members.find((entry) => entry.userId === user.id) : undefined;
+  const t = dict.room;
   // Someone the host removed sees why, whatever the room's visibility.
   if (room && user && !member && (await isBanned(user.id, room.code))) {
-    return <Kicked dict={dict.room} locale={locale} />;
+    return <Notice title={t.kicked.title} lead={t.kicked.lead} back={t.kicked.back} locale={locale} />;
   }
-  // Code-only and private rooms can't be joined yet, so only their members see them.
-  if (!room || (!member && room.visibility !== "public")) {
+  // The URL holds the code, so opening it is a code attempt like the join field (SALLE-10).
+  if (!member && room?.visibility !== "public") {
+    const ip = await requestIp();
+    if (tooManyCodeMisses(ip)) {
+      return <Notice title={t.tooMany.title} lead={t.tooMany.lead} back={t.kicked.back} locale={locale} />;
+    }
+    // Only an invite link opens a private room; its code alone says nothing.
+    if (!room || room.visibility === "private") {
+      recordCodeMiss(ip);
+      notFound();
+    }
+  }
+  if (!room) {
     notFound();
   }
   const current = member || !user ? null : await findCurrentRoom(user.id);
@@ -74,7 +88,6 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   const runners = room.members.filter((entry) => entry.role === "participant");
   const spectators = room.members.filter((entry) => entry.role === "spectator");
   const joinable = JOINABLE_STATES.includes(room.state);
-  const t = dict.room;
   const isHost = user !== null && room.hostId === user.id;
   const inRace = room.state === "countdown" || room.state === "racing";
   const results = room.state === "results" ? await getLatestRaceResults(room.code) : null;
@@ -274,20 +287,5 @@ function MemberList({
         </ul>
       )}
     </section>
-  );
-}
-
-function Kicked({ dict, locale }: { dict: RoomDictionary; locale: Locale }) {
-  return (
-    <div className="mx-auto max-w-lg border border-line bg-surface p-8 rounded-leaf">
-      <h1 className="font-display text-3xl leading-tight font-semibold">{dict.kicked.title}</h1>
-      <p className="mt-3 text-muted">{dict.kicked.lead}</p>
-      <Link
-        href={localePath(locale, "/")}
-        className="mt-6 inline-flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
-      >
-        {dict.kicked.back}
-      </Link>
-    </div>
   );
 }
