@@ -26,6 +26,8 @@
   --petal: #f3d3e2;
   --petal-line: #8b2e74;
   --glare: #fff1a8;
+  /* Dark ink for the blurred letters, since the glare is light in both themes. */
+  --on-glare: #2e1f33;
   /* Chart series, checked for colour-blind separation against the background. */
   --chart-1: #309975;
   --chart-2: #8b2e74;
@@ -182,7 +184,7 @@ span.podium-pop {
 .glare {
   background: var(--glare);
   color: transparent;
-  text-shadow: 0 0 6px color-mix(in srgb, var(--foreground) 40%, transparent);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--on-glare) 40%, transparent);
   box-shadow: 0 0 14px 4px var(--glare);
 }
 
