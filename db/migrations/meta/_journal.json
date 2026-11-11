@@ -78,6 +78,13 @@
       "when": 1794357578703,
       "tag": "0010_add_race_result_guest_id",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794357819612,
+      "tag": "0011_create_accounts",
+      "breakpoints": true
     }
   ]
 }

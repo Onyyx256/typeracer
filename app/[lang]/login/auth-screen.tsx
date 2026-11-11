@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import * as z from "zod";
 import { DiscordIcon, GitHubIcon } from "@/app/components/brand-icons";
 import { GrowingStem } from "@/app/components/growing-stem";
 import { TextField } from "@/app/components/text-field";
 import {
   AUTH_LIMITS,
+  OAUTH_ERRORS,
   PASSWORD_MIN,
   USERNAME_MAX,
   USERNAME_MIN,
@@ -23,8 +25,6 @@ import { formatPercent, interpolate, plural } from "@/lib/i18n/format";
 import { login, signup } from "./actions";
 
 type Mode = "login" | "signup";
-
-type Notice = AuthError | "oauthSoon";
 
 function validate(
   mode: Mode,
@@ -87,7 +87,9 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const [notice, setNotice] = useState<AuthError | null>(null);
+  // The OAuth callback sends failures back as ?error=, shown until the visitor moves on.
+  const [showUrlNotice, setShowUrlNotice] = useState(true);
   const [submitting, startSubmit] = useTransition();
   const router = useRouter();
 
@@ -121,15 +123,13 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
     setMode(next);
     setErrors({});
     setNotice(null);
+    setShowUrlNotice(false);
     setConfirm("");
-  }
-
-  function announcePending() {
-    setNotice("oauthSoon");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setShowUrlNotice(false);
     const found = validate(mode, username, password, confirm);
     setErrors(found);
     if (Object.values(found).some(Boolean)) {
@@ -203,14 +203,14 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
           <div className="mt-5 grid grid-cols-2 gap-3">
             <OAuthButton
               label={`${copy.oauth} Discord`}
-              onClick={announcePending}
+              href={`/api/auth/discord?lang=${locale}`}
             >
               <DiscordIcon className="size-5" />
               Discord
             </OAuthButton>
             <OAuthButton
               label={`${copy.oauth} GitHub`}
-              onClick={announcePending}
+              href={`/api/auth/github?lang=${locale}`}
             >
               <GitHubIcon className="size-5" />
               GitHub
@@ -292,14 +292,14 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
               role="status"
               className="min-h-5 font-mono text-sm text-accent-text"
             >
-              {notice && (
-                <>
-                  &gt;{" "}
-                  {notice === "oauthSoon" ? dict.oauthSoon : errorText(notice)}
-                  <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">
-                    _
-                  </span>
-                </>
+              {notice ? (
+                <NoticeLine text={errorText(notice)} />
+              ) : (
+                showUrlNotice && (
+                  <Suspense fallback={null}>
+                    <UrlNotice errorText={errorText} />
+                  </Suspense>
+                )
               )}
             </p>
           </form>
@@ -316,6 +316,23 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
         </div>
       </main>
     </div>
+  );
+}
+
+const urlErrorSchema = z.enum(OAUTH_ERRORS);
+
+/** In its own Suspense boundary so reading the URL doesn't stop the page from prerendering. */
+function UrlNotice({ errorText }: { errorText: (code: AuthError) => string | undefined }) {
+  const parsed = urlErrorSchema.safeParse(useSearchParams().get("error"));
+  return parsed.success ? <NoticeLine text={errorText(parsed.data)} /> : null;
+}
+
+function NoticeLine({ text }: { text: string | undefined }) {
+  return (
+    <>
+      &gt; {text}
+      <span className="animate-[caret-blink_1.1s_steps(1)_infinite]">_</span>
+    </>
   );
 }
 
@@ -342,23 +359,23 @@ function ModeButton({
   );
 }
 
+// A plain link, not next/link: the route answers with a redirect to another site.
 function OAuthButton({
   label,
-  onClick,
+  href,
   children,
 }: {
   label: string;
-  onClick: () => void;
+  href: string;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <a
+      href={href}
       aria-label={label}
       className={`flex h-11 cursor-pointer items-center justify-center gap-3 border border-line bg-background font-medium transition-colors hover:border-primary-text rounded-leaf`}
     >
       {children}
-    </button>
+    </a>
   );
 }

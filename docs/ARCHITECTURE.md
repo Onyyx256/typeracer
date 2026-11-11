@@ -1,6 +1,6 @@
 # Architecture
 
-Les tables `users`, `texts`, `rooms`, `room_members`, `room_bans`, `races` et `race_results` existent. Les autres (`accounts`, `invite_links`) sont ce que je prévois faire.
+Les tables `users`, `accounts`, `texts`, `rooms`, `room_members`, `room_bans`, `races` et `race_results` existent. La table `invite_links` est ce que je prévois faire.
 
 ## Modèle de données
 
@@ -36,8 +36,8 @@ erDiagram
     accounts {
         uuid id PK
         uuid user_id FK
-        text provider
-        text provider_account_id
+        text provider "github ou discord"
+        text provider_account_id "unique par fournisseur"
     }
     rooms {
         uuid id PK

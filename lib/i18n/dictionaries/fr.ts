@@ -631,7 +631,6 @@ export const fr = {
     hide: "masquer",
     justVisiting: "Juste de passage ?",
     playAsGuest: "Jouer en tant qu'invité",
-    oauthSoon: "authentification bientôt disponible",
     steps: {
       username: "nom d'utilisateur : {remaining}",
       password: "mot de passe : {remaining}",
@@ -653,6 +652,9 @@ export const fr = {
       badCredentials: "nom d'utilisateur ou mot de passe incorrect",
       signupUnavailable: "inscription impossible pour le moment, réessaie plus tard",
       loginUnavailable: "connexion impossible pour le moment, réessaie plus tard",
+      oauthCancelled: "connexion annulée",
+      oauthFailed: "la connexion a échoué, réessaie",
+      oauthUnavailable: "cette connexion n'est pas disponible pour le moment",
     },
   },
 };
