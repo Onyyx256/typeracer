@@ -7,6 +7,7 @@ import { RoomSummary } from "@/app/components/room-summary";
 import { getViewer } from "@/lib/auth/current-user";
 import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { changeClock } from "@/lib/realtime/notify";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import { MIN_RUNNERS } from "@/lib/race/manager";
@@ -63,6 +64,8 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
     redirect(localePath(locale, `/rooms/${parsed.data}`));
   }
 
+  // Before reading the room, so a change made while it loads still counts as newer.
+  const renderedAt = changeClock();
   const room = await getRoom(parsed.data);
   const member = user ? room?.members.find((entry) => entry.userId === user.id) : undefined;
   const t = dict.room;
@@ -107,7 +110,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
     <div
       className={`grid gap-10 lg:items-start ${inRace ? "" : "lg:grid-cols-[minmax(0,1fr)_20rem]"}`}
     >
-      <LiveRoom code={room.code} />
+      <LiveRoom code={room.code} renderedAt={renderedAt} />
       {/* Tighter during the race, so the whole race fits on screen. */}
       <div className={`grid ${inRace ? "gap-5" : "gap-8"}`}>
         <header className={`grid ${inRace ? "gap-2" : "gap-4"}`}>

@@ -17,7 +17,9 @@ import {
   roomChannel,
   userChannel,
   watchRoomSchema,
+  type WatchReply,
 } from "./events";
+import { lastChange } from "./notify";
 import { scheduleGone, socketClosed, socketOpened } from "./presence";
 import { realtimeState } from "./state";
 
@@ -42,6 +44,16 @@ function leaveRoomChannels(socket: Socket): void {
   }
 }
 
+/**
+ * Tells a page, once it follows a channel, when that channel last changed:
+ * a change between the page's render and now never reached it otherwise.
+ */
+function replyWatched(ack: unknown, channel: string): void {
+  if (typeof ack === "function") {
+    ack({ changedAt: lastChange(channel) } satisfies WatchReply);
+  }
+}
+
 function onConnection(socket: Socket): void {
   const { userId } = socket.data as SocketData;
   if (userId) {
@@ -51,7 +63,7 @@ function onConnection(socket: Socket): void {
     socket.on("disconnect", () => socketClosed(userId, memberGone));
   }
 
-  socket.on(EVENTS.watchRoom, async (payload: unknown) => {
+  socket.on(EVENTS.watchRoom, async (payload: unknown, ack: unknown) => {
     const parsed = watchRoomSchema.safeParse(payload);
     if (!parsed.success) {
       return;
@@ -60,14 +72,19 @@ function onConnection(socket: Socket): void {
       if (await canWatchRoom(userId, parsed.data.code)) {
         // One room page at a time per tab.
         leaveRoomChannels(socket);
-        await socket.join(roomChannel(parsed.data.code));
+        const channel = roomChannel(parsed.data.code);
+        await socket.join(channel);
+        replyWatched(ack, channel);
       }
     } catch (error) {
       logFailure("room:watch", error);
     }
   });
   socket.on(EVENTS.unwatchRoom, () => leaveRoomChannels(socket));
-  socket.on(EVENTS.watchLobby, () => void socket.join(LOBBY_CHANNEL));
+  socket.on(EVENTS.watchLobby, async (_payload: unknown, ack: unknown) => {
+    await socket.join(LOBBY_CHANNEL);
+    replyWatched(ack, LOBBY_CHANNEL);
+  });
   socket.on(EVENTS.unwatchLobby, () => void socket.leave(LOBBY_CHANNEL));
 
   socket.on(EVENTS.raceSync, async (payload: unknown) => {

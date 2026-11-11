@@ -4,6 +4,7 @@ import { LiveLobby } from "@/app/components/live-updates";
 import { getViewer } from "@/lib/auth/current-user";
 import { LOCALES, LOCALE_NAMES, localePath, type Locale } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { changeClock } from "@/lib/realtime/notify";
 import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 import { filterQuery, parseRoomFilters, type RoomFilters } from "@/lib/rooms/filters";
@@ -39,6 +40,8 @@ async function RoomList({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const filters = parseRoomFilters(await searchParams);
+  // Before reading the rooms, so a change made while they load still counts as newer.
+  const renderedAt = changeClock();
   const filtered = filters.lang !== undefined || filters.complexity !== undefined;
   const [dict, locale, viewer, rooms] = await Promise.all([
     getDictionary(),
@@ -52,7 +55,7 @@ async function RoomList({
 
   return (
     <>
-      <LiveLobby />
+      <LiveLobby renderedAt={renderedAt} />
       {current && (
         <p className="mt-6 flex flex-wrap items-center gap-3 border border-primary-text bg-surface px-4 py-3 rounded-leaf">
           {interpolate(t.current, { code: current.code })}

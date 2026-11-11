@@ -10,6 +10,8 @@ type RealtimeState = {
   /** Open sockets per signed-in user (several tabs = several sockets). */
   sockets: Map<string, number>;
   leaveTimers: Map<string, ReturnType<typeof setTimeout>>;
+  /** When each channel last changed, for pages that subscribe after rendering. */
+  changedAt: Map<string, number>;
   handlersAttached: boolean;
 };
 
@@ -28,6 +30,7 @@ export function realtimeState(): RealtimeState {
   globals[STATE_KEY] ??= {
     sockets: new Map(),
     leaveTimers: new Map(),
+    changedAt: new Map(),
     handlersAttached: false,
   } satisfies RealtimeState;
   return globals[STATE_KEY] as RealtimeState;

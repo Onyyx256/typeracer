@@ -12,21 +12,23 @@ export function Presence({ userId }: { userId: string | null }) {
   return null;
 }
 
-export function LiveRoom({ code }: { code: string }) {
+export function LiveRoom({ code, renderedAt }: { code: string; renderedAt: number }) {
   useLiveRefresh({
     watch: EVENTS.watchRoom,
     unwatch: EVENTS.unwatchRoom,
     changed: EVENTS.roomChanged,
     payload: { code },
+    renderedAt,
   });
   return null;
 }
 
-export function LiveLobby() {
+export function LiveLobby({ renderedAt }: { renderedAt: number }) {
   useLiveRefresh({
     watch: EVENTS.watchLobby,
     unwatch: EVENTS.unwatchLobby,
     changed: EVENTS.lobbyChanged,
+    renderedAt,
   });
   return null;
 }
