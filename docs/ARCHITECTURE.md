@@ -1,6 +1,6 @@
 # Architecture
 
-Les tables `users`, `accounts`, `texts`, `rooms`, `room_members`, `room_bans`, `races` et `race_results` existent. La table `invite_links` est ce que je prévois faire.
+Les tables `users`, `accounts`, `texts`, `rooms`, `room_members`, `room_bans`, `room_invites`, `races` et `race_results` existent.
 
 ## Modèle de données
 
@@ -12,7 +12,8 @@ erDiagram
     users |o--o{ room_members : "est"
     rooms ||--o{ room_bans : "exclut"
     users ||--o{ room_bans : "est exclu de"
-    rooms ||--o{ invite_links : "a"
+    rooms ||--o{ room_invites : "invite avec"
+    users |o--o{ room_invites : "a utilisé"
     rooms ||--o{ races : "enchaîne"
     texts |o--o{ races : "utilisé dans"
     races ||--o{ race_results : "donne"
@@ -63,13 +64,14 @@ erDiagram
         uuid user_id FK
         timestamp created_at
     }
-    invite_links {
+    room_invites {
         uuid id PK
         uuid room_id FK
-        text token
-        text used_by_ip
-        uuid used_by_member FK
-        boolean revoked
+        text token UK "256 bits aléatoires"
+        uuid used_by FK "première personne qui l'utilise"
+        text used_ip "adresse de cette première utilisation"
+        timestamp used_at
+        timestamp revoked_at "à l'exclusion"
     }
     texts {
         uuid id PK
@@ -119,6 +121,7 @@ Quelques précisions :
 - La visibilité et la capacité ont leur propre colonne parce que la liste des salles filtre dessus. Le reste de la configuration (texte, temps, mode d'erreur, bonus) est dans la colonne `jsonb` `config`, parce que ce sont beaucoup d'options qui sont toujours lues ensemble. Elle est relue avec le schéma Zod `raceConfigSchema`.
 - Quand l'hôte quitte, le membre présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il ne reste personne, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
 - Quand l'hôte exclut quelqu'un (SALLE-07), son départ est enregistré dans `room_bans`, avec un index unique sur (`room_id`, `user_id`). Rejoindre la salle vérifie cette table, donc la personne ne peut plus revenir. Un invité qui efface ses cookies devient un nouvel utilisateur : la base ne peut pas le reconnaître.
+- Un lien d'invitation (SALLE-04) est une ligne de `room_invites`. Son jeton fait 32 octets aléatoires (256 bits) et a un index unique. La première utilisation enregistre `used_by` et `used_ip` ; ensuite, le lien ne marche que pour cette personne, depuis cette adresse. Exclure quelqu'un remplit `revoked_at` sur ses liens. Quand la salle ferme, tous ses liens deviennent invalides, parce que l'état de la salle est vérifié à chaque utilisation.
 - `texts` contient les passages des textes cohérents. Leur provenance et le calcul de la difficulté sont expliqués dans [TEXTES.md](TEXTES.md).
 - `races` garde le texte exact et la configuration de la course, pour réafficher les résultats plus tard (HIST-02).
 - `race_results` a une ligne par participant, invités compris, pour que le tableau complet puisse être réaffiché. Mais la ligne d'un invité n'a pas de `user_id` : elle ne devient jamais son historique (AUTH-03, RES-05). `wpm_series` garde le MPM échantillonné chaque seconde et `missed_keys` les touches ratées, pour les graphiques (RES-03).
