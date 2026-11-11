@@ -92,6 +92,34 @@ export const userAvatars = pgTable(
 
 export type UserAvatar = typeof userAvatars.$inferSelect;
 
+export const OAUTH_PROVIDERS = ["github", "discord"] as const;
+export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
+
+/** Links a user to a GitHub or Discord identity. */
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").$type<OAuthProvider>().notNull(),
+    /** The provider's own user id, which never changes even when the login does. */
+    providerAccountId: text("provider_account_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("accounts_provider_account_idx").on(table.provider, table.providerAccountId),
+    // One identity per provider per user.
+    uniqueIndex("accounts_user_provider_idx").on(table.userId, table.provider),
+    check("accounts_provider", sql`${table.provider} in ('github', 'discord')`),
+  ],
+);
+
+export type Account = typeof accounts.$inferSelect;
+
 export const texts = pgTable(
   "texts",
   {
