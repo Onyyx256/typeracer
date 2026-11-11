@@ -82,7 +82,9 @@ export function RaceTrack({
                   name: entry.name,
                   percent: formatPercent(locale, entry.progress),
                   wpm: entry.wpm,
-                }) + (entry.effect ? ` · ${dict.bonuses[entry.effect]}` : "")
+                }) +
+                (entry.botLevel ? ` · ${roomDict.bots.badge} ${roomDict.bots.levels[entry.botLevel]}` : "") +
+                (entry.effect ? ` · ${dict.bonuses[entry.effect]}` : "")
               }
               className={`relative flex min-w-0 flex-col items-center gap-1.5 px-1 pt-2 pb-2 rounded-leaf ${
                 you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
@@ -110,6 +112,15 @@ export function RaceTrack({
                 {entry.isGuest && (
                   <span className="shrink-0 font-mono text-[0.65rem] tracking-wide text-on-panel-muted uppercase" aria-hidden="true">
                     {roomDict.guestBadge}
+                  </span>
+                )}
+                {entry.botLevel && (
+                  <span
+                    className="shrink-0 font-mono text-[0.65rem] tracking-wide text-on-panel-muted uppercase"
+                    title={roomDict.bots.levels[entry.botLevel]}
+                    aria-hidden="true"
+                  >
+                    {roomDict.bots.badge}
                   </span>
                 )}
               </span>

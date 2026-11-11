@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { raceResults, races, rooms, texts } from "@/db/schema";
+import type { BotLevel } from "@/lib/bots/levels";
 import { raceConfigSchema, type RaceConfig } from "@/lib/rooms/settings";
 import type { BonusKind } from "./bonuses";
 import type { ParticipantResult } from "./engine";
@@ -65,6 +66,7 @@ export type ResultRow = {
   guestId?: string | null;
   name: string;
   isGuest: boolean;
+  botLevel?: BotLevel | null;
   rank: number;
   status: ResultStatus;
   wpm: number;

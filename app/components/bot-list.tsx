@@ -3,36 +3,38 @@
 import { useId } from "react";
 import { Section } from "@/app/components/room-settings-fields";
 import { BOT_LEVELS, BOT_PROFILES, type BotLevel } from "@/lib/bots/levels";
-import type { PracticeDictionary } from "@/lib/i18n/dictionaries/fr";
+import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
-import { PRACTICE_BOTS_MAX, type PracticeBot } from "@/lib/practice/settings";
 
 const DEFAULT_LEVEL: BotLevel = "intermediate";
 
 const button =
   "flex h-10 cursor-pointer items-center gap-2 border border-line px-4 text-sm font-medium transition-colors hover:border-primary-text disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-line rounded-leaf";
 
-/** Bots are only configured for now; the note says so until the bot engine exists. */
 export function BotList({
   dict,
   bots,
+  max,
+  empty,
   onAdd,
   onRemove,
   onLevel,
 }: {
-  dict: PracticeDictionary["bots"];
-  bots: readonly PracticeBot[];
+  dict: RoomDictionary["bots"];
+  bots: readonly { level: BotLevel }[];
+  max: number;
+  empty: string;
   onAdd: (level: BotLevel) => void;
   onRemove: (index: number) => void;
   onLevel: (index: number, level: BotLevel) => void;
 }) {
-  const full = bots.length >= PRACTICE_BOTS_MAX;
+  const full = bots.length >= max;
 
   return (
     <Section title={dict.heading}>
       <p className="-mt-3 text-sm text-muted">{dict.lead}</p>
       {bots.length === 0 ? (
-        <p className="font-mono text-sm text-muted">&gt; {dict.empty}</p>
+        <p className="font-mono text-sm text-muted">&gt; {empty}</p>
       ) : (
         <ul className="grid gap-2">
           {bots.map((bot, index) => (
@@ -56,11 +58,10 @@ export function BotList({
         </button>
         {full && (
           <span className="font-mono text-sm text-muted">
-            {interpolate(dict.full, { max: PRACTICE_BOTS_MAX })}
+            {interpolate(dict.full, { max })}
           </span>
         )}
       </div>
-      <p className="font-mono text-sm text-accent-text">&gt; {dict.soon}</p>
     </Section>
   );
 }
@@ -72,7 +73,7 @@ function BotRow({
   onLevel,
   onRemove,
 }: {
-  dict: PracticeDictionary["bots"];
+  dict: RoomDictionary["bots"];
   name: string;
   level: BotLevel;
   onLevel: (level: BotLevel) => void;

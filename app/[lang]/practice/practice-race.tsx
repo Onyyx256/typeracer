@@ -22,7 +22,6 @@ const TICK_MS = 200;
 /** Runs in this browser with the same engine as a room. Nothing is saved. */
 export function PracticeRace({
   race,
-  hasBots,
   onEnd,
   dict,
   raceDict,
@@ -30,7 +29,6 @@ export function PracticeRace({
   locale,
 }: {
   race: Race;
-  hasBots: boolean;
   onEnd: (results: ParticipantResult[]) => void;
   dict: PracticeDictionary;
   raceDict: RaceDictionary;
@@ -97,7 +95,6 @@ export function PracticeRace({
         <RaceTrack entries={track} youId={PRACTICE_PLAYER} dict={raceDict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.deadline} dict={raceDict} />
       </div>
-      {hasBots && <p className="font-mono text-sm text-muted">&gt; {dict.bots.soon}</p>}
 
       {/* No race on a phone, only the track. */}
       <div className="flex flex-wrap items-center justify-between gap-4 md:hidden">

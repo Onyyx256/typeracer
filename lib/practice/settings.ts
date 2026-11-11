@@ -9,8 +9,8 @@ import {
 } from "@/lib/rooms/settings";
 
 /**
- * No catch-up bonuses in practice: they need someone else ahead or behind,
- * and bots don't race yet.
+ * No catch-up bonuses in practice: it stays a plain run against the clock
+ * and the bots.
  */
 
 /** Enough for a full track without hiding the player's flower. */
