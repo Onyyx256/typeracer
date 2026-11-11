@@ -1,6 +1,7 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 import { eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
+import type { BotLevel } from "@/lib/bots/levels";
 import { races, rooms } from "@/db/schema";
 import { createRoom, joinRoom, leaveRoom } from "@/lib/rooms/rooms";
 import { defaultRoomSettings, type RoomState } from "@/lib/rooms/settings";
@@ -28,9 +29,19 @@ afterAll(async () => {
   await deleteTestUsers();
 });
 
-async function roomWithRunners(runners: number, hostRole: "participant" | "spectator" = "participant") {
+async function roomWithRunners(
+  runners: number,
+  hostRole: "participant" | "spectator" = "participant",
+  bots: BotLevel[] = [],
+) {
   const host = await createTestAccount();
-  const settings = { ...defaultRoomSettings("en"), textType: "random" as const, length: 10, hostRole };
+  const settings = {
+    ...defaultRoomSettings("en"),
+    textType: "random" as const,
+    length: 10,
+    hostRole,
+    bots: bots.map((level) => ({ level })),
+  };
   const created = await createRoom(host.id, settings, false, uniqueName("h"));
   if (!created.ok) {
     throw new Error(created.error);
@@ -77,6 +88,27 @@ describe("startRace", () => {
     const watching = await roomWithRunners(1, "spectator");
     expect(await startRace(watching.hostId)).toEqual({ ok: false, error: "notEnoughRunners" });
     expect(await stateOf(watching.code)).toBe("waiting");
+  });
+
+  test("bots count as runners, but at least one human must race (COURSE-02)", async () => {
+    const onlyBots = await roomWithRunners(0, "spectator", ["expert", "noob"]);
+    expect(await startRace(onlyBots.hostId)).toEqual({ ok: false, error: "noHuman" });
+    expect(await stateOf(onlyBots.code)).toBe("waiting");
+
+    const withBot = await roomWithRunners(1, "participant", ["impossible"]);
+    expect(await startRace(withBot.hostId)).toEqual({ ok: true });
+    const track = raceStateFor(withBot.code, withBot.hostId)?.track ?? [];
+    expect(track.map((entry) => entry.botLevel)).toEqual([null, "impossible"]);
+  });
+
+  test("bot results are saved with their level and no account (BOT-04)", async () => {
+    const { hostId, code } = await roomWithRunners(1, "participant", ["expert"]);
+    expect(await startRace(hostId)).toEqual({ ok: true });
+    await closeRace(code);
+    const view = await getLatestRaceResults(code);
+    const bot = view?.results.find((row) => row.botLevel !== null);
+    expect(bot).toMatchObject({ name: "Bot 1", botLevel: "expert", userId: null, guestId: null, isGuest: false });
+    expect(view?.results.find((row) => row.botLevel === null)?.userId).toBe(hostId);
   });
 
   test("starts the countdown once, and reveals the text only then (COURSE-03)", async () => {
