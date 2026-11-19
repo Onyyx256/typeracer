@@ -6,7 +6,7 @@ export type PlayerLook = {
   cosmetics: Cosmetics;
 };
 
-/** Guests and bots get the default look. */
+/** Guests get the default look; bots get their level's colours (lib/bots/looks.ts). */
 export type PlayerLooks = Record<string, PlayerLook>;
 
 /** The version in the query changes with each new photo, so caches never serve an old one. */

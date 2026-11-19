@@ -5,6 +5,7 @@ import { Avatar } from "@/app/components/avatar";
 import { GrowingStem } from "@/app/components/growing-stem";
 import { WeatherIcon } from "@/app/components/weather-icon";
 import type { TrackEntry } from "@/lib/race/engine";
+import { BOT_COSMETICS } from "@/lib/bots/looks";
 import { cosmeticClasses } from "@/lib/profile/cosmetics";
 import type { PlayerLooks } from "@/lib/profile/look";
 import type { Locale } from "@/lib/i18n/config";
@@ -74,6 +75,7 @@ export function RaceTrack({
           const you = entry.userId === youId;
           const progress = shown[entry.userId] ?? 0;
           const look = looks[entry.userId];
+          const cosmetics = entry.botLevel ? BOT_COSMETICS[entry.botLevel] : look?.cosmetics;
           return (
             <li
               key={entry.userId}
@@ -89,7 +91,7 @@ export function RaceTrack({
               className={`relative flex min-w-0 flex-col items-center gap-1.5 px-1 pt-2 pb-2 rounded-leaf ${
                 you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
               } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""} ${
-                look ? cosmeticClasses(look.cosmetics) : ""
+                cosmetics ? cosmeticClasses(cosmetics) : ""
               }`}
             >
               {entry.effect && (
