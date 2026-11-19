@@ -78,7 +78,7 @@ En anglais, l'option accents ne s'applique pas : les accents sont toujours enlev
 
 ## Caractères à inclure ou exclure (CONF-07)
 
-Ces filtres s'appliquent **seulement au texte aléatoire**. En mode cohérent, ils sont désactivés dans le formulaire et vidés par le serveur, parce qu'on ne peut pas enlever une lettre d'un vrai texte sans le rendre illisible.
+Ces filtres s'appliquent **seulement au texte aléatoire**. En mode cohérent, le formulaire les masque et affiche une note à la place, et le serveur les vide, parce qu'on ne peut pas enlever une lettre d'un vrai texte sans le rendre illisible.
 
 - **Avec ces lettres** : chaque mot contient au moins une de ces lettres. Ça permet de pratiquer des lettres en particulier. Seules les lettres comptent ici.
 - **Sans ces caractères** : ces caractères n'apparaissent jamais, que ce soient des lettres, de la ponctuation ou des chiffres. Un caractère à la fois inclus et exclu est exclu.
