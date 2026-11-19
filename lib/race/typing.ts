@@ -10,13 +10,6 @@ export const BACKSPACE = "\b";
 
 export type ErrorMode = RaceConfig["errorMode"];
 
-/**
- * Strict mode: how many wrong characters can pile up after the last
- * correct one before keys stop being accepted. Past that, the player has
- * clearly lost their place and must delete first.
- */
-export const MAX_WRONG_TAIL = 8;
-
 export type TypingState = {
   /** What the player has typed, compared character by character with the text. */
   input: string;
@@ -110,7 +103,7 @@ export function applyKey(
   if (input.length >= text.length) {
     return state;
   }
-  if (mode === "strict" && input.length - correctPrefixLength(text, input) >= MAX_WRONG_TAIL) {
+  if (mode === "strict" && correctPrefixLength(text, input) < input.length) {
     return state;
   }
 

@@ -6,7 +6,6 @@ import {
   correctChars,
   initialTyping,
   isComplete,
-  MAX_WRONG_TAIL,
   typingProgress,
   type ErrorMode,
 } from "./typing";
@@ -51,14 +50,15 @@ describe("strict mode (mandatory correction)", () => {
   });
 
   test("backspace can go back over a wrong space", () => {
-    const state = type("strict", "lx <<e");
+    const state = type("strict", "l <e");
     expect(state.input).toBe("le");
   });
 
-  test("keys stop being accepted after too many wrong ones in a row", () => {
-    const state = type("strict", "l" + "z".repeat(MAX_WRONG_TAIL + 3));
-    expect(state.input).toBe("l" + "z".repeat(MAX_WRONG_TAIL));
-    expect(state.keystrokes).toBe(1 + MAX_WRONG_TAIL);
+  test("no key is accepted after a wrong one until it is deleted", () => {
+    const state = type("strict", "lzzz");
+    expect(state.input).toBe("lz");
+    expect(state.keystrokes).toBe(2);
+    expect(type("strict", "lzzz<e").input).toBe("le");
   });
 
   test("the race is complete only once the whole text is correct", () => {
