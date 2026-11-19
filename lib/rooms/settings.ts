@@ -93,7 +93,7 @@ type TextFilters = Pick<
 /**
  * Drops what the chosen options make meaningless, so the stored config says
  * what the race really uses: accents only exist in French, and the
- * include/exclude lists only apply to random text (CONF-07).
+ * include/exclude lists only apply to random text.
  */
 export function normalizeSettings(settings: RoomSettings): RoomSettings;
 export function normalizeSettings(settings: EditableSettings): EditableSettings;
