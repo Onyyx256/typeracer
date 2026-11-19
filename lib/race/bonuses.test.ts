@@ -55,6 +55,13 @@ describe("trailingRunners", () => {
     const standings = [standing("a", 0.5), standing("b", 0.4), standing("c", 0.4)];
     expect(ids(trailingRunners(standings))).toEqual(["b", "c"]);
   });
+
+  test("never includes anyone tied for first", () => {
+    expect(trailingRunners([standing("a", 0.3), standing("b", 0.3)])).toEqual([]);
+    const standings = [standing("a", 0.5), standing("b", 0.5), standing("c", 0.4)];
+    expect(ids(trailingRunners(standings))).toEqual(["c"]);
+    expect(ids(leadingRunners(standings))).toEqual(["a", "b"]);
+  });
 });
 
 describe("leadingRunners", () => {

@@ -68,11 +68,10 @@ export function shareOfWords(share: number, baseWords: number): number {
   return Math.max(1, Math.round(share * baseWords));
 }
 
-/** The leader never trails, so a lone runner gets nothing. */
+/** Everyone tied for first leads and never trails, so a lone runner gets nothing. */
 export function trailingRunners(standings: readonly Standing[]): Standing[] {
   const leader = Math.max(0, ...standings.map((standing) => standing.progress));
-  const leaderId = standings.find((standing) => standing.progress === leader)?.userId;
-  const racing = standings.filter((standing) => standing.racing && standing.userId !== leaderId);
+  const racing = standings.filter((standing) => standing.racing && standing.progress < leader);
   if (racing.length === 0) {
     return [];
   }
