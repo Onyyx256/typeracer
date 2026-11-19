@@ -97,3 +97,39 @@ test("someone in a room can't practice", async ({ browser }) => {
 
   await context.close();
 });
+
+test("a signed-in player's flower colours show in practice", async ({ page }) => {
+  const username = e2eName();
+  const password = "e2e-password-1234";
+  await page.goto("/en/login");
+  await page.getByRole("button", { name: "Sign up", exact: true }).click();
+  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByLabel("Confirm").fill(password);
+  await page.getByRole("button", { name: "Create my account" }).click();
+  await expect(page).toHaveURL(/\/en$/);
+
+  await page.goto("/en/account");
+  await page.getByRole("radio", { name: /^Fern/ }).check({ force: true });
+  await page.getByRole("radio", { name: /^Snow/ }).check({ force: true });
+  await page.getByRole("button", { name: "Save" }).last().click();
+  await expect(page.getByText("> colours saved")).toBeVisible();
+
+  await page.goto("/en/practice");
+  await page.getByRole("button", { name: "Add a bot" }).click();
+  await page.getByLabel("Level").selectOption("impossible");
+  await page.getByRole("radio", { name: /^Random/ }).check({ force: true });
+  await page.getByLabel("Length").fill("10");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+
+  // The player's chosen colours, and the bot's level colours, on the track...
+  await expect(page.getByRole("listitem", { name: new RegExp(`^${username}:`) })).toHaveClass(/stem-fern petal-snow/);
+  await expect(page.getByRole("listitem", { name: /^Bot 1:/ })).toHaveClass(/stem-ink petal-midnight/);
+
+  // ...and on the podium.
+  await expect(page.getByText("The race starts in")).toBeHidden({ timeout: 6_000 });
+  await page.getByRole("button", { name: "Give up" }).click();
+  await page.getByRole("dialog", { name: "Give up this practice?" }).getByRole("button", { name: "Give up" }).click();
+  await expect(page.getByRole("heading", { name: "Results" })).toBeAttached();
+  await expect(page.locator(".stem-fern.petal-snow")).toHaveCount(1);
+});

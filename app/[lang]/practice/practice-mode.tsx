@@ -10,6 +10,7 @@ import {
 import { BotList } from "@/app/components/bot-list";
 import { Race, type ParticipantResult, type RaceParticipant } from "@/lib/race/engine";
 import type { Locale } from "@/lib/i18n/config";
+import type { PlayerLook, PlayerLooks } from "@/lib/profile/look";
 import { interpolate } from "@/lib/i18n/format";
 import type {
   CreateRoomDictionary,
@@ -46,6 +47,7 @@ const secondary =
 export function PracticeMode({
   playerName,
   isGuest,
+  look,
   dict,
   settingsDict,
   raceDict,
@@ -55,6 +57,8 @@ export function PracticeMode({
 }: {
   playerName: string;
   isGuest: boolean;
+  /** Null for a guest. */
+  look: PlayerLook | null;
   dict: PracticeDictionary;
   settingsDict: CreateRoomDictionary;
   raceDict: RaceDictionary;
@@ -68,6 +72,7 @@ export function PracticeMode({
   // Set when the server refuses because a room was joined meanwhile (another tab).
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const looks: PlayerLooks = look ? { [PRACTICE_PLAYER]: look } : {};
 
   function update(changes: Partial<PracticeSettings>) {
     setSettings((current) => ({ ...current, ...changes }));
@@ -131,6 +136,7 @@ export function PracticeMode({
         <PracticeRace
           key={phase.id}
           race={phase.race}
+          looks={looks}
           onEnd={onEnd}
           dict={dict}
           raceDict={raceDict}
@@ -147,6 +153,7 @@ export function PracticeMode({
         <RaceResults
           view={{ results: phase.results, source: phase.source }}
           userId={PRACTICE_PLAYER}
+          looks={looks}
           dict={resultsDict}
           roomDict={roomDict}
           locale={locale}

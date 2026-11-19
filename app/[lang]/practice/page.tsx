@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getViewer } from "@/lib/auth/current-user";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { getLooks } from "@/lib/profile/profile";
 import { findCurrentRoom } from "@/lib/rooms/rooms";
 import { InRoomNotice } from "./in-room-notice";
 import { PracticeMode } from "./practice-mode";
@@ -31,12 +32,14 @@ async function Practice() {
   if (current) {
     return <InRoomNotice code={current.code} dict={dict.practice} locale={locale} />;
   }
+  const look = viewer ? ((await getLooks([viewer.id]))[viewer.id] ?? null) : null;
 
   // Only the strings the page uses are sent to the browser.
   return (
     <PracticeMode
       playerName={viewer?.displayName ?? dict.practice.you}
       isGuest={viewer?.isGuest ?? true}
+      look={look}
       dict={dict.practice}
       settingsDict={dict.createRoom}
       raceDict={dict.race}
