@@ -207,21 +207,24 @@ function RaceCharts({
             <h3 id="wpm-chart-heading" className="font-display text-2xl font-semibold">
               {t.wpmHeading}
             </h3>
-            <p className="text-sm text-muted">{t.wpmLead}</p>
+            <p className="text-sm text-muted">{own ? t.wpmLeadMistakes : t.wpmLead}</p>
           </div>
           <RaceWpmChart
             runners={view.results.map((row) => ({
               id: id(row),
               name: row.name,
               you: you(row),
-              series: row.wpmSeries,
+              // Like missed keys, mistakes are private: only the player's own reach the page.
+              series: you(row) ? row.wpmSeries : row.wpmSeries.map(({ t, wpm }) => ({ t, wpm })),
             }))}
             labels={{
               axis: t.axis,
               time: t.time,
               others: t.others,
               you: roomDict.you,
-              summary: t.wpmSummary,
+              summary: own ? t.wpmSummaryMistakes : t.wpmSummary,
+              mistakesLegend: t.mistakesLegend,
+              mistakes: t.mistakes,
             }}
             locale={locale}
           />

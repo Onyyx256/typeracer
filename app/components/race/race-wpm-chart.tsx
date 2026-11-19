@@ -2,6 +2,9 @@
 
 import { useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useChartWidth } from "@/app/components/charts/use-chart-width";
+import type { Locale } from "@/lib/i18n/config";
+import { plural, type PluralForms } from "@/lib/i18n/format";
+import { mistakesOf } from "@/lib/race/mistakes";
 import type { WpmPoint } from "@/lib/race/types";
 import { niceScale } from "@/lib/stats/series";
 
@@ -19,6 +22,8 @@ export type RaceWpmLabels = {
   others: string;
   you: string;
   summary: string;
+  mistakesLegend: string;
+  mistakes: PluralForms;
 };
 
 const COLORS = 8;
@@ -31,6 +36,11 @@ function colorOf(index: number): string {
   return index < COLORS ? `var(--series-${index + 1})` : "var(--muted)";
 }
 
+/** Wider for more mistakes in the same second, capped so it stays a mark. */
+function crossSize(count: number): number {
+  return 3 + Math.min(count, 4);
+}
+
 export function RaceWpmChart({
   runners,
   labels,
@@ -38,7 +48,7 @@ export function RaceWpmChart({
 }: {
   runners: RaceWpmRunner[];
   labels: RaceWpmLabels;
-  locale: string;
+  locale: Locale;
 }) {
   const { ref, width, measured } = useChartWidth();
   const [active, setActive] = useState<number | null>(null);
@@ -61,6 +71,8 @@ export function RaceWpmChart({
   const y = (wpm: number) => MARGIN.top + plotHeight - ((wpm - scale.min) / (scale.max - scale.min)) * plotHeight;
   const format = (value: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
   const seconds = (ms: number) => labels.time.replace("{seconds}", format(ms / 1000));
+  const player = runners.find((runner) => runner.you);
+  const mistakes = player ? mistakesOf(player.series) : [];
 
   function nearest(event: PointerEvent<SVGSVGElement>): number {
     const box = event.currentTarget.getBoundingClientRect();
@@ -100,10 +112,16 @@ export function RaceWpmChart({
           }))
           .flatMap(({ runner, index, point }) => (point ? [{ runner, index, wpm: point.wpm }] : []))
           .sort((a, b) => b.wpm - a.wpm);
+  const activeMistake = mistakes.find((mistake) => mistake.t === activeTime);
+  const mistakeText = activeMistake ? plural(locale, labels.mistakes, activeMistake.count) : null;
   const announcement =
     activeTime === null
       ? ""
-      : `${seconds(activeTime)}, ${readings.map((reading) => `${reading.runner.name} ${format(reading.wpm)}`).join(", ")}`;
+      : [
+          seconds(activeTime),
+          ...readings.map((reading) => `${reading.runner.name} ${format(reading.wpm)}`),
+          ...(mistakeText ? [mistakeText] : []),
+        ].join(", ");
   const colored = runners.slice(0, COLORS);
   // The player is drawn last, so their line stays on top.
   const drawOrder = runners
@@ -138,6 +156,14 @@ export function RaceWpmChart({
               <line x1="1" y1="6" x2="15" y2="6" stroke={colorOf(COLORS)} strokeWidth="1" strokeLinecap="round" />
             </svg>
             {labels.others}
+          </li>
+        )}
+        {mistakes.length > 0 && (
+          <li className="flex items-center gap-2">
+            <svg width="16" height="12" aria-hidden="true">
+              <Cross cx={8} cy={6} size={4} />
+            </svg>
+            {labels.mistakesLegend}
           </li>
         )}
       </ul>
@@ -238,6 +264,9 @@ export function RaceWpmChart({
               </g>
             );
           })}
+          {mistakes.map((mistake) => (
+            <Cross key={mistake.t} cx={x(mistake.t)} cy={y(mistake.wpm)} size={crossSize(mistake.count)} />
+          ))}
           {readings.map((reading) =>
             reading.index < COLORS && activeTime !== null ? (
               <circle
@@ -284,6 +313,14 @@ export function RaceWpmChart({
             {readings.length > TOOLTIP_ROWS && (
               <span className="text-xs text-muted">+{readings.length - TOOLTIP_ROWS}</span>
             )}
+            {mistakeText && (
+              <span className="flex items-center gap-2 text-danger">
+                <svg width="12" height="12" aria-hidden="true">
+                  <Cross cx={6} cy={6} size={4} />
+                </svg>
+                {mistakeText}
+              </span>
+            )}
           </div>
         )}
         <p aria-live="polite" className="sr-only">
@@ -291,5 +328,16 @@ export function RaceWpmChart({
         </p>
       </div>
     </figure>
+  );
+}
+
+/** A shape and not only a color, so the mark reads without telling red apart. */
+function Cross({ cx, cy, size }: { cx: number; cy: number; size: number }) {
+  const path = `M${cx - size},${cy - size}L${cx + size},${cy + size}M${cx + size},${cy - size}L${cx - size},${cy + size}`;
+  return (
+    <g aria-hidden="true" strokeLinecap="round">
+      <path d={path} strokeWidth="5" className="stroke-background" />
+      <path d={path} strokeWidth="2" stroke="var(--danger)" />
+    </g>
   );
 }
