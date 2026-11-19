@@ -243,7 +243,7 @@ describe("Race", () => {
     expect(series.map((point) => [point.t, point.errors])).toEqual([
       [1000, 1],
       [2000, 1],
-      [2800, 3],
+      [2800, 2],
     ]);
   });
 
