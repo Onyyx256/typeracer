@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, max } from "drizzle-orm";
 import { getDb } from "@/db";
 import { raceResults, races, rooms, texts } from "@/db/schema";
 import type { BotLevel } from "@/lib/bots/levels";
@@ -113,6 +113,38 @@ export async function getRaceResultsFor(
     .where(and(eq(raceResults.raceId, raceId), eq(raceResults.userId, userId)))
     .limit(1);
   return entry ? loadRaceResults(raceId) : null;
+}
+
+/**
+ * Whether this race beat the user's best WPM from every race before it, so
+ * reviewing an old race still shows the record it set back then. Like the
+ * stats page's best WPM, only finished races count, and a first race has no
+ * record to beat.
+ */
+export async function isPersonalBest(raceId: string, userId: string): Promise<boolean> {
+  const db = getDb();
+  const [entry] = await db
+    .select({ wpm: raceResults.wpm, status: raceResults.status, endedAt: races.endedAt })
+    .from(raceResults)
+    .innerJoin(races, eq(races.id, raceResults.raceId))
+    .where(and(eq(raceResults.raceId, raceId), eq(raceResults.userId, userId)))
+    .limit(1);
+  if (!entry || entry.status !== "finished") {
+    return false;
+  }
+  const [previous] = await db
+    .select({ best: max(raceResults.wpm) })
+    .from(raceResults)
+    .innerJoin(races, eq(races.id, raceResults.raceId))
+    .where(
+      and(
+        eq(raceResults.userId, userId),
+        eq(raceResults.status, "finished"),
+        lt(races.endedAt, entry.endedAt),
+      ),
+    );
+  const best = previous?.best;
+  return best !== null && best !== undefined && entry.wpm > Number(best);
 }
 
 async function loadRaceResults(raceId: string): Promise<RaceResultsView | null> {

@@ -32,11 +32,14 @@ export function RaceResults({
   dict,
   roomDict,
   locale,
+  personalBest = false,
 }: {
   /** Only what's shown, so a practice race (never saved) can use it too. */
   view: Pick<RaceResultsView, "results" | "source">;
   userId: string | null;
   looks?: PlayerLooks;
+  /** The viewer's WPM in this race beat their best before it. */
+  personalBest?: boolean;
   dict: ResultsDictionary;
   roomDict: RoomDictionary;
   locale: Locale;
@@ -125,7 +128,19 @@ export function RaceResults({
                       </span>
                     )}
                   </th>
-                  <td className="px-4 py-3 text-right font-semibold">{formatNumber(locale, row.wpm)}</td>
+                  <td className="px-4 py-3 text-right font-semibold">
+                    {you && personalBest ? (
+                      <span className="inline-grid justify-items-end gap-1">
+                        <span className="record-glow">{formatNumber(locale, row.wpm)}</span>
+                        <span className="record-pop rounded-leaf bg-accent px-2 py-0.5 font-mono text-xs whitespace-nowrap text-on-accent">
+                          <span aria-hidden="true">★ </span>
+                          {dict.personalBest}
+                        </span>
+                      </span>
+                    ) : (
+                      formatNumber(locale, row.wpm)
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">{formatNumber(locale, row.rawWpm)}</td>
                   <td className="px-4 py-3 text-right">
                     {row.accuracy === null ? (

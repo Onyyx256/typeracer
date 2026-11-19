@@ -9,7 +9,7 @@ import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatDateTime, interpolate } from "@/lib/i18n/format";
 import { getLooks } from "@/lib/profile/profile";
-import { getRaceResultsFor } from "@/lib/race/results";
+import { getRaceResultsFor, isPersonalBest } from "@/lib/race/results";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dict = await getDictionary();
@@ -41,7 +41,10 @@ async function PastRace({ params }: { params: Promise<{ raceId: string }> }) {
   if (!view) {
     notFound();
   }
-  const looks = await getLooks(view.results.flatMap((row) => (row.userId ? [row.userId] : [])));
+  const [looks, personalBest] = await Promise.all([
+    getLooks(view.results.flatMap((row) => (row.userId ? [row.userId] : []))),
+    isPersonalBest(view.raceId, user.id),
+  ]);
   const t = dict.statsPage.race;
 
   return (
@@ -61,6 +64,7 @@ async function PastRace({ params }: { params: Promise<{ raceId: string }> }) {
         view={view}
         userId={user.id}
         looks={looks}
+        personalBest={personalBest}
         dict={dict.results}
         roomDict={dict.room}
         locale={locale}
