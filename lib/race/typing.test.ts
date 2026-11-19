@@ -78,9 +78,17 @@ describe("free mode (errors counted)", () => {
     expect(state.keystrokes - state.correctKeystrokes).toBe(1);
   });
 
-  test("a word can still be fixed until its space is typed, not after", () => {
+  test("backspace goes back into finished words, down to the start", () => {
     expect(type("free", "lx<e").input).toBe("le");
-    expect(type("free", "lx <<").input).toBe("lx ");
+    expect(type("free", "lx <<").input).toBe("l");
+    expect(type("free", "lx chat<<<<<<<").input).toBe("");
+  });
+
+  test("fixing an old error wins back net WPM but not accuracy", () => {
+    const fixed = type("free", "lx chat<<<<<<e chat");
+    expect(fixed.input).toBe("le chat");
+    expect(correctChars(TEXT, "free", fixed)).toBe(7);
+    expect(fixed.keystrokes - fixed.correctKeystrokes).toBe(1);
   });
 
   test("the race is complete when the length is reached, errors included", () => {

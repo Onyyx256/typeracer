@@ -39,13 +39,15 @@ export function correctPrefixLength(text: string, input: string): number {
 }
 
 /**
- * Where backspace stops. A word is kept once the space after it is typed:
- * in strict mode only if everything up to it is correct, in free mode
- * whatever it contains (errors there are counted and left behind).
+ * Where backspace stops. In strict mode a word is kept once it and the
+ * space after it are correct. Free mode can go back to the start: a fixed
+ * error wins back its net WPM, but accuracy keeps the miss.
  */
 export function lockedLength(text: string, mode: ErrorMode, input: string): number {
-  const kept = mode === "strict" ? input.slice(0, correctPrefixLength(text, input)) : input;
-  return kept.lastIndexOf(" ") + 1;
+  if (mode === "free") {
+    return 0;
+  }
+  return input.slice(0, correctPrefixLength(text, input)).lastIndexOf(" ") + 1;
 }
 
 /**
