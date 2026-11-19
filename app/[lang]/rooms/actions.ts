@@ -21,6 +21,7 @@ import {
   lookUpInvite,
   type CreateInviteError,
 } from "@/lib/rooms/invites";
+import type { CurrentRoom } from "@/lib/rooms/label";
 import type { NameError } from "@/lib/rooms/names";
 import {
   createRoom,
@@ -61,7 +62,7 @@ export type RoomActionError =
 export type RoomActionResult = {
   ok: false;
   error: RoomActionError;
-  currentCode?: string;
+  current?: CurrentRoom;
 };
 
 /** Logs only the driver's message: Drizzle's own embeds the query parameters. */

@@ -221,7 +221,7 @@ describe("one room per person (SALLE-06)", () => {
     expect(await joinRoom(userId, second.code, "participant", false, name)).toEqual({
       ok: false,
       error: "alreadyInRoom",
-      currentCode: first.code,
+      current: { code: first.code, visibility: settings.visibility },
     });
     expect((await findCurrentRoom(userId))?.code).toBe(first.code);
   });
@@ -231,7 +231,7 @@ describe("one room per person (SALLE-06)", () => {
     expect(await createRoom(first.hostId, settings, false, uniqueName("h"))).toEqual({
       ok: false,
       error: "alreadyInRoom",
-      currentCode: first.code,
+      current: { code: first.code, visibility: settings.visibility },
     });
   });
 

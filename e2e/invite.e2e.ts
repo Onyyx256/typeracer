@@ -63,6 +63,7 @@ test("a guest joins a code-only room with its code from the home page", async ({
 test("a private room opens only with an invite link, once", async ({ browser }) => {
   const host = await hostRoom(browser, "Private");
   const nickname = e2eName();
+  await expect(host.page.getByRole("heading", { level: 1 })).toHaveText("Private room");
 
   await host.page.getByRole("button", { name: "Make a link" }).click();
   const link = host.page.getByRole("textbox", { name: "Link 1" });
@@ -79,7 +80,7 @@ test("a private room opens only with an invite link, once", async ({ browser }) 
   await expect(guest.getByText("no open room has this code")).toBeVisible();
 
   await guest.goto(invitePath);
-  await expect(guest.getByRole("heading", { name: `Invitation to room ${host.code}` })).toBeVisible();
+  await expect(guest.getByRole("heading", { name: "Invitation to a private room" })).toBeVisible();
   await joinAsGuest(guest, nickname);
   await expect(guest).toHaveURL(new RegExp(`/en/rooms/${host.code}$`));
 

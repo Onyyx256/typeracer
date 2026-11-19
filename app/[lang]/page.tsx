@@ -8,6 +8,7 @@ import { renderTime } from "@/lib/realtime/render-time";
 import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 import { filterQuery, parseRoomFilters, type RoomFilters } from "@/lib/rooms/filters";
+import { roomLabel } from "@/lib/rooms/label";
 import { findCurrentRoom, listPublicRooms } from "@/lib/rooms/rooms";
 import { COMPLEXITIES } from "@/lib/rooms/settings";
 import { JoinByCode } from "./join-by-code";
@@ -58,7 +59,7 @@ async function RoomList({
       <LiveLobby renderedAt={renderedAt} />
       {current && (
         <p className="mt-6 flex flex-wrap items-center gap-3 border border-primary-text bg-surface px-4 py-3 rounded-leaf">
-          {interpolate(t.current, { code: current.code })}
+          {interpolate(t.current, { room: roomLabel(dict.roomNames, current) })}
           <Link
             href={localePath(locale, `/rooms/${current.code}`)}
             className="font-medium text-primary-text underline underline-offset-4"

@@ -9,6 +9,7 @@ import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/format";
 import { requestIp } from "@/lib/request";
 import { inviteTokenSchema, lookUpInvite } from "@/lib/rooms/invites";
+import { roomLabel } from "@/lib/rooms/label";
 import { findCurrentRoom, getRoom, isBanned } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { JoinRoom } from "../../rooms/[code]/join-room";
@@ -72,8 +73,14 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
     <div className="grid gap-8">
       <header>
         <h1 className="font-display text-4xl leading-tight font-semibold">
-          {t.heading}{" "}
-          <span className="font-mono tracking-widest text-accent-text">{room.code}</span>
+          {room.visibility === "private" ? (
+            t.privateHeading
+          ) : (
+            <>
+              {t.heading}{" "}
+              <span className="font-mono tracking-widest text-accent-text">{room.code}</span>
+            </>
+          )}
         </h1>
         <p className="mt-2 text-muted">{interpolate(t.lead, { host })}</p>
       </header>
@@ -90,7 +97,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
             locale={locale}
             code={room.code}
             full={runners >= room.capacity}
-            elsewhere={current?.code ?? null}
+            elsewhere={current && { code: current.code, label: roomLabel(dict.roomNames, current) }}
             defaultName={user?.displayName ?? ""}
             hasSession={user !== null}
             invite={token}
