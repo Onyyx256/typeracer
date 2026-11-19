@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomBans, roomInvites, roomMembers, rooms, users } from "@/db/schema";
 import { abandonRace, closeRace } from "@/lib/race/manager";
@@ -746,4 +746,53 @@ export async function listPublicRooms(
     const { language, complexity, textType } = parsed.data;
     return [{ ...row, language, complexity, textType }];
   });
+}
+
+/**
+ * Public rooms a quick race can join, best first: the fewest free seats
+ * (closest to full), then the oldest. Rooms the user is banned from are
+ * left out.
+ */
+export async function listQuickRaceRooms(userId: string | null, limit = 20): Promise<string[]> {
+  const participants = sql<number>`count(${roomMembers.id}) filter (where ${roomMembers.role} = 'participant')`;
+  const rows = await getDb()
+    .select({ code: rooms.code })
+    .from(rooms)
+    .leftJoin(roomMembers, eq(roomMembers.roomId, rooms.id))
+    .where(
+      and(
+        eq(rooms.visibility, "public"),
+        inArray(rooms.state, [...JOINABLE_STATES]),
+        userId
+          ? sql`not exists (select 1 from ${roomBans} where ${roomBans.roomId} = ${rooms.id} and ${roomBans.userId} = ${userId})`
+          : undefined,
+      ),
+    )
+    .groupBy(rooms.id)
+    .having(sql`${participants} < ${rooms.capacity}`)
+    .orderBy(sql`${rooms.capacity} - ${participants}`, asc(rooms.createdAt))
+    .limit(limit);
+  return rows.map((row) => row.code);
+}
+
+const SKIPPED_ON_QUICK_RACE: readonly RoomError[] = ["full", "notJoinable", "nameTaken", "banned", "notFound"];
+
+export type QuickRaceResult = RoomResult | { ok: false; error: "noRoom" };
+
+/**
+ * Tries the candidates in order, so a room filled or started in the meantime
+ * only moves the user on to the next one.
+ */
+export async function joinQuickRace(userId: string, name: string): Promise<QuickRaceResult> {
+  const blocked = await checkCurrentRoom(userId, false);
+  if (blocked) {
+    return blocked;
+  }
+  for (const code of await listQuickRaceRooms(userId)) {
+    const result = await joinRoom(userId, code, "participant", false, name);
+    if (result.ok || !SKIPPED_ON_QUICK_RACE.includes(result.error)) {
+      return result;
+    }
+  }
+  return { ok: false, error: "noRoom" };
 }
