@@ -115,13 +115,15 @@ export async function getRaceResultsFor(
   return entry ? loadRaceResults(raceId) : null;
 }
 
+export type PersonalBest = { wpm: number; previous: number };
+
 /**
- * Whether this race beat the user's best WPM from every race before it, so
- * reviewing an old race still shows the record it set back then. Like the
- * stats page's best WPM, only finished races count, and a first race has no
- * record to beat.
+ * The record this race set, if it beat the user's best WPM from every race
+ * before it, so reviewing an old race still shows the record it set back
+ * then. Like the stats page's best WPM, only finished races count, and a
+ * first race has no record to beat.
  */
-export async function isPersonalBest(raceId: string, userId: string): Promise<boolean> {
+export async function getPersonalBest(raceId: string, userId: string): Promise<PersonalBest | null> {
   const db = getDb();
   const [entry] = await db
     .select({ wpm: raceResults.wpm, status: raceResults.status, endedAt: races.endedAt })
@@ -130,7 +132,7 @@ export async function isPersonalBest(raceId: string, userId: string): Promise<bo
     .where(and(eq(raceResults.raceId, raceId), eq(raceResults.userId, userId)))
     .limit(1);
   if (!entry || entry.status !== "finished") {
-    return false;
+    return null;
   }
   const [previous] = await db
     .select({ best: max(raceResults.wpm) })
@@ -143,8 +145,11 @@ export async function isPersonalBest(raceId: string, userId: string): Promise<bo
         lt(races.endedAt, entry.endedAt),
       ),
     );
-  const best = previous?.best;
-  return best !== null && best !== undefined && entry.wpm > Number(best);
+  if (previous?.best === null || previous?.best === undefined) {
+    return null;
+  }
+  const best = Number(previous.best);
+  return entry.wpm > best ? { wpm: entry.wpm, previous: best } : null;
 }
 
 async function loadRaceResults(raceId: string): Promise<RaceResultsView | null> {
