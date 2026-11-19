@@ -217,7 +217,7 @@ Les trois effets viennent des notes de la démarche créative (`docs/DEMARCHE-CR
 
 **Règle exacte (BONUS-01).** Quand l'hôte a activé les bonus (CONF-09), chaque fois que la progression du meneur atteint 25 %, 50 % puis 75 % (une seule fois par point de contrôle), deux effets tombent : le bonus (pluie et soleil) pour les retardataires, et un malus pour ceux en tête, nuit ou soleil aveuglant, que le serveur tire au hasard avec un générateur à graine (les tests sont reproductibles). Un effet qui n'a personne à viser est sauté.
 
-- **En retard** : les coureurs encore en course qui sont derniers (tous, en cas d'égalité) ou à plus de 25 % du meneur. Le meneur n'est jamais en retard.
+- **En retard** : les coureurs encore en course qui sont derniers (tous, en cas d'égalité) ou à plus de 25 % du meneur. Le meneur n'est jamais en retard, et tous ceux à égalité avec lui comptent comme meneurs : à 2 coureurs à égalité, personne n'est en retard.
 - **En tête** : les 3 premiers encore en course, sans les retardataires. À un point de contrôle, un coureur reçoit donc un bonus ou un malus, jamais les deux ; à 2 coureurs, le 2e reçoit le bonus et le 1er le malus. La place d'un coureur en tête (pour les 7 %, 5 % et 3 % de la nuit) ne change pas si un autre a déjà reçu le maximum.
 - Un coureur reçoit au plus 3 effets par course, bonus et malus confondus.
 
