@@ -208,6 +208,17 @@ export const en: Dictionary = {
     },
     noMatch: "no public room matches these filters",
     clearFilters: "Show all rooms",
+    quickRace: {
+      button: "Quick race",
+      hint: "We put you in the public room closest to full.",
+      noRoom: "No room is available right now.",
+      createLead: "Open a public room with the default settings: you'll be its host.",
+      create: "Create a public room",
+      guestLead: "Come back in a moment: new rooms open often.",
+      close: "Close",
+      alreadyInRoom: "you're already in {room}",
+      unavailable: "can't do that right now, try again later",
+    },
     joinByCode: {
       heading: "Got a code?",
       label: "Room code",

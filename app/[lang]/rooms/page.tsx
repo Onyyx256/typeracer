@@ -13,6 +13,7 @@ import { roomLabel } from "@/lib/rooms/label";
 import { findCurrentRoom, listPublicRooms } from "@/lib/rooms/rooms";
 import { COMPLEXITIES } from "@/lib/rooms/settings";
 import { JoinByCode } from "./join-by-code";
+import { QuickRace } from "./quick-race";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dict = await getDictionary();
@@ -63,6 +64,12 @@ async function RoomList({
   return (
     <>
       <LiveLobby renderedAt={renderedAt} />
+      <QuickRace
+        dict={t.quickRace}
+        roomNames={dict.roomNames}
+        locale={locale}
+        canCreate={canCreate}
+      />
       {current && (
         <p className="mt-6 flex flex-wrap items-center gap-3 border border-primary-text bg-surface px-4 py-3 rounded-leaf">
           {interpolate(t.current, { room: roomLabel(dict.roomNames, current) })}
