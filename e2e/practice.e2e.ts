@@ -6,7 +6,10 @@ import { e2eName } from "./database";
 
 test("a visitor without an account practices alone", async ({ page }) => {
   await page.goto("/en");
-  await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Practice" }).click();
+  const landing = page.getByRole("main");
+  await expect(landing.getByRole("heading", { name: "NelumboType", level: 1 })).toBeVisible();
+  await expect(landing.getByRole("link", { name: "Join a race" })).toHaveAttribute("href", "/en/rooms");
+  await landing.getByRole("link", { name: "Practice" }).click();
   await expect(page).toHaveURL(/\/en\/practice$/);
   await expect(page.getByRole("heading", { name: "Practice", level: 1 })).toBeVisible();
 
@@ -69,7 +72,7 @@ test("someone in a room can't practice", async ({ browser }) => {
   await practice.getByLabel("Password", { exact: true }).fill(password);
   await practice.getByLabel("Confirm").fill(password);
   await practice.getByRole("button", { name: "Create my account" }).click();
-  await expect(practice).toHaveURL(/\/en$/);
+  await expect(practice).toHaveURL(/\/en\/rooms$/);
 
   // Practice opens while not in a room...
   await practice.goto("/en/practice");

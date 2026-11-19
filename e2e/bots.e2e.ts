@@ -14,7 +14,7 @@ async function signUp(page: Page, username: string): Promise<void> {
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByLabel("Confirm").fill(PASSWORD);
   await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en$/);
+  await expect(page).toHaveURL(/\/en\/rooms$/);
 }
 
 /** Random words: the e2e database has no passage corpus. */

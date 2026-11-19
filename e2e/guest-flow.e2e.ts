@@ -14,7 +14,7 @@ async function signUp(page: Page, username: string): Promise<void> {
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByLabel("Confirm").fill(PASSWORD);
   await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en$/);
+  await expect(page).toHaveURL(/\/en\/rooms$/);
 }
 
 /** Signs in through the login form, first with a wrong password, which is refused. */
@@ -30,7 +30,7 @@ async function logIn(page: Page, username: string): Promise<void> {
 
   await password.fill(PASSWORD);
   await password.press("Enter");
-  await expect(page).toHaveURL(/\/en$/);
+  await expect(page).toHaveURL(/\/en\/rooms$/);
 }
 
 /** An account made in a browser of its own, so the test then signs in from scratch. */
@@ -64,7 +64,7 @@ test("a guest joins a public room under a nickname, then leaves", async ({ brows
 
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
-  await guest.goto("/en");
+  await guest.goto("/en/rooms");
   await guest.getByRole("link", { name: new RegExp(code) }).click();
   await expect(guest).toHaveURL(new RegExp(`/en/rooms/${code}$`));
   await expect(guest.getByRole("heading", { level: 1 })).toContainText(code);
@@ -112,7 +112,7 @@ test("a guest joins a public room under a nickname, then leaves", async ({ brows
   await expect(me).toContainText("(you)");
 
   await guest.getByRole("button", { name: "Leave the room" }).click();
-  await expect(guest).toHaveURL(/\/en$/);
+  await expect(guest).toHaveURL(/\/en\/rooms$/);
   await expect(guestOnHostPage).toHaveCount(0);
   await expect(hostRunners.getByRole("listitem")).toHaveCount(1);
 
