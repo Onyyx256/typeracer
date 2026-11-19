@@ -116,8 +116,8 @@ erDiagram
 Quelques précisions :
 
 - `accounts` sert pour les connexions Discord et GitHub. `password_hash` est null si le compte utilise seulement OAuth.
-- Un membre de salle est pour l'instant un utilisateur connecté (`user_id`). Les invités (AUTH-02) auront une colonne `guest_id` qui vient de leur cookie signé. `role` est participant ou spectateur.
-- Pour SALLE-06, `room_members.user_id` a une contrainte unique, donc une personne ne peut pas être dans deux salles en même temps, même si l'interface a un bogue ou si deux onglets envoient la demande en même temps. `guest_id` aura la même contrainte.
+- Un membre de salle est toujours une ligne de `users` (`user_id`), invités compris : un invité (AUTH-02) est un utilisateur avec `is_guest` et sans `username`. `role` est participant ou spectateur.
+- Pour SALLE-06, `room_members.user_id` a une contrainte unique, donc une personne ne peut pas être dans deux salles en même temps, même si l'interface a un bogue ou si deux onglets envoient la demande en même temps. Comme les invités sont des lignes de `users`, la même contrainte s'applique à eux.
 - Le code de salle a un index unique et une contrainte `check` sur son format (6 caractères sans 0/O ni 1/I/L, SALLE-02). La capacité est vérifiée entre 2 et 30 par la base aussi (SALLE-05).
 - La visibilité et la capacité ont leur propre colonne parce que la liste des salles filtre dessus. Le reste de la configuration (texte, temps, mode d'erreur, bonus) est dans la colonne `jsonb` `config`, parce que ce sont beaucoup d'options qui sont toujours lues ensemble. Elle est relue avec le schéma Zod `raceConfigSchema`.
 - Quand l'hôte quitte, le membre présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il ne reste personne, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
