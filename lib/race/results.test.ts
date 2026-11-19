@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { raceResults, races } from "@/db/schema";
 import type { ResultStatus } from "@/lib/race/types";
 import { createTestAccount, deleteTestUsers } from "@/test/db";
-import { isPersonalBest } from "./results";
+import { getPersonalBest } from "./results";
 
 
 const raceIds: string[] = [];
@@ -46,10 +46,10 @@ async function addRace(userId: string, wpm: number, status: ResultStatus = "fini
   return race.id;
 }
 
-describe("isPersonalBest", () => {
+describe("getPersonalBest", () => {
   test("is never set by a first race: there is no record to beat", async () => {
     const account = await createTestAccount();
-    expect(await isPersonalBest(await addRace(account.id, 80), account.id)).toBe(false);
+    expect(await getPersonalBest(await addRace(account.id, 80), account.id)).toBeNull();
   });
 
   test("needs a WPM above every earlier finished race", async () => {
@@ -58,9 +58,9 @@ describe("isPersonalBest", () => {
     const tie = await addRace(account.id, 50);
     const better = await addRace(account.id, 55);
     const worse = await addRace(account.id, 52);
-    expect(await isPersonalBest(tie, account.id)).toBe(false);
-    expect(await isPersonalBest(better, account.id)).toBe(true);
-    expect(await isPersonalBest(worse, account.id)).toBe(false);
+    expect(await getPersonalBest(tie, account.id)).toBeNull();
+    expect(await getPersonalBest(better, account.id)).toEqual({ wpm: 55, previous: 50 });
+    expect(await getPersonalBest(worse, account.id)).toBeNull();
   });
 
   test("still shows on an old race that beat the record back then", async () => {
@@ -68,7 +68,7 @@ describe("isPersonalBest", () => {
     await addRace(account.id, 40);
     const record = await addRace(account.id, 60);
     await addRace(account.id, 90);
-    expect(await isPersonalBest(record, account.id)).toBe(true);
+    expect(await getPersonalBest(record, account.id)).toEqual({ wpm: 60, previous: 40 });
   });
 
   test("only counts finished races, like the best WPM in the stats", async () => {
@@ -76,8 +76,8 @@ describe("isPersonalBest", () => {
     await addRace(account.id, 40);
     await addRace(account.id, 120, "timeUp");
     await addRace(account.id, 130, "abandoned");
-    expect(await isPersonalBest(await addRace(account.id, 45), account.id)).toBe(true);
-    expect(await isPersonalBest(await addRace(account.id, 200, "timeUp"), account.id)).toBe(false);
+    expect(await getPersonalBest(await addRace(account.id, 45), account.id)).toEqual({ wpm: 45, previous: 40 });
+    expect(await getPersonalBest(await addRace(account.id, 200, "timeUp"), account.id)).toBeNull();
   });
 
   test("is only the viewer's own", async () => {
@@ -85,6 +85,6 @@ describe("isPersonalBest", () => {
     const stranger = await createTestAccount();
     await addRace(account.id, 40);
     const record = await addRace(account.id, 60);
-    expect(await isPersonalBest(record, stranger.id)).toBe(false);
+    expect(await getPersonalBest(record, stranger.id)).toBeNull();
   });
 });

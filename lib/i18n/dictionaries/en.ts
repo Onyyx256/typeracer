@@ -500,7 +500,11 @@ export const en: Dictionary = {
       timeUp: "Time's up",
       abandoned: "Gave up",
     },
-    personalBest: "New personal best!",
+    personalBest: {
+      heading: "New personal best!",
+      wpm: "{wpm} WPM",
+      previous: "previous best: {wpm} WPM",
+    },
     botUnfinished: "Not finished",
     noAccuracy: "no accuracy, gave up",
     source: "From “{title}”, {author}",

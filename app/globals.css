@@ -201,7 +201,7 @@ span.podium-pop {
 }
 
 /*
- * New personal best: the badge pops in after the podium has bloomed, then
+ * New personal best: the banner pops in after the podium has bloomed, then
  * the WPM glows twice. Like the podium, the resting style is the end state.
  */
 @keyframes record-pop {
@@ -219,7 +219,7 @@ span.podium-pop {
 }
 
 .record-pop {
-  transform-origin: right center;
+  transform-origin: left center;
   animation: record-pop 0.5s 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
