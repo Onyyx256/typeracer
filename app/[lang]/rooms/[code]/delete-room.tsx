@@ -31,7 +31,7 @@ export function DeleteRoom({ dict, locale }: { dict: RoomDictionary; locale: Loc
     startTransition(async () => {
       const result = await deleteRoomAction();
       if (result.ok) {
-        router.push(localePath(locale, "/"));
+        router.push(localePath(locale, "/rooms"));
       } else {
         setError(result.error);
       }

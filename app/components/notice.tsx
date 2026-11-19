@@ -18,7 +18,7 @@ export function Notice({
       <h1 className="font-display text-3xl leading-tight font-semibold">{title}</h1>
       <p className="mt-3 text-muted">{lead}</p>
       <Link
-        href={localePath(locale, "/")}
+        href={localePath(locale, "/rooms")}
         className="mt-6 inline-flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
       >
         {back}

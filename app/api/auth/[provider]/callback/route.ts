@@ -66,6 +66,6 @@ export async function GET(request: Request, ctx: RouteContext<"/api/auth/[provid
   }
 
   redirect(
-    failure ? `${localePath(lang, "/login")}?error=${failure}` : localePath(lang, "/"),
+    failure ? `${localePath(lang, "/login")}?error=${failure}` : localePath(lang, "/rooms"),
   );
 }

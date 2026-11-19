@@ -151,7 +151,7 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
           return;
         }
       }
-      router.replace(localePath(locale, "/"));
+      router.replace(localePath(locale, "/rooms"));
     });
   }
 
@@ -307,7 +307,7 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
           <p className="mt-4 border-t border-line pt-4 text-sm text-muted">
             {dict.justVisiting}{" "}
             <Link
-              href={localePath(locale, "/")}
+              href={localePath(locale, "/rooms")}
               className="font-medium text-primary-text underline-offset-4 hover:underline"
             >
               {dict.playAsGuest}
