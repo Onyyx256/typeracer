@@ -41,6 +41,9 @@ export const EVENTS = {
 
 export const watchRoomSchema = z.object({ code: roomCodeSchema });
 
+/** The server's answer to a watch: when the channel last changed, in ms. */
+export type WatchReply = { changedAt: number | null };
+
 export const raceSyncSchema = z.object({ code: roomCodeSchema });
 
 /** One character or "\b" (backspace) per key; the engine also limits the pace. */

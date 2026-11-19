@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, count, desc, eq, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { roomBans, roomMembers, rooms, users } from "@/db/schema";
+import { roomBans, roomInvites, roomMembers, rooms, users } from "@/db/schema";
 import { abandonRace, closeRace } from "@/lib/race/manager";
 import { notifyKicked, notifyRoomChanged, notifyRoomClosed } from "@/lib/realtime/notify";
 import { isConnected } from "@/lib/realtime/presence";
@@ -27,7 +27,13 @@ export type RoomError =
   | "notJoinable"
   | "full"
   | "nameTaken"
-  | "banned";
+  | "banned"
+  /** Revoked, or not a link to this room. */
+  | "inviteInvalid"
+  /** Already used by someone else, or from another address. */
+  | "inviteUsed";
+
+export type InviteAccess = { token: string; ip: string };
 
 export type RoomResult =
   | { ok: true; code: string }
@@ -254,8 +260,9 @@ async function insertRoom(
 }
 
 /**
- * Only public rooms for now: code and private rooms answer "not found" so a
- * code reveals nothing.
+ * Public and code-only rooms open with their code. A private room needs an
+ * invite link; with the code alone it answers "not found", like a code that
+ * doesn't exist.
  */
 export async function joinRoom(
   userId: string,
@@ -263,6 +270,7 @@ export async function joinRoom(
   role: HostRole,
   leaveCurrent: boolean,
   name: string,
+  invite?: InviteAccess,
 ): Promise<RoomResult> {
   const blocked = await checkCurrentRoom(userId, leaveCurrent, code);
   if (blocked) {
@@ -282,7 +290,10 @@ export async function joinRoom(
         .from(rooms)
         .where(eq(rooms.code, code))
         .for("update");
-      if (!room || room.state === "closed" || room.visibility !== "public") {
+      if (!room || room.state === "closed") {
+        return invite ? { ok: false, error: "inviteInvalid" } : { ok: false, error: "notFound" };
+      }
+      if (!invite && room.visibility === "private") {
         return { ok: false, error: "notFound" };
       }
       if (await isBannedFrom(tx, room.id, userId)) {
@@ -296,6 +307,10 @@ export async function joinRoom(
       // A second tab or a double click: nothing to do.
       if (already) {
         return { ok: true, code };
+      }
+      const claim = invite ? await checkInvite(tx, room.id, userId, invite) : null;
+      if (claim && !claim.ok) {
+        return claim;
       }
       if (!JOINABLE_STATES.includes(room.state)) {
         return { ok: false, error: "notJoinable" };
@@ -313,6 +328,12 @@ export async function joinRoom(
       }
       // A name already used in the room is refused by room_members_room_name_idx.
       await tx.insert(roomMembers).values({ roomId: room.id, userId, role, name });
+      if (claim?.firstUse && invite) {
+        await tx
+          .update(roomInvites)
+          .set({ usedBy: userId, usedIp: invite.ip, usedAt: new Date() })
+          .where(eq(roomInvites.id, claim.id));
+      }
       return { ok: true, code };
     });
     if (result.ok) {
@@ -329,6 +350,36 @@ export async function joinRoom(
     }
     throw error;
   }
+}
+
+async function checkInvite(
+  tx: Transaction,
+  roomId: string,
+  userId: string,
+  invite: InviteAccess,
+): Promise<{ ok: true; id: string; firstUse: boolean } | { ok: false; error: RoomError }> {
+  // Locked so two people opening the same link at once can't both get in.
+  const [row] = await tx
+    .select({
+      id: roomInvites.id,
+      usedBy: roomInvites.usedBy,
+      usedIp: roomInvites.usedIp,
+      usedAt: roomInvites.usedAt,
+      revokedAt: roomInvites.revokedAt,
+    })
+    .from(roomInvites)
+    .where(and(eq(roomInvites.token, invite.token), eq(roomInvites.roomId, roomId)))
+    .for("update");
+  if (!row || row.revokedAt) {
+    return { ok: false, error: "inviteInvalid" };
+  }
+  if (!row.usedAt) {
+    return { ok: true, id: row.id, firstUse: true };
+  }
+  if (row.usedBy !== userId || row.usedIp !== invite.ip) {
+    return { ok: false, error: "inviteUsed" };
+  }
+  return { ok: true, id: row.id, firstUse: false };
 }
 
 async function isBannedFrom(db: Database | Transaction, roomId: string, userId: string) {
@@ -384,6 +435,16 @@ export async function kickMember(hostId: string, targetId: string): Promise<Kick
         .insert(roomBans)
         .values({ roomId: room.id, userId: targetId })
         .onConflictDoNothing();
+      await tx
+        .update(roomInvites)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(roomInvites.roomId, room.id),
+            eq(roomInvites.usedBy, targetId),
+            isNull(roomInvites.revokedAt),
+          ),
+        );
       return { ok: true, code: room.code };
     },
   );

@@ -9,7 +9,7 @@ import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate } from "@/lib/i18n/format";
 import { isNameError } from "@/lib/rooms/names";
 import type { HostRole } from "@/lib/rooms/settings";
-import { joinRoomAction, type RoomActionError } from "../actions";
+import { joinRoomAction, joinWithInviteAction, type RoomActionError } from "../actions";
 
 type JoinRoomProps = {
   dict: RoomDictionary;
@@ -20,6 +20,8 @@ type JoinRoomProps = {
   /** Empty for a visitor without a session, who joins as a guest. */
   defaultName: string;
   hasSession: boolean;
+  /** The invite link's token, for a private room. */
+  invite?: string;
 };
 
 const primary =
@@ -37,6 +39,7 @@ export function JoinRoom({
   elsewhere,
   defaultName,
   hasSession,
+  invite,
 }: JoinRoomProps) {
   const [error, setError] = useState<RoomActionError | null>(null);
   const [pending, startTransition] = useTransition();
@@ -55,13 +58,10 @@ export function JoinRoom({
     setError(null);
     startTransition(async () => {
       // On success the action redirects back here, now as a member.
-      const result = await joinRoomAction({
-        lang: locale,
-        code,
-        role,
-        name,
-        leaveCurrent: elsewhere !== null,
-      });
+      const request = { lang: locale, role, name, leaveCurrent: elsewhere !== null };
+      const result = invite
+        ? await joinWithInviteAction({ ...request, token: invite })
+        : await joinRoomAction({ ...request, code });
       setError(result.error);
       // Other errors (full room...) show beside the buttons.
       if (!isNameError(result.error)) {

@@ -28,7 +28,9 @@ export default defineConfig({
     // The custom server (Next + Socket.IO), as in production, so live updates are tested too.
     command: "bun run build && bun run start",
     url: `${baseURL}/en`,
-    env: { PORT: String(PORT), DATABASE_URL: E2E_DATABASE_URL },
+    // Every test browser shares one address here, so the wrong-code limit
+    // would soon block them all.
+    env: { PORT: String(PORT), DATABASE_URL: E2E_DATABASE_URL, CODE_MISS_LIMIT: "100000" },
     // Never reuse whatever is on the port: it could be using another database.
     reuseExistingServer: false,
     timeout: 300_000,

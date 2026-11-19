@@ -1,5 +1,5 @@
 {
-  "id": "b8883d20-b9f2-40b6-99ea-4588819d884d",
+  "id": "31991fe7-ed6c-4148-afb8-61844ea5e011",
   "prevId": "fbb6af02-b798-4db3-b78b-57a9a634de40",
   "version": "7",
   "dialect": "postgresql",
@@ -151,12 +151,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": true
-        },
-        "bot_level": {
-          "name": "bot_level",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "rank": {
           "name": "rank",
@@ -357,14 +351,6 @@
         "race_results_only_guests_have_guest_id": {
           "name": "race_results_only_guests_have_guest_id",
           "value": "\"race_results\".\"is_guest\" or \"race_results\".\"guest_id\" is null"
-        },
-        "race_results_bot_level": {
-          "name": "race_results_bot_level",
-          "value": "\"race_results\".\"bot_level\" in ('noob', 'beginner', 'intermediate', 'expert', 'impossible')"
-        },
-        "race_results_bot_has_no_user": {
-          "name": "race_results_bot_has_no_user",
-          "value": "\"race_results\".\"bot_level\" is null or (\"race_results\".\"user_id\" is null and \"race_results\".\"guest_id\" is null and not \"race_results\".\"is_guest\")"
         }
       },
       "isRLSEnabled": false
@@ -565,6 +551,142 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.room_invites": {
+      "name": "room_invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "room_id": {
+          "name": "room_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "used_by": {
+          "name": "used_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_ip": {
+          "name": "used_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "room_invites_token_idx": {
+          "name": "room_invites_token_idx",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "room_invites_room_idx": {
+          "name": "room_invites_room_idx",
+          "columns": [
+            {
+              "expression": "room_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "room_invites_room_id_rooms_id_fk": {
+          "name": "room_invites_room_id_rooms_id_fk",
+          "tableFrom": "room_invites",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "room_invites_used_by_users_id_fk": {
+          "name": "room_invites_used_by_users_id_fk",
+          "tableFrom": "room_invites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "used_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "room_invites_token_format": {
+          "name": "room_invites_token_format",
+          "value": "\"room_invites\".\"token\" ~ '^[A-Za-z0-9_-]{43}$'"
+        },
+        "room_invites_used_together": {
+          "name": "room_invites_used_together",
+          "value": "(\"room_invites\".\"used_at\" is null) = (\"room_invites\".\"used_ip\" is null)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.room_members": {

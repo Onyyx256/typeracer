@@ -10,6 +10,8 @@ type RealtimeState = {
   /** Open sockets per signed-in user (several tabs = several sockets). */
   sockets: Map<string, number>;
   leaveTimers: Map<string, ReturnType<typeof setTimeout>>;
+  /** When each channel last changed, for pages that subscribe after rendering. */
+  changedAt: Map<string, number>;
   handlersAttached: boolean;
 };
 
@@ -23,12 +25,19 @@ export function getIo(): Server | null {
   return ((globalThis as Globals)[IO_KEY] as Server | undefined) ?? null;
 }
 
+/**
+ * Fills in any field the stored object lacks: in development the object
+ * outlives hot reloads, so it can predate a field added to the code since.
+ */
 export function realtimeState(): RealtimeState {
   const globals = globalThis as Globals;
-  globals[STATE_KEY] ??= {
-    sockets: new Map(),
-    leaveTimers: new Map(),
-    handlersAttached: false,
-  } satisfies RealtimeState;
-  return globals[STATE_KEY] as RealtimeState;
+  const stored = (globals[STATE_KEY] ?? {}) as Partial<RealtimeState>;
+  const state: RealtimeState = {
+    sockets: stored.sockets ?? new Map(),
+    leaveTimers: stored.leaveTimers ?? new Map(),
+    changedAt: stored.changedAt ?? new Map(),
+    handlersAttached: stored.handlersAttached ?? false,
+  };
+  globals[STATE_KEY] = Object.assign(stored, state);
+  return stored as RealtimeState;
 }

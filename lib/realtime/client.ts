@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
+import type { WatchReply } from "./events";
 
 /** One connection per tab, shared by every component; the cookie identifies the user. */
 let socket: Socket | null = null;
@@ -47,17 +48,30 @@ export function useLiveRefresh(options: {
   unwatch: string;
   changed: string;
   payload?: unknown;
+  /** Server time of the render this page shows, to catch changes made before it subscribed. */
+  renderedAt: number;
 }): void {
   const router = useRouter();
   const { watch, unwatch, changed } = options;
   const key = JSON.stringify(options.payload ?? null);
+  // A ref, so each refresh's new time doesn't make the page subscribe again.
+  const renderedAt = useRef(options.renderedAt);
+  useEffect(() => {
+    renderedAt.current = options.renderedAt;
+  }, [options.renderedAt]);
 
   useEffect(() => {
     const current = getSocket();
     const payload: unknown = JSON.parse(key);
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const subscribe = () => current.emit(watch, payload);
+    const onWatched = (reply: Partial<WatchReply> | undefined) => {
+      const changedAt = reply?.changedAt;
+      if (typeof changedAt === "number" && changedAt > renderedAt.current) {
+        onChanged();
+      }
+    };
+    const subscribe = () => current.emit(watch, payload, onWatched);
     const onChanged = () => {
       timer ??= setTimeout(() => {
         timer = null;

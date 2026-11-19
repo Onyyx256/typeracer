@@ -12,11 +12,20 @@ import {
   type StartRaceError,
 } from "@/lib/race/manager";
 import { DEFAULT_LOCALE, localePath, localeSchema, type Locale } from "@/lib/i18n/config";
+import { requestIp } from "@/lib/request";
 import { roomCodeSchema } from "@/lib/rooms/code";
+import { recordCodeMiss, tooManyCodeMisses } from "@/lib/rooms/code-attempts";
+import {
+  createInvite,
+  inviteTokenSchema,
+  lookUpInvite,
+  type CreateInviteError,
+} from "@/lib/rooms/invites";
 import type { NameError } from "@/lib/rooms/names";
 import {
   createRoom,
   deleteRoom,
+  getRoom,
   joinRoom,
   kickMember,
   leaveClosesRoom,
@@ -46,6 +55,7 @@ export type RoomActionError =
   | "invalid"
   | "noWords"
   | "notSignedIn"
+  | "tooMany"
   | "unavailable";
 
 export type RoomActionResult = {
@@ -134,6 +144,32 @@ export async function createRoomAction(input: unknown): Promise<RoomActionResult
   });
 }
 
+/**
+ * A visitor without a session becomes a guest under the name they chose, and
+ * that name becomes their default for the next rooms; a refused one (taken in
+ * this room) doesn't.
+ */
+async function joinAs(
+  name: string,
+  join: (userId: string, name: string) => Promise<RoomResult | RoomActionResult>,
+): Promise<RoomResult | RoomActionResult> {
+  const user = await sessionProfile();
+  const checked = checkName(name);
+  if ("error" in checked) {
+    return { ok: false, error: checked.error };
+  }
+  let userId = user?.id;
+  if (!userId) {
+    userId = (await createGuest(checked.name)).id;
+    await createSession(userId);
+  }
+  const result = await join(userId, checked.name);
+  if (result.ok && (!user || user.isGuest)) {
+    await setGuestNickname(userId, checked.name);
+  }
+  return result;
+}
+
 const joinRoomInput = z.object({
   lang: localeSchema,
   code: roomCodeSchema,
@@ -151,24 +187,99 @@ export async function joinRoomAction(input: unknown): Promise<RoomActionResult> 
   const { lang, code, role, name, leaveCurrent } = parsed.data;
 
   return enterRoom("joinRoom", lang, async () => {
-    const user = await sessionProfile();
-    const checked = checkName(name);
-    if ("error" in checked) {
-      return { ok: false, error: checked.error };
+    const ip = await requestIp();
+    if (tooManyCodeMisses(ip)) {
+      return { ok: false, error: "tooMany" };
     }
-    let userId = user?.id;
-    if (!userId) {
-      userId = (await createGuest(checked.name)).id;
-      await createSession(userId);
-    }
-    const result = await joinRoom(userId, code, role, leaveCurrent, checked.name);
-    // The name a guest got in with becomes their default for the next rooms;
-    // a refused one (taken in this room) doesn't.
-    if (result.ok && (!user || user.isGuest)) {
-      await setGuestNickname(userId, checked.name);
+    const result = await joinAs(name, (userId, checked) =>
+      joinRoom(userId, code, role, leaveCurrent, checked),
+    );
+    if (!result.ok && result.error === "notFound") {
+      recordCodeMiss(ip);
     }
     return result;
   });
+}
+
+const joinWithInviteInput = z.object({
+  lang: localeSchema,
+  token: inviteTokenSchema,
+  role: z.enum(HOST_ROLES),
+  name: nameInput,
+  leaveCurrent: z.boolean().default(false),
+});
+
+export async function joinWithInviteAction(input: unknown): Promise<RoomActionResult> {
+  const parsed = joinWithInviteInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "inviteInvalid" };
+  }
+  const { lang, token, role, name, leaveCurrent } = parsed.data;
+
+  return enterRoom("joinWithInvite", lang, async () => {
+    const ip = await requestIp();
+    // Checked first, so a dead link doesn't leave a guest account behind.
+    const found = await lookUpInvite(token, await getSessionUserId(), ip);
+    if (!found.ok) {
+      return found;
+    }
+    return joinAs(name, (userId, checked) =>
+      joinRoom(userId, found.code, role, leaveCurrent, checked, { token, ip }),
+    );
+  });
+}
+
+const findRoomInput = z.object({ lang: localeSchema, code: z.string().max(20) });
+
+export type FindRoomError = "invalid" | "notFound" | "tooMany" | "unavailable";
+
+/**
+ * The join-by-code field. A private room answers "not found" like a code that
+ * doesn't exist, except to its own members.
+ */
+export async function findRoomAction(input: unknown): Promise<{ ok: false; error: FindRoomError }> {
+  const parsed = findRoomInput.safeParse(input);
+  const code = roomCodeSchema.safeParse(parsed.data?.code);
+  if (!parsed.success || !code.success) {
+    return { ok: false, error: "invalid" };
+  }
+  try {
+    const ip = await requestIp();
+    if (tooManyCodeMisses(ip)) {
+      return { ok: false, error: "tooMany" };
+    }
+    const [room, userId] = await Promise.all([getRoom(code.data), getSessionUserId()]);
+    const visible =
+      room !== null &&
+      (room.visibility !== "private" || room.members.some((member) => member.userId === userId));
+    if (!visible) {
+      recordCodeMiss(ip);
+      return { ok: false, error: "notFound" };
+    }
+  } catch (error) {
+    logFailure("findRoom", error);
+    return { ok: false, error: "unavailable" };
+  }
+  redirect(localePath(parsed.data.lang, `/rooms/${code.data}`));
+}
+
+export type CreateInviteActionResult =
+  | { ok: true }
+  | { ok: false; error: CreateInviteError | "unavailable" };
+
+/** No input: createInvite checks that the session's user hosts a private room (SEC-01). */
+export async function createInviteAction(): Promise<CreateInviteActionResult> {
+  const hostId = await getSessionUserId();
+  if (!hostId) {
+    return { ok: false, error: "notHost" };
+  }
+  try {
+    const result = await createInvite(hostId);
+    return result.ok ? { ok: true } : result;
+  } catch (error) {
+    logFailure("createInvite", error);
+    return { ok: false, error: "unavailable" };
+  }
 }
 
 const leaveRoomInput = z.object({ lang: localeSchema });
