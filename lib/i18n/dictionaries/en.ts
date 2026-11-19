@@ -500,6 +500,7 @@ export const en: Dictionary = {
       timeUp: "Time's up",
       abandoned: "Gave up",
     },
+    personalBest: "New personal best!",
     botUnfinished: "Not finished",
     noAccuracy: "no accuracy, gave up",
     source: "From “{title}”, {author}",
