@@ -38,7 +38,7 @@ function colorOf(index: number): string {
 
 /** Wider for more mistakes in the same second, capped so it stays a mark. */
 function crossSize(count: number): number {
-  return 3 + Math.min(count, 4);
+  return 2.5 + Math.min(count, 4) * 0.5;
 }
 
 export function RaceWpmChart({
@@ -161,7 +161,7 @@ export function RaceWpmChart({
         {mistakes.length > 0 && (
           <li className="flex items-center gap-2">
             <svg width="16" height="12" aria-hidden="true">
-              <Cross cx={8} cy={6} size={4} />
+              <Cross cx={8} cy={6} size={3} />
             </svg>
             {labels.mistakesLegend}
           </li>
@@ -316,7 +316,7 @@ export function RaceWpmChart({
             {mistakeText && (
               <span className="flex items-center gap-2 text-danger">
                 <svg width="12" height="12" aria-hidden="true">
-                  <Cross cx={6} cy={6} size={4} />
+                  <Cross cx={6} cy={6} size={3} />
                 </svg>
                 {mistakeText}
               </span>
@@ -336,7 +336,7 @@ function Cross({ cx, cy, size }: { cx: number; cy: number; size: number }) {
   const path = `M${cx - size},${cy - size}L${cx + size},${cy + size}M${cx + size},${cy - size}L${cx - size},${cy + size}`;
   return (
     <g aria-hidden="true" strokeLinecap="round">
-      <path d={path} strokeWidth="5" className="stroke-background" />
+      <path d={path} strokeWidth="4" className="stroke-background" />
       <path d={path} strokeWidth="2" stroke="var(--danger)" />
     </g>
   );
