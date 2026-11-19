@@ -27,9 +27,11 @@ import {
   createRoom,
   deleteRoom,
   getRoom,
+  joinQuickRace,
   joinRoom,
   kickMember,
   leaveClosesRoom,
+  listQuickRaceRooms,
   leaveRoom,
   transferHost,
   updateRoomSettings,
@@ -42,6 +44,7 @@ import {
 } from "@/lib/rooms/rooms";
 import {
   HOST_ROLES,
+  defaultRoomSettings,
   editableSettingsSchema,
   normalizeSettings,
   raceConfigSchema,
@@ -93,12 +96,12 @@ function checkName(input: string): { name: string } | { error: NameError } {
   return { name: parsed.data };
 }
 
-async function enterRoom(
+async function enterRoom<Failure extends { ok: false }>(
   action: string,
   lang: Locale,
-  run: () => Promise<RoomResult | RoomActionResult>,
-): Promise<RoomActionResult> {
-  let result: RoomResult | RoomActionResult;
+  run: () => Promise<{ ok: true; code: string } | Failure>,
+): Promise<Failure | { ok: false; error: "unavailable" }> {
+  let result: { ok: true; code: string } | Failure;
   try {
     result = await run();
   } catch (error) {
@@ -227,6 +230,64 @@ export async function joinWithInviteAction(input: unknown): Promise<RoomActionRe
     return joinAs(name, (userId, checked) =>
       joinRoom(userId, found.code, role, leaveCurrent, checked, { token, ip }),
     );
+  });
+}
+
+const quickRaceInput = z.object({ lang: localeSchema });
+
+/**
+ * A visitor without a session has no name yet, so they are sent to the
+ * chosen room's page to pick one; everyone else joins it right away.
+ */
+export type QuickRaceActionResult = {
+  ok: false;
+  error: "noRoom" | "alreadyInRoom" | "invalid" | "unavailable";
+  current?: CurrentRoom;
+};
+
+export async function quickRaceAction(input: unknown): Promise<QuickRaceActionResult> {
+  const parsed = quickRaceInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid" };
+  }
+  const { lang } = parsed.data;
+
+  return enterRoom("quickRace", lang, async (): Promise<
+    { ok: true; code: string } | QuickRaceActionResult
+  > => {
+    const user = await sessionProfile();
+    if (!user) {
+      const [code] = await listQuickRaceRooms(null, 1);
+      return code ? { ok: true, code } : { ok: false, error: "noRoom" };
+    }
+    const result = await joinQuickRace(user.id, user.displayName);
+    if (result.ok) {
+      return result;
+    }
+    if (result.error === "noRoom") {
+      return { ok: false, error: "noRoom" };
+    }
+    if (result.error === "alreadyInRoom") {
+      return { ok: false, error: "alreadyInRoom", current: "current" in result ? result.current : undefined };
+    }
+    // Any other refusal was a room-specific one the loop should have skipped.
+    return { ok: false, error: "unavailable" };
+  });
+}
+
+export async function createDefaultRoomAction(input: unknown): Promise<RoomActionResult> {
+  const parsed = quickRaceInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid" };
+  }
+  const { lang } = parsed.data;
+
+  return enterRoom("createDefaultRoom", lang, async () => {
+    const user = await sessionProfile();
+    if (!user || user.isGuest) {
+      return { ok: false, error: "notSignedIn" };
+    }
+    return createRoom(user.id, defaultRoomSettings(lang), false, user.displayName);
   });
 }
 

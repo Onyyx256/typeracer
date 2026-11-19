@@ -210,6 +210,17 @@ export const fr = {
     },
     noMatch: "aucune salle publique ne correspond à ces filtres",
     clearFilters: "Voir toutes les salles",
+    quickRace: {
+      button: "Faire une course",
+      hint: "On te place dans la salle publique la plus près d'être pleine.",
+      noRoom: "Aucune salle n'est disponible pour le moment.",
+      createLead: "Ouvre une salle publique avec les réglages par défaut : tu en seras l'hôte.",
+      create: "Créer une salle publique",
+      guestLead: "Reviens dans un moment : de nouvelles salles s'ouvrent souvent.",
+      close: "Fermer",
+      alreadyInRoom: "tu es déjà dans {room}",
+      unavailable: "impossible pour le moment, réessaie plus tard",
+    },
     joinByCode: {
       heading: "Tu as un code ?",
       label: "Code de la salle",

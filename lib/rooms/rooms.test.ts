@@ -12,11 +12,13 @@ import {
   findCurrentRoom,
   getRoom,
   isBanned,
+  joinQuickRace,
   joinRoom,
   kickMember,
   leaveClosesRoom,
   leaveRoom,
   listPublicRooms,
+  listQuickRaceRooms,
   transferHost,
   updateRoomSettings,
 } from "./rooms";
@@ -681,5 +683,94 @@ describe("updateRoomSettings (CONF-11, CONF-12)", () => {
     await updateRoomSettings(hostId, editable({ visibility: "code" }));
     const listed = await listPublicRooms();
     expect(listed.some((room) => room.code === code)).toBe(false);
+  });
+});
+
+describe("quick race (JOIN-03)", () => {
+  async function ranked(codes: string[], userId: string | null = null) {
+    const listed = await listQuickRaceRooms(userId, 1000);
+    return listed.filter((code) => codes.includes(code));
+  }
+
+  test("the room with the fewest free seats comes first", async () => {
+    const roomy = (await hostRoom({ capacity: 10 })).code;
+    const nearlyFull = (await hostRoom({ capacity: 4 })).code;
+    await guestJoins(nearlyFull);
+    await guestJoins(nearlyFull);
+    const middle = (await hostRoom({ capacity: 5 })).code;
+
+    expect(await ranked([roomy, nearlyFull, middle])).toEqual([nearlyFull, middle, roomy]);
+  });
+
+  test("closeness counts free seats, not spectators", async () => {
+    const watched = (await hostRoom({ capacity: 5 })).code;
+    await guestJoins(watched, "spectator");
+    await guestJoins(watched, "spectator");
+    const busier = (await hostRoom({ capacity: 5 })).code;
+    await guestJoins(busier);
+
+    expect(await ranked([watched, busier])).toEqual([busier, watched]);
+  });
+
+  test("on a tie, the oldest room wins", async () => {
+    const older = (await hostRoom({ capacity: 3 })).code;
+    const newer = (await hostRoom({ capacity: 3 })).code;
+    expect(await ranked([newer, older])).toEqual([older, newer]);
+  });
+
+  test("full, private, code-only, racing and closed rooms are left out", async () => {
+    const open = (await hostRoom({ capacity: 3 })).code;
+    const full = (await hostRoom()).code;
+    await guestJoins(full);
+    const unlisted = (await hostRoom({ visibility: "code" })).code;
+    const hidden = (await hostRoom({ visibility: "private" })).code;
+    const racing = (await hostRoom({ capacity: 3 })).code;
+    await setState(racing, "racing");
+    const closed = (await hostRoom({ capacity: 3 })).code;
+    await setState(closed, "closed");
+    const results = (await hostRoom({ capacity: 3 })).code;
+    await setState(results, "results");
+
+    expect(await ranked([open, full, unlisted, hidden, racing, closed, results])).toEqual([
+      open,
+      results,
+    ]);
+  });
+
+  test("a room the user was kicked from is left out for them only", async () => {
+    const { hostId, code } = await hostRoom({ capacity: 3 });
+    const runner = await guestJoins(code);
+    await kickMember(hostId, runner.userId);
+
+    expect(await ranked([code], runner.userId)).toEqual([]);
+    expect(await ranked([code])).toEqual([code]);
+  });
+
+  test("joins the best room as a participant under the user's name", async () => {
+    const { code } = await hostRoom({ capacity: 3 });
+    await guestJoins(code);
+    const account = await createTestAccount();
+    const [best] = await listQuickRaceRooms(account.id, 1);
+
+    expect(await joinQuickRace(account.id, account.username)).toEqual({ ok: true, code: best });
+    const member = (await getRoom(best))?.members.find((entry) => entry.userId === account.id);
+    expect(member).toMatchObject({ role: "participant", displayName: account.username });
+  });
+
+  test("moves on when the name is already taken in the best room", async () => {
+    const name = uniqueName("q");
+    const account = await createTestAccount();
+    const [best] = await listQuickRaceRooms(account.id, 1);
+    await guestJoins(best, "spectator", name);
+
+    const result = await joinQuickRace(account.id, name);
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.code).not.toBe(best);
+  });
+
+  test("someone already in a room is sent back to it", async () => {
+    const { hostId, code } = await hostRoom();
+    const result = await joinQuickRace(hostId, uniqueName("h"));
+    expect(result).toMatchObject({ ok: false, error: "alreadyInRoom", current: { code } });
   });
 });
