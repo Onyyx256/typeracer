@@ -773,4 +773,20 @@ describe("quick race (JOIN-03)", () => {
     const result = await joinQuickRace(hostId, uniqueName("h"));
     expect(result).toMatchObject({ ok: false, error: "alreadyInRoom", current: { code } });
   });
+
+  test("never puts anyone in a full, private or code-only room", async () => {
+    const full = (await hostRoom()).code;
+    await guestJoins(full);
+    const hidden = (await hostRoom({ visibility: "private", capacity: 8 })).code;
+    const unlisted = (await hostRoom({ visibility: "code", capacity: 8 })).code;
+    const account = await createTestAccount();
+
+    const result = await joinQuickRace(account.id, account.username);
+    if (result.ok) {
+      expect([full, hidden, unlisted]).not.toContain(result.code);
+    } else {
+      expect(result.error).toBe("noRoom");
+    }
+    expect((await getRoom(full))?.members).toHaveLength(2);
+  });
 });
