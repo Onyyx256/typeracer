@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { createRng } from "@/lib/texts/rng";
 import {
   appendWords,
+  GLARE_BOT_SPEED,
+  glaredEnd,
+  glaredWork,
   glareRange,
   joinRemoved,
   leadingRunners,
@@ -188,5 +191,23 @@ describe("text changes", () => {
     expect(text.slice(start, end)).toBe("deux trois quatre");
     const [lastStart, lastEnd] = glareRange(text, 30);
     expect(text.slice(lastStart, lastEnd)).toBe("sept");
+  });
+});
+
+describe("glare on a bot", () => {
+  test("a key under glare takes 1/0.15 as long", () => {
+    expect(glaredEnd(0, 150, 5_000)).toBeCloseTo(150 / GLARE_BOT_SPEED);
+  });
+
+  test("a key that outlasts the glare finishes at full speed", () => {
+    // 1000 ms of work: 5000 ms of glare do 750 of it, the last 250 run normally.
+    expect(glaredEnd(0, 1_000, 5_000)).toBeCloseTo(5_250);
+    expect(glaredEnd(6_000, 1_000, 5_000)).toBe(7_000);
+  });
+
+  test("measures the work done across the glare's end, the inverse of glaredEnd", () => {
+    expect(glaredWork(0, 5_250, 5_000)).toBeCloseTo(1_000);
+    expect(glaredWork(6_000, 7_000, 5_000)).toBe(1_000);
+    expect(glaredWork(1_000, 2_000, 0)).toBe(1_000);
   });
 });

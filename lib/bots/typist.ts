@@ -23,8 +23,6 @@ const LONG_WORD = 8;
 const LONG_WORD_SPEED = 0.8;
 /** Capitals, digits, punctuation and accents need a reach or a shift. */
 const SPECIAL_CHAR_SLOWDOWN = 1.6;
-/** While glare hides the next words. */
-const GLARE_SLOWDOWN = 2.5;
 
 /** In base key times, so pauses scale with the level's speed. */
 const START_DELAY = [4, 8] as const;
@@ -108,13 +106,13 @@ export class BotTypist {
     this.keyMs = baseKeyMs(this.targetWpm, this.profile, options.errorMode);
   }
 
-  /** Null once the text is done. `slowed` while glare hides the next words. */
-  next(text: string, mode: ErrorMode, typing: TypingState, slowed = false): BotKey | null {
+  /** Null once the text is done. Glare is the engine's to apply, since it ends mid-key. */
+  next(text: string, mode: ErrorMode, typing: TypingState): BotKey | null {
     if (isComplete(text, mode, typing)) {
       return null;
     }
     const step = this.pending.shift() ?? this.plan(text, mode, typing);
-    const delayMs = step.delayMs * (slowed ? GLARE_SLOWDOWN : 1);
+    const { delayMs } = step;
     const expected = text[typing.input.length] ?? "";
     if (step.kind === "back") {
       return { key: BACKSPACE, delayMs };

@@ -455,6 +455,44 @@ describe("bots in a race (BOT-04)", () => {
     expect(race.track(START + 60_000).find((entry) => entry.userId === "bot-1")?.progress).toBe(typed);
   });
 
+  test("crawl at 15% of their speed while glare blinds them, then recover", () => {
+    const words = Array.from({ length: 60 }, (_, index) => `mot${index}`).join(" ");
+    for (let seed = 0; seed < 100; seed++) {
+      const race = new Race({
+        text: words,
+        errorMode: "strict",
+        timeLimit: 0,
+        participants: [
+          { userId: "a", name: "Alice", isGuest: false },
+          { userId: "bot-1", name: "Bot 1", isGuest: false, bot: { level: "impossible", seed: 4 } },
+        ],
+        now: T0,
+        bonuses: { seed, reserve: "encore des mots" },
+      });
+      const progress = (at: number) =>
+        race.track(at).find((entry) => entry.userId === "bot-1")?.progress ?? 0;
+      let glaredAt = 0;
+      for (let now = START; now <= START + 30_000 && glaredAt === 0; now += 50) {
+        const events = race.tick(now);
+        if (events.some((event) => event.kind === "glare" && event.targets.includes("bot-1"))) {
+          glaredAt = now;
+        }
+      }
+      if (glaredAt === 0) {
+        continue;
+      }
+      const start = progress(glaredAt);
+      race.tick(glaredAt + 5_000);
+      const during = progress(glaredAt + 5_000) - start;
+      race.tick(glaredAt + 10_000);
+      const after = progress(glaredAt + 10_000) - start - during;
+      expect(after).toBeGreaterThan(0);
+      expect(during).toBeLessThan(after * 0.3);
+      return;
+    }
+    throw new Error("No seed glares the bot.");
+  });
+
   test("get catch-up effects like humans, and follow a longer text", () => {
     const race = new Race({
       text: LONG,

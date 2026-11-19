@@ -5,6 +5,8 @@ import {
   appendWords,
   CHECKPOINTS,
   GLARE_MS,
+  glaredEnd,
+  glaredWork,
   joinRemoved,
   planBonuses,
   removableWords,
@@ -77,6 +79,10 @@ export type RunnerIdentity = {
 export type RunnerStatus = "racing" | "finished" | "abandoned";
 
 type BotRun = { typist: BotTypist; next: BotKey | null; at: number };
+
+function glareUntil(runner: Runner): number {
+  return runner.effect?.kind === "glare" ? runner.effect.until : 0;
+}
 
 type Runner = RunnerIdentity & {
   bot: BotRun | null;
@@ -299,9 +305,8 @@ export class Race {
           bot.next = null;
           break;
         }
-        const glare = runner.effect?.kind === "glare" && bot.at < runner.effect.until;
-        bot.next = bot.typist.next(runner.text, this.mode, runner.typing, glare);
-        bot.at += bot.next?.delayMs ?? 0;
+        bot.next = bot.typist.next(runner.text, this.mode, runner.typing);
+        bot.at = glaredEnd(bot.at, bot.next?.delayMs ?? 0, glareUntil(runner));
       }
     }
   }
@@ -357,7 +362,12 @@ export class Race {
         runner.text = appendWords(runner.text, words);
       }
       runner.bonuses.push(kind);
+      const pending = runner.bot?.next && runner.bot.at > now ? runner.bot : null;
+      const work = pending ? glaredWork(now, pending.at, glareUntil(runner)) : 0;
       runner.effect = { kind, until: now + (kind === "glare" ? GLARE_MS : EFFECT_SHOW_MS) };
+      if (pending) {
+        pending.at = glaredEnd(now, work, glareUntil(runner));
+      }
       event.targets.push(runner.userId);
       if (kind !== "glare") {
         event.texts.push({ userId: runner.userId, text: runner.text, removed: runner.removed });

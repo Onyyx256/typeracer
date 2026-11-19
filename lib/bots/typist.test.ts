@@ -19,20 +19,15 @@ const TEXT = TEXTS[0] ?? "";
 
 type Run = { typing: TypingState; keys: { key: string; at: number }[]; ms: number };
 
-function run(
-  bot: BotTypist,
-  text: string,
-  mode: ErrorMode,
-  options: { slowed?: boolean } = {},
-): Run {
+function run(bot: BotTypist, text: string, mode: ErrorMode): Run {
   let typing = initialTyping();
   let ms = 0;
   const keys: Run["keys"] = [];
-  for (let next = bot.next(text, mode, typing, options.slowed); next; ) {
+  for (let next = bot.next(text, mode, typing); next; ) {
     ms += next.delayMs;
     keys.push({ key: next.key, at: ms });
     typing = applyKey(text, mode, typing, next.key);
-    next = bot.next(text, mode, typing, options.slowed);
+    next = bot.next(text, mode, typing);
   }
   return { typing, keys, ms };
 }
@@ -116,14 +111,6 @@ describe("bot typist", () => {
     const { typing } = race("noob", 5, "free");
     expect(typing.input.length).toBe(TEXT.length);
     expect(typing.input).not.toBe(TEXT);
-  });
-
-  test("is slower while glare hides the next words", () => {
-    const plain = run(new BotTypist({ level: "expert", seed: 9, errorMode: "strict" }), TEXT, "strict");
-    const glared = run(new BotTypist({ level: "expert", seed: 9, errorMode: "strict" }), TEXT, "strict", {
-      slowed: true,
-    });
-    expect(glared.ms).toBeGreaterThan(plain.ms * 2);
   });
 
   test("follows a text that changes under it, as bonuses do", () => {

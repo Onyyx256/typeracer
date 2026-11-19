@@ -30,6 +30,24 @@ export const NIGHT_SHARES = [0.07, 0.05, 0.03] as const;
 export const GLARE_MS = 5_000;
 export const GLARE_WORDS = 3;
 
+/** A bot can't read through glare: it types at this share of its speed until the glare ends. */
+export const GLARE_BOT_SPEED = 0.15;
+
+/** When `work` ms of normal typing started at `start` ends, slowed until `glareUntil`. */
+export function glaredEnd(start: number, work: number, glareUntil: number): number {
+  const glared = Math.max(0, glareUntil - start);
+  if (work <= glared * GLARE_BOT_SPEED) {
+    return start + work / GLARE_BOT_SPEED;
+  }
+  return start + glared + (work - glared * GLARE_BOT_SPEED);
+}
+
+/** How many ms of normal typing fit between `from` and `to`, slowed until `glareUntil`. */
+export function glaredWork(from: number, to: number, glareUntil: number): number {
+  const slowEnd = Math.min(to, Math.max(from, glareUntil));
+  return (slowEnd - from) * GLARE_BOT_SPEED + (to - slowEnd);
+}
+
 /** Words kept after the one being typed, so a rain never cuts what the browser may already have typed. */
 export const RAIN_MARGIN_WORDS = 2;
 
