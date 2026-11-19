@@ -105,6 +105,7 @@ export function TypingBox({
   dict,
   locale,
   action,
+  notice,
 }: {
   text: string;
   errorMode: ErrorMode;
@@ -117,6 +118,7 @@ export function TypingBox({
   dict: RaceDictionary;
   locale: Locale;
   action?: ReactNode;
+  notice?: ReactNode;
 }) {
   const field = useRef<HTMLTextAreaElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -278,7 +280,15 @@ export function TypingBox({
           className="pointer-events-none absolute inset-0 size-full resize-none bg-transparent text-transparent caret-transparent opacity-0"
         />
       </div>
-      {!done && <p className="font-mono text-xs text-muted">&gt; {dict.focusHint}</p>}
+      {/* The notice takes the hint's place, so nothing moves when an effect lands. */}
+      {!done && (
+        <div className="grid font-mono text-xs">
+          <p className={`text-muted [grid-area:1/1] ${notice ? "invisible" : ""}`}>&gt; {dict.focusHint}</p>
+          <p role="status" aria-live="polite" className="flex items-center gap-2 text-accent-text [grid-area:1/1]">
+            {notice}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

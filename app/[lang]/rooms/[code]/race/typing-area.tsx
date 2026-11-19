@@ -47,6 +47,7 @@ export function TypingArea({
   dict,
   locale,
   action,
+  notice,
 }: {
   code: string;
   errorMode: ErrorMode;
@@ -59,6 +60,7 @@ export function TypingArea({
   dict: RaceDictionary;
   locale: Locale;
   action?: ReactNode;
+  notice?: ReactNode;
 }) {
   const [text, setText] = useState(initial.text);
   const [removed, setRemoved] = useState(initial.removed);
@@ -175,6 +177,7 @@ export function TypingArea({
       dict={dict}
       locale={locale}
       action={action}
+      notice={notice}
     />
   );
 }
