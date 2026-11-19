@@ -4,35 +4,26 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 import type { WatchReply } from "./events";
+import { onIdentityChange } from "./identity";
 
 /** One connection per tab, shared by every component; the cookie identifies the user. */
 let socket: Socket | null = null;
-let identity: string | null = null;
-
-export function getSocket(): Socket {
-  socket ??= io({ withCredentials: true });
-  return socket;
-}
 
 /**
  * The server reads the session cookie only when the socket connects, so
  * after logging in or out the socket reconnects as the new identity.
  */
-export function useSocketIdentity(userId: string | null): void {
-  useEffect(() => {
-    if (identity === userId) {
-      return;
-    }
-    identity = userId;
-    // A guest only needs a socket on pages that watch something.
-    if (!socket && userId === null) {
-      return;
-    }
-    const current = getSocket();
-    if (current.connected) {
-      current.disconnect().connect();
-    }
-  }, [userId]);
+export function getSocket(): Socket {
+  if (!socket) {
+    const created = io({ withCredentials: true });
+    onIdentityChange(() => {
+      if (created.connected) {
+        created.disconnect().connect();
+      }
+    });
+    socket = created;
+  }
+  return socket;
 }
 
 /** Batches bursts of events into one re-render. */

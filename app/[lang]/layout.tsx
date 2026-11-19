@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
-import { Presence } from "@/app/components/live-updates";
+import { Presence } from "@/app/components/presence";
 import { RoomClosed } from "@/app/components/room-closed";
 import { SiteHeader } from "@/app/components/site-header";
 import { getViewer } from "@/lib/auth/current-user";

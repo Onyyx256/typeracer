@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { localePath, type Locale } from "@/lib/i18n/config";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
-import { EVENTS, type RoomClosed as RoomClosedPayload, type RoomClosedReason } from "@/lib/realtime/events";
-import { getSocket } from "@/lib/realtime/client";
+import type { RoomClosed as RoomClosedPayload, RoomClosedReason } from "@/lib/realtime/events";
 
 /**
  * Mounted in the layout, so a room page re-rendering into a 404 at the same
@@ -23,11 +22,23 @@ export function RoomClosed({
   const titleId = useId();
 
   useEffect(() => {
-    const socket = getSocket();
     const onClosed = (payload: RoomClosedPayload) => setClosed(payload.reason);
-    socket.on(EVENTS.roomClosed, onClosed);
+    let unsubscribe: (() => void) | null = null;
+    let unmounted = false;
+    // Loaded here rather than imported, so the layout doesn't ship socket.io and Zod to every page.
+    void Promise.all([import("@/lib/realtime/client"), import("@/lib/realtime/events")]).then(
+      ([{ getSocket }, { EVENTS }]) => {
+        if (unmounted) {
+          return;
+        }
+        const socket = getSocket();
+        socket.on(EVENTS.roomClosed, onClosed);
+        unsubscribe = () => socket.off(EVENTS.roomClosed, onClosed);
+      },
+    );
     return () => {
-      socket.off(EVENTS.roomClosed, onClosed);
+      unmounted = true;
+      unsubscribe?.();
     };
   }, []);
 

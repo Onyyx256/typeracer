@@ -1,16 +1,7 @@
 "use client";
 
 import { EVENTS } from "@/lib/realtime/events";
-import { useLiveRefresh, useSocketIdentity } from "@/lib/realtime/client";
-
-/**
- * An open tab is how the server knows a member is still there. Rendered for
- * guests too (null), so logging out reconnects the socket as a guest.
- */
-export function Presence({ userId }: { userId: string | null }) {
-  useSocketIdentity(userId);
-  return null;
-}
+import { useLiveRefresh } from "@/lib/realtime/client";
 
 export function LiveRoom({ code, renderedAt }: { code: string; renderedAt: number }) {
   useLiveRefresh({
