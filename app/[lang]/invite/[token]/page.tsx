@@ -72,8 +72,14 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
     <div className="grid gap-8">
       <header>
         <h1 className="font-display text-4xl leading-tight font-semibold">
-          {t.heading}{" "}
-          <span className="font-mono tracking-widest text-accent-text">{room.code}</span>
+          {room.visibility === "private" ? (
+            t.privateHeading
+          ) : (
+            <>
+              {t.heading}{" "}
+              <span className="font-mono tracking-widest text-accent-text">{room.code}</span>
+            </>
+          )}
         </h1>
         <p className="mt-2 text-muted">{interpolate(t.lead, { host })}</p>
       </header>

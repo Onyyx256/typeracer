@@ -116,11 +116,18 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
         <header className={`grid ${inRace ? "gap-2" : "gap-4"}`}>
           {/* The leave and delete buttons line up with the title, not the state below it. */}
           <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* A private room's code lets no one in, so showing it would only mislead the host. */}
             <h1 className="font-display text-4xl leading-tight font-semibold">
-              {t.heading}{" "}
-              <span className="font-mono tracking-widest text-accent-text">
-                {room.code}
-              </span>
+              {room.visibility === "private" ? (
+                t.privateHeading
+              ) : (
+                <>
+                  {t.heading}{" "}
+                  <span className="font-mono tracking-widest text-accent-text">
+                    {room.code}
+                  </span>
+                </>
+              )}
             </h1>
             {member && (
               <div className="flex flex-wrap gap-3">

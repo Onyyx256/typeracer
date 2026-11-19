@@ -214,6 +214,7 @@ export const en: Dictionary = {
   room: {
     title: "Room {code}",
     heading: "Room",
+    privateHeading: "Private room",
     states: {
       waiting: "Waiting",
       countdown: "Countdown",
@@ -649,6 +650,7 @@ export const en: Dictionary = {
   invitePage: {
     title: "Invitation",
     heading: "Invitation to room",
+    privateHeading: "Invitation to a private room",
     lead: "{host} invites you to their private room. Choose how to join.",
     invalid: {
       title: "This link doesn't work anymore",

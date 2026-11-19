@@ -216,6 +216,7 @@ export const fr = {
   room: {
     title: "Salle {code}",
     heading: "Salle",
+    privateHeading: "Salle privée",
     states: {
       waiting: "En attente",
       countdown: "Décompte",
@@ -651,6 +652,7 @@ export const fr = {
   invitePage: {
     title: "Invitation",
     heading: "Invitation dans la salle",
+    privateHeading: "Invitation dans une salle privée",
     lead: "{host} t'invite dans sa salle privée. Choisis comment entrer.",
     invalid: {
       title: "Ce lien ne marche plus",
