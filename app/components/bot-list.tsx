@@ -91,25 +91,39 @@ function BotRow({
         <label htmlFor={id} className="text-sm text-muted">
           {dict.level}
         </label>
-        <select
-          id={id}
-          value={level}
-          onChange={(event) => {
-            const next = BOT_LEVELS.find((candidate) => candidate === event.target.value);
-            if (next) onLevel(next);
-          }}
-          className="h-10 cursor-pointer border border-line bg-surface px-3 text-sm transition-colors hover:border-primary-text focus-visible:border-primary-text rounded-leaf"
-        >
-          {BOT_LEVELS.map((option) => (
-            <option key={option} value={option}>
-              {dict.levels[option]} ·{" "}
-              {interpolate(dict.speed, {
-                min: BOT_PROFILES[option].minWpm,
-                max: BOT_PROFILES[option].maxWpm,
-              })}
-            </option>
-          ))}
-        </select>
+        <span className="relative">
+          <select
+            id={id}
+            value={level}
+            onChange={(event) => {
+              const next = BOT_LEVELS.find((candidate) => candidate === event.target.value);
+              if (next) onLevel(next);
+            }}
+            className="h-10 cursor-pointer appearance-none border border-line bg-surface pr-10 pl-3 text-sm transition-colors hover:border-primary-text focus-visible:border-primary-text rounded-leaf"
+          >
+            {BOT_LEVELS.map((option) => (
+              <option key={option} value={option}>
+                {dict.levels[option]} ·{" "}
+                {interpolate(dict.speed, {
+                  min: BOT_PROFILES[option].minWpm,
+                  max: BOT_PROFILES[option].maxWpm,
+                })}
+              </option>
+            ))}
+          </select>
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </span>
         <button
           type="button"
           onClick={onRemove}
