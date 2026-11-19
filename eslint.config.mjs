@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Playwright output.
     "playwright-report/**",
     "test-results/**",
+    // Other checkouts of this repo, with their own build output, live here.
+    ".claude/worktrees/**",
   ]),
 ]);
 
