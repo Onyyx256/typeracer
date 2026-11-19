@@ -3,6 +3,7 @@ import { BonusTip } from "@/app/components/race/bonus-tip";
 import { MissedKeys } from "@/app/components/race/missed-keys";
 import { RaceWpmChart } from "@/app/components/race/race-wpm-chart";
 import type { RaceResultsView, ResultRow } from "@/lib/race/results";
+import { BOT_COSMETICS } from "@/lib/bots/looks";
 import { cosmeticClasses } from "@/lib/profile/cosmetics";
 import type { PlayerLooks } from "@/lib/profile/look";
 import type { Locale } from "@/lib/i18n/config";
@@ -59,6 +60,7 @@ export function RaceResults({
               return <li key={index} aria-hidden="true" className={order} />;
             }
             const look = row.userId ? looks[row.userId] : undefined;
+            const cosmetics = row.botLevel ? BOT_COSMETICS[row.botLevel] : look?.cosmetics;
             return (
               <li key={index} className={`grid justify-items-center gap-2 text-center ${order}`}>
                 <PodiumFlower
@@ -66,7 +68,7 @@ export function RaceResults({
                   avatarUrl={look?.avatarUrl}
                   stem={stem}
                   delay={delay}
-                  className={`max-w-[7.5rem] ${look ? cosmeticClasses(look.cosmetics) : ""}`}
+                  className={`max-w-[7.5rem] ${cosmetics ? cosmeticClasses(cosmetics) : ""}`}
                 />
                 <span className="max-w-full truncate font-medium" title={row.name}>
                   {row.name}
