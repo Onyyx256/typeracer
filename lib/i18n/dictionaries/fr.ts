@@ -502,7 +502,11 @@ export const fr = {
       timeUp: "Temps écoulé",
       abandoned: "Abandon",
     },
-    personalBest: "Nouveau record personnel !",
+    personalBest: {
+      heading: "Nouveau record personnel !",
+      wpm: "{wpm} MPM",
+      previous: "ancien record : {wpm} MPM",
+    },
     botUnfinished: "Pas fini",
     noAccuracy: "pas de précision, abandon",
     source: "Extrait de « {title} », {author}",

@@ -2,7 +2,7 @@ import { PodiumFlower } from "@/app/components/podium-flower";
 import { BonusTip } from "@/app/components/race/bonus-tip";
 import { MissedKeys } from "@/app/components/race/missed-keys";
 import { RaceWpmChart } from "@/app/components/race/race-wpm-chart";
-import type { RaceResultsView, ResultRow } from "@/lib/race/results";
+import type { PersonalBest, RaceResultsView, ResultRow } from "@/lib/race/results";
 import { BOT_COSMETICS } from "@/lib/bots/looks";
 import { cosmeticClasses } from "@/lib/profile/cosmetics";
 import type { PlayerLooks } from "@/lib/profile/look";
@@ -32,14 +32,14 @@ export function RaceResults({
   dict,
   roomDict,
   locale,
-  personalBest = false,
+  personalBest = null,
 }: {
   /** Only what's shown, so a practice race (never saved) can use it too. */
   view: Pick<RaceResultsView, "results" | "source">;
   userId: string | null;
   looks?: PlayerLooks;
-  /** The viewer's WPM in this race beat their best before it. */
-  personalBest?: boolean;
+  /** The viewer's record, if this race beat their best before it. */
+  personalBest?: PersonalBest | null;
   dict: ResultsDictionary;
   roomDict: RoomDictionary;
   locale: Locale;
@@ -53,6 +53,21 @@ export function RaceResults({
       <h2 id="results-heading" className="sr-only">
         {dict.heading}
       </h2>
+
+      {personalBest && (
+        <p className="record-pop flex w-fit flex-wrap items-baseline gap-x-3 gap-y-1 border border-accent bg-accent/15 px-4 py-3 rounded-leaf">
+          <span className="font-display text-xl font-semibold">
+            <span aria-hidden="true" className="text-accent-text">★ </span>
+            {dict.personalBest.heading}{" "}
+            <span className="record-glow tabular-nums">
+              {interpolate(dict.personalBest.wpm, { wpm: formatNumber(locale, personalBest.wpm) })}
+            </span>
+          </span>
+          <span className="font-mono text-sm text-muted tabular-nums">
+            {interpolate(dict.personalBest.previous, { wpm: formatNumber(locale, personalBest.previous) })}
+          </span>
+        </p>
+      )}
 
       <div>
         <h3 className="sr-only">{dict.podium}</h3>
@@ -128,19 +143,7 @@ export function RaceResults({
                       </span>
                     )}
                   </th>
-                  <td className="px-4 py-3 text-right font-semibold">
-                    {you && personalBest ? (
-                      <span className="inline-grid justify-items-end gap-1">
-                        <span className="record-glow">{formatNumber(locale, row.wpm)}</span>
-                        <span className="record-pop rounded-leaf bg-accent px-2 py-0.5 font-mono text-xs whitespace-nowrap text-on-accent">
-                          <span aria-hidden="true">★ </span>
-                          {dict.personalBest}
-                        </span>
-                      </span>
-                    ) : (
-                      formatNumber(locale, row.wpm)
-                    )}
-                  </td>
+                  <td className="px-4 py-3 text-right font-semibold">{formatNumber(locale, row.wpm)}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(locale, row.rawWpm)}</td>
                   <td className="px-4 py-3 text-right">
                     {row.accuracy === null ? (

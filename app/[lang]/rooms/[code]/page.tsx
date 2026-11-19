@@ -11,7 +11,7 @@ import { renderTime } from "@/lib/realtime/render-time";
 import type { RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { interpolate, plural } from "@/lib/i18n/format";
 import { MIN_RUNNERS } from "@/lib/race/manager";
-import { getLatestRaceResults, isPersonalBest } from "@/lib/race/results";
+import { getLatestRaceResults, getPersonalBest } from "@/lib/race/results";
 import { getLooks } from "@/lib/profile/profile";
 import { requestIp, requestOrigin } from "@/lib/request";
 import { roomCodeSchema } from "@/lib/rooms/code";
@@ -97,7 +97,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
   const isHost = user !== null && room.hostId === user.id;
   const inRace = room.state === "countdown" || room.state === "racing";
   const results = room.state === "results" ? await getLatestRaceResults(room.code) : null;
-  const personalBest = results && user ? await isPersonalBest(results.raceId, user.id) : false;
+  const personalBest = results && user ? await getPersonalBest(results.raceId, user.id) : null;
   // The podium can show someone who has left the room since.
   const looks = await getLooks([
     ...room.members.map((entry) => entry.userId),

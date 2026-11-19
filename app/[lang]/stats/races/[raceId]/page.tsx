@@ -9,7 +9,7 @@ import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatDateTime, interpolate } from "@/lib/i18n/format";
 import { getLooks } from "@/lib/profile/profile";
-import { getRaceResultsFor, isPersonalBest } from "@/lib/race/results";
+import { getRaceResultsFor, getPersonalBest } from "@/lib/race/results";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dict = await getDictionary();
@@ -43,7 +43,7 @@ async function PastRace({ params }: { params: Promise<{ raceId: string }> }) {
   }
   const [looks, personalBest] = await Promise.all([
     getLooks(view.results.flatMap((row) => (row.userId ? [row.userId] : []))),
-    isPersonalBest(view.raceId, user.id),
+    getPersonalBest(view.raceId, user.id),
   ]);
   const t = dict.statsPage.race;
 
