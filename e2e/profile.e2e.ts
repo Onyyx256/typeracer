@@ -1,21 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import sharp from "sharp";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // The account page: profile photo, display name and flower colours, for a
 // new account that has never raced.
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 test("a new account sets a photo, a display name and its free colours", async ({ page }) => {
   const username = e2eName();

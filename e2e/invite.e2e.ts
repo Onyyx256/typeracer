@@ -1,20 +1,9 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // The ways into a room that isn't listed: a code-only room with its code
 // (or a link), a private room only with a one-time invite link.
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 async function hostRoom(browser: Browser, visibility: "By code" | "Private") {
   const name = e2eName();

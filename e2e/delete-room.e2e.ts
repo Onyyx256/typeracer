@@ -1,20 +1,9 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // The host deletes the room at once, instead of kicking everyone out
 // first: the members are released and their pages say so (SALLE-08).
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 /** A new signed-in host with an open room; returns the page and the room code. */
 async function hostRoom(browser: Browser): Promise<{ host: Page; code: string }> {

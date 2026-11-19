@@ -1,21 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // A Wi-Fi stall in the middle of a race: the network holds the messages and
 // delivers them together. The server judges the speed on when they were
 // sent, so nothing typed is lost.
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 test("keys typed during a network stall all reach the server", async ({ browser }) => {
   test.slow();
