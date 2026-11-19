@@ -108,3 +108,40 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   await guestContext.close();
   await hostContext.close();
 });
+
+test("pasting or dropping the text into the typing box does nothing", async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto("/en/practice");
+  await page.getByRole("radio", { name: /^Random/ }).check({ force: true });
+  await page.getByLabel("Length").fill("10");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  const shown = page.locator('p[aria-label="Text to type"]');
+  const text = (await shown.innerText()).trim();
+  await expect(page.getByText("The race starts in")).toBeHidden({ timeout: 6_000 });
+
+  const field = page.getByLabel("Type the text here");
+  await field.focus();
+  // Headless Chromium on macOS doesn't turn Cmd+V into a paste, so the
+  // events a paste or a drop fires are sent to the box directly. One letter
+  // only: the engine already refuses a whole text arriving at once, and this
+  // checks the box itself.
+  const refused = await field.evaluate((element, value) => {
+    const events = [
+      new ClipboardEvent("paste", { bubbles: true, cancelable: true }),
+      new InputEvent("beforeinput", { bubbles: true, cancelable: true, inputType: "insertFromPaste", data: value }),
+      new DragEvent("drop", { bubbles: true, cancelable: true }),
+      new InputEvent("beforeinput", { bubbles: true, cancelable: true, inputType: "insertFromDrop", data: value }),
+    ];
+    return events.map((event) => !element.dispatchEvent(event));
+  }, text[0]);
+  expect(refused).toEqual([true, true, true, true]);
+
+  // The box still takes keys, and they land from the first letter on, so
+  // nothing pasted or dropped got in before them.
+  await page.keyboard.type(text.slice(0, 3), { delay: 60 });
+  await expect(shown.locator("span.text-primary-text")).toHaveCount(3);
+  await expect(shown.locator("span.text-danger")).toHaveCount(0);
+
+  await context.close();
+});
