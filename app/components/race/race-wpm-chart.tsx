@@ -46,7 +46,8 @@ export function RaceWpmChart({
   const times = [...new Set(runners.flatMap((runner) => runner.series.map((point) => point.t)))].sort(
     (a, b) => a - b,
   );
-  if (times.length === 0) {
+  // Given up during the countdown: no time passed, so there is no axis to draw.
+  if ((times.at(-1) ?? 0) <= 0) {
     return null;
   }
   const values = runners.flatMap((runner) => runner.series.map((point) => point.wpm));

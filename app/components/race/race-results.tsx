@@ -195,33 +195,36 @@ function RaceCharts({
   const you = (row: ResultRow) => isViewer(row, userId);
   // Missed keys are private: only the player's own reach the page.
   const own = view.results.find(you);
+  const timed = view.results.some((row) => row.wpmSeries.some((point) => point.t > 0));
 
   return (
     <div className="grid gap-8">
-      <section aria-labelledby="wpm-chart-heading" className="grid gap-3">
-        <div className="grid gap-1">
-          <h3 id="wpm-chart-heading" className="font-display text-2xl font-semibold">
-            {t.wpmHeading}
-          </h3>
-          <p className="text-sm text-muted">{t.wpmLead}</p>
-        </div>
-        <RaceWpmChart
-          runners={view.results.map((row) => ({
-            id: id(row),
-            name: row.name,
-            you: you(row),
-            series: row.wpmSeries,
-          }))}
-          labels={{
-            axis: t.axis,
-            time: t.time,
-            others: t.others,
-            you: roomDict.you,
-            summary: t.wpmSummary,
-          }}
-          locale={locale}
-        />
-      </section>
+      {timed && (
+        <section aria-labelledby="wpm-chart-heading" className="grid gap-3">
+          <div className="grid gap-1">
+            <h3 id="wpm-chart-heading" className="font-display text-2xl font-semibold">
+              {t.wpmHeading}
+            </h3>
+            <p className="text-sm text-muted">{t.wpmLead}</p>
+          </div>
+          <RaceWpmChart
+            runners={view.results.map((row) => ({
+              id: id(row),
+              name: row.name,
+              you: you(row),
+              series: row.wpmSeries,
+            }))}
+            labels={{
+              axis: t.axis,
+              time: t.time,
+              others: t.others,
+              you: roomDict.you,
+              summary: t.wpmSummary,
+            }}
+            locale={locale}
+          />
+        </section>
+      )}
 
       {own && (
         <section aria-labelledby="keys-chart-heading" className="grid gap-3">

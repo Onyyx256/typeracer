@@ -45,6 +45,7 @@ test("a visitor without an account practices alone", async ({ page }) => {
   await expect(rows.nth(1)).toContainText("You");
   await expect(rows.nth(1)).toContainText("Finished");
   await expect(rows.nth(1).getByRole("cell").nth(4)).not.toHaveText("100.0%");
+  await expect(page.getByRole("heading", { name: "WPM during the race" })).toBeVisible();
   await expect(page.getByText("Practice results aren't saved.")).toBeVisible();
 
   // Again, with a new text and a new countdown.
@@ -53,6 +54,8 @@ test("a visitor without an account practices alone", async ({ page }) => {
   await page.getByRole("button", { name: "Give up" }).click();
   await page.getByRole("dialog", { name: "Give up this practice?" }).getByRole("button", { name: "Give up" }).click();
   await expect(rows.nth(1)).toContainText("Gave up");
+  // Given up during the countdown: no time passed, so no WPM chart to draw.
+  await expect(page.getByRole("heading", { name: "WPM during the race" })).toHaveCount(0);
 });
 
 test("someone in a room can't practice", async ({ browser }) => {

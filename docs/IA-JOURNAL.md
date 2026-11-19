@@ -57,3 +57,11 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** dans une vraie course sur localhost:3000 (salle W5GFHC), l'invité avait tout tapé en vert, mais la piste le montrait toujours « en course » et les résultats n'arrivaient pas. Ce serveur de dev tournait depuis 19 h 06, avant les bonus, avec un mélange d'anciennes et de nouvelles versions du code. Premier essai de correction de l'IA : redemander toute la course (`race:sync`), mais ça remettait la frappe à l'état du serveur et perdait des touches en route, ce qu'un test répété a montré.
 - **Correction :** la piste donne la longueur du texte de chaque coureur ; si elle diffère pendant plus de 0,5 s, le navigateur redemande seulement son texte (`race:text-sync`). Test e2e qui jette les `race:text` de l'invité (commits dabfd6d, c578245, 4e3b1f1, 9fe5663).
 - **Leçon :** un état envoyé une seule fois doit pouvoir être retrouvé ; tester aussi le cas où un message se perd.
+
+## 2026-11-19 — Graphique du MPM en NaN après un abandon pendant le décompte
+
+- **Outil / agent :** Claude Code (session du graphique de RES-03, commit 8391855, à confirmer) ; Playwright.
+- **Ce que l'IA a fait :** `app/components/race/race-wpm-chart.tsx` divisait par le dernier temps de la course. Si on abandonne pendant le décompte de 3 s, tous les temps valent 0 : React reçoit NaN pour `x`, `cx`, `x1`, `x2` et `left`. Le test e2e de l'entraînement abandonnait déjà pendant un décompte, mais il tourne sur un build de production, où React n'affiche pas ces avertissements.
+- **Comment je l'ai détecté :** en jouant à l'entraînement avec un bot Noob (une course finie, « Recommencer », abandon) : 5 erreurs React dans le serveur de dev.
+- **Correction :** le graphique ne dessine rien si aucun temps n'a passé, et les résultats cachent sa section (ef6239c) ; le test e2e vérifie que le graphique est là après une vraie course et absent après un abandon pendant le décompte (4d56c86).
+- **Leçon :** penser aux cas limites des divisions (durée nulle), et ne pas compter sur les tests e2e de production pour voir les avertissements de React.
