@@ -29,7 +29,7 @@ async function Practice() {
   const [viewer, dict, locale] = await Promise.all([getViewer(), getDictionary(), getLocale()]);
   const current = viewer ? await findCurrentRoom(viewer.id) : null;
   if (current) {
-    return <InRoomNotice code={current.code} dict={dict.practice} locale={locale} />;
+    return <InRoomNotice room={current} dict={dict.practice} roomNames={dict.roomNames} locale={locale} />;
   }
 
   // Only the strings the page uses are sent to the browser.
@@ -42,6 +42,7 @@ async function Practice() {
       raceDict={dict.race}
       resultsDict={dict.results}
       roomDict={dict.room}
+      roomNames={dict.roomNames}
       locale={locale}
     />
   );

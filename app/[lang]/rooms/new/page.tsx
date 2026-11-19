@@ -38,6 +38,7 @@ async function SignedInForm() {
     <CreateRoomForm
       dict={dict.createRoom}
       botsDict={dict.room.bots}
+      roomNames={dict.roomNames}
       locale={locale}
       defaultName={user.displayName}
     />

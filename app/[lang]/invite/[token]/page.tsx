@@ -9,6 +9,7 @@ import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/format";
 import { requestIp } from "@/lib/request";
 import { inviteTokenSchema, lookUpInvite } from "@/lib/rooms/invites";
+import { roomLabel } from "@/lib/rooms/label";
 import { findCurrentRoom, getRoom, isBanned } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { JoinRoom } from "../../rooms/[code]/join-room";
@@ -96,7 +97,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
             locale={locale}
             code={room.code}
             full={runners >= room.capacity}
-            elsewhere={current?.code ?? null}
+            elsewhere={current && { code: current.code, label: roomLabel(dict.roomNames, current) }}
             defaultName={user?.displayName ?? ""}
             hasSession={user !== null}
             invite={token}

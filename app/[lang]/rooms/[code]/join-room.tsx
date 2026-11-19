@@ -16,7 +16,8 @@ type JoinRoomProps = {
   locale: Locale;
   code: string;
   full: boolean;
-  elsewhere: string | null;
+  /** The room the visitor is already in, with its label. */
+  elsewhere: { code: string; label: string } | null;
   /** Empty for a visitor without a session, who joins as a guest. */
   defaultName: string;
   hasSession: boolean;
@@ -78,9 +79,9 @@ export function JoinRoom({
     <div className="grid gap-2">
       {elsewhere && (
         <>
-          <p className="text-sm">{interpolate(dict.elsewhere, { code: elsewhere })}</p>
-          <Link href={localePath(locale, `/rooms/${elsewhere}`)} className={secondary}>
-            {interpolate(dict.goBack, { code: elsewhere })}
+          <p className="text-sm">{interpolate(dict.elsewhere, { room: elsewhere.label })}</p>
+          <Link href={localePath(locale, `/rooms/${elsewhere.code}`)} className={secondary}>
+            {interpolate(dict.goBack, { room: elsewhere.label })}
           </Link>
           <p className="mt-2 font-mono text-xs text-muted">&gt; {dict.leaveAndJoin}</p>
         </>

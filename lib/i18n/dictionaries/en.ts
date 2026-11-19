@@ -173,13 +173,17 @@ export const en: Dictionary = {
       unavailable: "can't save right now, try again",
     },
   },
+  roomNames: {
+    code: "room {code}",
+    private: "your private room",
+  },
   roomsPage: {
     title: "Join a room",
     heading: "Join a room",
     lead: "Public rooms open right now. Step into the one you like.",
     empty: "no public room yet",
     create: "Create a room",
-    current: "You're in room {code}.",
+    current: "You're in {room}.",
     backToRoom: "Go back",
     caption: "Public rooms",
     columns: {
@@ -254,8 +258,8 @@ export const en: Dictionary = {
       unavailable: "not possible right now, try again later",
     },
     waitingNote: "the host will start the race",
-    elsewhere: "You're already in room {code}.",
-    goBack: "Go back to {code}",
+    elsewhere: "You're already in {room}.",
+    goBack: "Go back to {room}",
     leaveAndJoin: "Leave it and join this one",
     guestBadge: "guest",
     bots: {
@@ -513,8 +517,8 @@ export const en: Dictionary = {
     again: "Go again",
     settings: "Change the settings",
     notSaved: "Practice results aren't saved.",
-    inRoom: "You're in room {code}. Leave it to practice.",
-    backToRoom: "Back to {code}",
+    inRoom: "You're in {room}. Leave it to practice.",
+    backToRoom: "Back to {room}",
     abandonDialog: {
       title: "Give up this practice?",
       lead: "The race stops here and you see your results.",
@@ -626,8 +630,8 @@ export const en: Dictionary = {
     },
     submit: "Create the room",
     submitting: "creating the room",
-    elsewhere: "You're already in room {code}.",
-    goBack: "Go back to {code}",
+    elsewhere: "You're already in {room}.",
+    goBack: "Go back to {room}",
     leaveAndCreate: "Leave it and create this one",
     errors: {
       invalid: "a setting isn't valid",

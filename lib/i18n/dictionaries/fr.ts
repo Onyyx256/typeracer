@@ -175,13 +175,17 @@ export const fr = {
       unavailable: "impossible d'enregistrer pour l'instant, réessaie",
     },
   },
+  roomNames: {
+    code: "la salle {code}",
+    private: "ta salle privée",
+  },
   roomsPage: {
     title: "Rejoindre une salle",
     heading: "Rejoindre une salle",
     lead: "Les salles publiques ouvertes en ce moment. Entre dans celle qui te plaît.",
     empty: "aucune salle publique pour l'instant",
     create: "Créer une salle",
-    current: "Tu es dans la salle {code}.",
+    current: "Tu es dans {room}.",
     backToRoom: "Y retourner",
     caption: "Salles publiques",
     columns: {
@@ -256,8 +260,8 @@ export const fr = {
       unavailable: "impossible pour le moment, réessaie plus tard",
     },
     waitingNote: "l'hôte lancera la course",
-    elsewhere: "Tu es déjà dans la salle {code}.",
-    goBack: "Retourner dans {code}",
+    elsewhere: "Tu es déjà dans {room}.",
+    goBack: "Retourner dans {room}",
     leaveAndJoin: "La quitter et entrer ici",
     guestBadge: "invité",
     bots: {
@@ -515,8 +519,8 @@ export const fr = {
     again: "Recommencer",
     settings: "Changer les réglages",
     notSaved: "Les résultats d'entraînement ne sont pas enregistrés.",
-    inRoom: "Tu es dans la salle {code}. Quitte-la pour t'entraîner.",
-    backToRoom: "Retourner dans {code}",
+    inRoom: "Tu es dans {room}. Quitte-la pour t'entraîner.",
+    backToRoom: "Retourner dans {room}",
     abandonDialog: {
       title: "Abandonner l'entraînement ?",
       lead: "La course s'arrête ici et tu vois tes résultats.",
@@ -628,8 +632,8 @@ export const fr = {
     },
     submit: "Créer la salle",
     submitting: "création de la salle",
-    elsewhere: "Tu es déjà dans la salle {code}.",
-    goBack: "Retourner dans {code}",
+    elsewhere: "Tu es déjà dans {room}.",
+    goBack: "Retourner dans {room}",
     leaveAndCreate: "La quitter et créer celle-ci",
     errors: {
       invalid: "un réglage n'est pas valide",

@@ -13,12 +13,14 @@ import type { Locale } from "@/lib/i18n/config";
 import { interpolate } from "@/lib/i18n/format";
 import type {
   CreateRoomDictionary,
+  Dictionary,
   PracticeDictionary,
   RaceDictionary,
   ResultsDictionary,
   RoomDictionary,
 } from "@/lib/i18n/dictionaries/fr";
 import { addBot, removeBot, setBotLevel } from "@/lib/bots/list";
+import type { CurrentRoom } from "@/lib/rooms/label";
 import {
   defaultPracticeSettings,
   PRACTICE_BOTS_MAX,
@@ -51,6 +53,7 @@ export function PracticeMode({
   raceDict,
   resultsDict,
   roomDict,
+  roomNames,
   locale,
 }: {
   playerName: string;
@@ -60,13 +63,14 @@ export function PracticeMode({
   raceDict: RaceDictionary;
   resultsDict: ResultsDictionary;
   roomDict: RoomDictionary;
+  roomNames: Dictionary["roomNames"];
   locale: Locale;
 }) {
   const [settings, setSettings] = useState<PracticeSettings>(() => defaultPracticeSettings(locale));
   const [phase, setPhase] = useState<Phase>({ kind: "setup" });
   const [error, setError] = useState<PracticeTextError | null>(null);
   // Set when the server refuses because a room was joined meanwhile (another tab).
-  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [room, setRoom] = useState<CurrentRoom | null>(null);
   const [pending, startTransition] = useTransition();
 
   function update(changes: Partial<PracticeSettings>) {
@@ -84,7 +88,7 @@ export function PracticeMode({
       const result = await practiceTextAction(settings);
       if (!result.ok) {
         setError(result.error);
-        setRoomCode(result.error === "inRoom" ? (result.currentCode ?? null) : null);
+        setRoom(result.error === "inRoom" ? (result.current ?? null) : null);
         setPhase({ kind: "setup" });
         return;
       }
@@ -121,8 +125,8 @@ export function PracticeMode({
     </p>
   );
 
-  if (roomCode) {
-    return <InRoomNotice code={roomCode} dict={dict} locale={locale} />;
+  if (room) {
+    return <InRoomNotice room={room} dict={dict} roomNames={roomNames} locale={locale} />;
   }
 
   if (phase.kind === "race") {

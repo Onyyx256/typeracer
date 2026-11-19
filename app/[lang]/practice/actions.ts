@@ -2,6 +2,7 @@
 
 import { getSessionUserId } from "@/lib/auth/session";
 import { practiceConfigSchema, practiceRaceConfig } from "@/lib/practice/settings";
+import type { CurrentRoom } from "@/lib/rooms/label";
 import { findCurrentRoom } from "@/lib/rooms/rooms";
 import { generateText, textConfigProblem } from "@/lib/texts/generate";
 
@@ -12,7 +13,7 @@ export type PracticeTextResult =
   | {
       ok: false;
       error: PracticeTextError;
-      currentCode?: string;
+      current?: CurrentRoom;
     };
 
 /** Logs only the driver's message: Drizzle's own embeds the query parameters. */
@@ -35,7 +36,7 @@ export async function practiceTextAction(input: unknown): Promise<PracticeTextRe
     const userId = await getSessionUserId();
     const current = userId ? await findCurrentRoom(userId) : null;
     if (current) {
-      return { ok: false, error: "inRoom", currentCode: current.code };
+      return { ok: false, error: "inRoom", current: { code: current.code, visibility: current.visibility } };
     }
     const { content, source } = await generateText(config);
     return {

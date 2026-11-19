@@ -7,6 +7,7 @@ import { notifyKicked, notifyRoomChanged, notifyRoomClosed } from "@/lib/realtim
 import { isConnected } from "@/lib/realtime/presence";
 import { generateRoomCode } from "./code";
 import type { RoomFilters } from "./filters";
+import type { CurrentRoom } from "./label";
 import {
   JOINABLE_STATES,
   raceConfigSchema,
@@ -37,7 +38,7 @@ export type InviteAccess = { token: string; ip: string };
 
 export type RoomResult =
   | { ok: true; code: string }
-  | { ok: false; error: RoomError; currentCode?: string };
+  | { ok: false; error: RoomError; current?: CurrentRoom };
 
 const CODE_ATTEMPTS = 5;
 
@@ -55,14 +56,19 @@ function isUniqueViolation(error: unknown, index: string): boolean {
 
 export async function findCurrentRoom(
   userId: string,
-): Promise<{ roomId: string; code: string } | null> {
+): Promise<({ roomId: string } & CurrentRoom) | null> {
   const [found] = await getDb()
-    .select({ roomId: rooms.id, code: rooms.code })
+    .select({ roomId: rooms.id, code: rooms.code, visibility: rooms.visibility })
     .from(roomMembers)
     .innerJoin(rooms, eq(rooms.id, roomMembers.roomId))
     .where(eq(roomMembers.userId, userId))
     .limit(1);
   return found ?? null;
+}
+
+/** What the browser gets: the room's id stays on the server. */
+function publicPart({ code, visibility }: CurrentRoom): CurrentRoom {
+  return { code, visibility };
 }
 
 type RemainingMember = { userId: string; isGuest: boolean };
@@ -197,7 +203,7 @@ async function checkCurrentRoom(
     return null;
   }
   if (!leaveCurrent) {
-    return { ok: false, error: "alreadyInRoom", currentCode: current.code };
+    return { ok: false, error: "alreadyInRoom", current: publicPart(current) };
   }
   await leaveRoom(userId);
   return null;
@@ -230,7 +236,7 @@ export async function createRoom(
     // Another tab put the user in a room in the meantime.
     if (isUniqueViolation(error, "room_members_user_idx")) {
       const current = await findCurrentRoom(userId);
-      return { ok: false, error: "alreadyInRoom", currentCode: current?.code };
+      return { ok: false, error: "alreadyInRoom", current: current ? publicPart(current) : undefined };
     }
     throw error;
   }
@@ -343,7 +349,7 @@ export async function joinRoom(
   } catch (error) {
     if (isUniqueViolation(error, "room_members_user_idx")) {
       const current = await findCurrentRoom(userId);
-      return { ok: false, error: "alreadyInRoom", currentCode: current?.code };
+      return { ok: false, error: "alreadyInRoom", current: current ? publicPart(current) : undefined };
     }
     if (isUniqueViolation(error, "room_members_room_name_idx")) {
       return { ok: false, error: "nameTaken" };

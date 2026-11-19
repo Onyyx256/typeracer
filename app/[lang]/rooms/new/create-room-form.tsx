@@ -8,7 +8,8 @@ import { RoomSummary } from "@/app/components/room-summary";
 import { TextField } from "@/app/components/text-field";
 import { localePath, type Locale } from "@/lib/i18n/config";
 import { USERNAME_MAX, USERNAME_MIN } from "@/lib/auth/validation";
-import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
+import type { CreateRoomDictionary, Dictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
+import { roomLabel, type CurrentRoom } from "@/lib/rooms/label";
 import { interpolate } from "@/lib/i18n/format";
 import {
   HOST_ROLES,
@@ -22,6 +23,7 @@ import { createRoomAction, type RoomActionError } from "../actions";
 type CreateRoomFormProps = {
   dict: CreateRoomDictionary;
   botsDict: RoomDictionary["bots"];
+  roomNames: Dictionary["roomNames"];
   locale: Locale;
   defaultName: string;
 };
@@ -35,13 +37,19 @@ function useHydrated(): boolean {
   return useSyncExternalStore(noSubscribe, () => true, () => false);
 }
 
-export function CreateRoomForm({ dict, botsDict, locale, defaultName }: CreateRoomFormProps) {
+export function CreateRoomForm({
+  dict,
+  botsDict,
+  roomNames,
+  locale,
+  defaultName,
+}: CreateRoomFormProps) {
   const [name, setName] = useState(defaultName);
   const [settings, setSettings] = useState<RoomSettings>(() =>
     defaultRoomSettings(locale),
   );
   const [error, setError] = useState<RoomActionError | null>(null);
-  const [currentCode, setCurrentCode] = useState<string | null>(null);
+  const [current, setCurrent] = useState<CurrentRoom | null>(null);
   const [pending, startTransition] = useTransition();
   const hydrated = useHydrated();
 
@@ -60,7 +68,7 @@ export function CreateRoomForm({ dict, botsDict, locale, defaultName }: CreateRo
       // On success the action redirects to the new room.
       const result = await createRoomAction({ lang: locale, settings, name, leaveCurrent });
       setError(result.error);
-      setCurrentCode(result.error === "alreadyInRoom" ? (result.currentCode ?? null) : null);
+      setCurrent(result.error === "alreadyInRoom" ? (result.current ?? null) : null);
     });
   }
 
@@ -69,7 +77,8 @@ export function CreateRoomForm({ dict, botsDict, locale, defaultName }: CreateRo
     submit(false);
   }
 
-  const elsewhere = error === "alreadyInRoom" && currentCode;
+  const elsewhere = error === "alreadyInRoom" ? current : null;
+  const elsewhereLabel = elsewhere ? roomLabel(roomNames, elsewhere) : "";
 
   return (
     <form
@@ -127,12 +136,12 @@ export function CreateRoomForm({ dict, botsDict, locale, defaultName }: CreateRo
         {elsewhere ? (
           // One room at a time, so offer to go back or leave it.
           <div className="mt-6 grid gap-2">
-            <p className="text-sm">{interpolate(dict.elsewhere, { code: currentCode })}</p>
+            <p className="text-sm">{interpolate(dict.elsewhere, { room: elsewhereLabel })}</p>
             <Link
-              href={localePath(locale, `/rooms/${currentCode}`)}
+              href={localePath(locale, `/rooms/${elsewhere.code}`)}
               className="flex h-11 items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf"
             >
-              {interpolate(dict.goBack, { code: currentCode })}
+              {interpolate(dict.goBack, { room: elsewhereLabel })}
             </Link>
             <button
               type="button"

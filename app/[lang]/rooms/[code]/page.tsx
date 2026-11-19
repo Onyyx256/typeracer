@@ -17,6 +17,7 @@ import { requestIp, requestOrigin } from "@/lib/request";
 import { roomCodeSchema } from "@/lib/rooms/code";
 import { recordCodeMiss, tooManyCodeMisses } from "@/lib/rooms/code-attempts";
 import { listInvites } from "@/lib/rooms/invites";
+import { roomLabel } from "@/lib/rooms/label";
 import { findCurrentRoom, getRoom, isBanned, type RoomMemberView } from "@/lib/rooms/rooms";
 import { JOINABLE_STATES } from "@/lib/rooms/settings";
 import { DeleteRoom } from "./delete-room";
@@ -234,7 +235,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
               locale={locale}
               code={room.code}
               full={runners.length >= room.capacity}
-              elsewhere={current?.code ?? null}
+              elsewhere={current && { code: current.code, label: roomLabel(dict.roomNames, current) }}
               defaultName={user?.displayName ?? ""}
               hasSession={user !== null}
             />
