@@ -501,6 +501,11 @@ export const en: Dictionary = {
       time: "{seconds} s",
       others: "Other runners",
       wpmSummary: "Chart of each runner's WPM during the race. Left and right arrows move through time.",
+      wpmLeadMistakes: "Each runner's WPM, second by second. The red crosses on your line show when you made mistakes.",
+      wpmSummaryMistakes:
+        "Chart of each runner's WPM during the race, with crosses on your line where you made mistakes. Left and right arrows move through time.",
+      mistakesLegend: "Your mistakes",
+      mistakes: { one: "{count} mistake", other: "{count} mistakes" },
       keysHeading: "Missed keys",
       keysLead: "The keys with mistakes, darker for more of them.",
       none: "no missed keys, well done",

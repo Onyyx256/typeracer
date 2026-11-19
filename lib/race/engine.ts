@@ -281,7 +281,7 @@ export class Race {
       const elapsed = this.elapsed(runner, now);
       const last = runner.series.at(-1)?.t ?? 0;
       if (elapsed - last >= SAMPLE_MS) {
-        runner.series.push({ t: elapsed, wpm: this.wpm(runner, now) });
+        runner.series.push(this.sample(runner, now));
       }
     }
     return this.isTypingOpen(now) ? this.fireCheckpoints(now) : [];
@@ -398,7 +398,7 @@ export class Race {
       const wpm = netWpm(correctChars(runner.text, this.mode, runner.typing), durationMs);
       const series = [...runner.series];
       if (series.at(-1)?.t !== durationMs && durationMs > 0) {
-        series.push({ t: durationMs, wpm });
+        series.push({ t: durationMs, wpm, errors: keystrokes - correctKeystrokes });
       }
       return {
         userId: runner.userId,
@@ -421,9 +421,14 @@ export class Race {
   }
 
   private end(runner: Runner, status: RunnerStatus, now: number): void {
-    runner.series.push({ t: this.elapsed(runner, now), wpm: this.wpm(runner, now) });
+    runner.series.push(this.sample(runner, now));
     runner.status = status;
     runner.endedAt = now;
+  }
+
+  private sample(runner: Runner, now: number): WpmPoint {
+    const { keystrokes, correctKeystrokes } = runner.typing;
+    return { t: this.elapsed(runner, now), wpm: this.wpm(runner, now), errors: keystrokes - correctKeystrokes };
   }
 
   private elapsed(runner: Runner, now: number): number {

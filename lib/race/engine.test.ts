@@ -232,6 +232,21 @@ describe("Race", () => {
     ]);
   });
 
+  test("records the wrong keystrokes so far with each sample", () => {
+    const race = newRace();
+    race.applyKeys("a", ["u", "x"], START + 500);
+    race.tick(START + 1000);
+    race.applyKeys("a", ["\b", "n"], START + 1500);
+    race.tick(START + 2000);
+    race.applyKeys("a", ["x", "y"], START + 2500);
+    const series = race.results(START + 2800)[0].wpmSeries;
+    expect(series.map((point) => [point.t, point.errors])).toEqual([
+      [1000, 1],
+      [2000, 1],
+      [2800, 3],
+    ]);
+  });
+
   test("gives back a runner's own typing, to resync their browser", () => {
     const race = newRace();
     race.applyKeys("a", ["u", "x"], START + 500);

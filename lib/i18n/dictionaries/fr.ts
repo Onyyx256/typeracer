@@ -503,6 +503,11 @@ export const fr = {
       time: "{seconds} s",
       others: "Autres coureurs",
       wpmSummary: "Graphique du MPM de chaque coureur pendant la course. Flèches gauche et droite pour parcourir le temps.",
+      wpmLeadMistakes: "Le MPM de chaque coureur, seconde par seconde. Les croix rouges sur ta ligne montrent quand tu as fait des erreurs.",
+      wpmSummaryMistakes:
+        "Graphique du MPM de chaque coureur pendant la course, avec des croix sur ta ligne aux moments de tes erreurs. Flèches gauche et droite pour parcourir le temps.",
+      mistakesLegend: "Tes erreurs",
+      mistakes: { one: "{count} erreur", other: "{count} erreurs" } satisfies PluralForms,
       keysHeading: "Touches ratées",
       keysLead: "Les touches où il y a eu des erreurs, plus foncées quand il y en a eu plus.",
       none: "aucune touche ratée, bravo",
