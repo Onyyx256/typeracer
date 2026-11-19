@@ -32,8 +32,6 @@ const HESITATION = [4, 12] as const;
 const REACTION = [3, 6] as const;
 const BACKSPACE_TIME = 0.8;
 
-/** Strict mode: keys typed past an error before noticing it. */
-const MAX_UNNOTICED = 2;
 /** Free mode: how often an error is fixed right away instead of left behind. */
 const FREE_FIX_CHANCE = 0.5;
 
@@ -47,7 +45,7 @@ const FREE_FIX_CHANCE = 0.5;
 const CHAR_COST = 1.12;
 const HESITATION_COST = 1.4;
 /** Strict mode always deletes and retypes; free mode often leaves the error. */
-const ERROR_COST: Record<ErrorMode, number> = { strict: 9.8, free: 5.4 };
+const ERROR_COST: Record<ErrorMode, number> = { strict: 6.5, free: 5.4 };
 
 /** Aims inside the range, so a hard text or a slow day rarely falls out of it. */
 const TARGET_SPREAD = 0.8;
@@ -152,15 +150,7 @@ export class BotTypist {
     }
 
     if (mode === "strict") {
-      const room = Math.max(0, text.length - position - 1);
-      const unnoticed = randomInt(this.rng, 0, Math.min(MAX_UNNOTICED, room));
-      for (let index = 1; index <= unnoticed; index++) {
-        this.pending.push({ kind: "type", delayMs: this.charMs(text[position + index] ?? "") });
-      }
-      for (let index = 0; index <= unnoticed; index++) {
-        const delay = this.keyMs * BACKSPACE_TIME + (index === 0 ? this.reaction() : 0);
-        this.pending.push({ kind: "back", delayMs: delay });
-      }
+      this.pending.push({ kind: "back", delayMs: this.keyMs * BACKSPACE_TIME + this.reaction() });
     } else if (this.rng() < FREE_FIX_CHANCE) {
       this.pending.push({ kind: "back", delayMs: this.reaction() });
     } else {
