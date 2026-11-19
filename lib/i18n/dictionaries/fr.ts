@@ -19,6 +19,12 @@ export const fr = {
     themeTitle: "Changer de thème",
     language: "Langue",
   },
+  landing: {
+    tagline: "Des courses de dactylo où chaque mot fait pousser ta fleur.",
+    join: "Rejoindre une course",
+    practice: "S'entraîner",
+    login: "Connexion",
+  },
   notFound: {
     title: "Page introuvable",
     heading: "Rien ne pousse ici",

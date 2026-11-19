@@ -17,6 +17,12 @@ export const en: Dictionary = {
     themeTitle: "Switch theme",
     language: "Language",
   },
+  landing: {
+    tagline: "Typing races where every word grows your flower.",
+    join: "Join a race",
+    practice: "Practice",
+    login: "Log in",
+  },
   notFound: {
     title: "Page not found",
     heading: "Nothing grows here",
