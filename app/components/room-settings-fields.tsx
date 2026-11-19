@@ -2,13 +2,12 @@
 
 import { useId, type ReactNode } from "react";
 import { BotList } from "@/app/components/bot-list";
-import { formatSeconds } from "@/app/components/room-summary";
 import { BOTS_MAX } from "@/lib/bots/levels";
 import { addBot, removeBot, setBotLevel } from "@/lib/bots/list";
 import { TextField } from "@/app/components/text-field";
 import { LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
 import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
-import { plural } from "@/lib/i18n/format";
+import { formatDuration, plural } from "@/lib/i18n/format";
 import {
   CAPACITY_MAX,
   CAPACITY_MIN,
@@ -74,7 +73,7 @@ export function RoomSettingsFields({
       <TextSettingsSection dict={dict} locale={locale} settings={settings} update={update} />
 
       <Section title={dict.sections.race}>
-        <RaceRulesFields dict={dict} settings={settings} update={update} />
+        <RaceRulesFields dict={dict} locale={locale} settings={settings} update={update} />
         <Toggle
           label={dict.bonuses.label}
           hint={dict.bonuses.hint}
@@ -230,10 +229,12 @@ export function TextSettingsSection({
 
 export function RaceRulesFields({
   dict,
+  locale,
   settings,
   update,
 }: {
   dict: CreateRoomDictionary;
+  locale: Locale;
   settings: Pick<RaceConfig, "timeLimit" | "errorMode">;
   update: (changes: Partial<Pick<RaceConfig, "timeLimit" | "errorMode">>) => void;
 }) {
@@ -250,7 +251,7 @@ export function RaceRulesFields({
         compact
         options={TIME_LIMITS.map((seconds) => ({
           value: String(seconds),
-          label: seconds === 0 ? dict.timeLimit.none : formatSeconds(seconds),
+          label: seconds === 0 ? dict.timeLimit.none : formatDuration(locale, seconds),
         }))}
       />
       <ChoiceGroup

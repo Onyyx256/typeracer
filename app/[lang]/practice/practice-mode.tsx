@@ -181,7 +181,7 @@ export function PracticeMode({
       <div className="grid gap-10">
         <TextSettingsSection dict={settingsDict} locale={locale} settings={settings} update={update} />
         <Section title={settingsDict.sections.race}>
-          <RaceRulesFields dict={settingsDict} settings={settings} update={update} />
+          <RaceRulesFields dict={settingsDict} locale={locale} settings={settings} update={update} />
         </Section>
         <BotList
           dict={roomDict.bots}

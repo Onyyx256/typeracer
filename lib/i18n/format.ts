@@ -38,6 +38,16 @@ export function formatNumber(locale: Locale, value: number, decimals = 0): strin
   }).format(value);
 }
 
+/** 30 → "30 s" / "30 sec", 120 → "2 min". */
+export function formatDuration(locale: Locale, seconds: number): string {
+  const minutes = seconds >= 60 && seconds % 60 === 0;
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: minutes ? "minute" : "second",
+    unitDisplay: "short",
+  }).format(minutes ? seconds / 60 : seconds);
+}
+
 /**
  * Pages render on the server, whose clock may be in UTC; dates are shown
  * in the players' time zone so a race at 9 p.m. isn't listed the next day.

@@ -1,12 +1,7 @@
 import { LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
 import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
-import { plural } from "@/lib/i18n/format";
+import { formatDuration, plural } from "@/lib/i18n/format";
 import type { RoomSettings } from "@/lib/rooms/settings";
-
-/** 30 → "30 s", 120 → "2 min": the same in both languages. */
-export function formatSeconds(seconds: number): string {
-  return seconds < 60 ? `${seconds} s` : `${seconds / 60} min`;
-}
 
 export type SummarySettings = Omit<RoomSettings, "hostRole"> &
   Partial<Pick<RoomSettings, "hostRole">>;
@@ -65,7 +60,7 @@ export function RoomSummary({ dict, botsDict, locale, settings }: RoomSummaryPro
           dict.timeLimit.legend,
           settings.timeLimit === 0
             ? dict.timeLimit.none
-            : formatSeconds(settings.timeLimit),
+            : formatDuration(locale, settings.timeLimit),
         ],
         [dict.errorMode.legend, dict.errorMode[settings.errorMode]],
         [dict.bonuses.label, settings.bonuses ? dict.summary.on : dict.summary.off],
