@@ -8,6 +8,7 @@ import { TypingBox, useTyping } from "@/app/components/race/typing-box";
 import type { ParticipantResult, Race } from "@/lib/race/engine";
 import { initialTyping } from "@/lib/race/typing";
 import type { Locale } from "@/lib/i18n/config";
+import type { PlayerLooks } from "@/lib/profile/look";
 import type {
   PracticeDictionary,
   RaceDictionary,
@@ -22,6 +23,7 @@ const TICK_MS = 200;
 /** Runs in this browser with the same engine as a room. Nothing is saved. */
 export function PracticeRace({
   race,
+  looks,
   onEnd,
   dict,
   raceDict,
@@ -29,6 +31,7 @@ export function PracticeRace({
   locale,
 }: {
   race: Race;
+  looks: PlayerLooks;
   onEnd: (results: ParticipantResult[]) => void;
   dict: PracticeDictionary;
   raceDict: RaceDictionary;
@@ -92,7 +95,7 @@ export function PracticeRace({
   return (
     <div className="grid gap-4">
       <div className="relative">
-        <RaceTrack entries={track} youId={PRACTICE_PLAYER} dict={raceDict} roomDict={roomDict} locale={locale} />
+        <RaceTrack entries={track} youId={PRACTICE_PLAYER} looks={looks} dict={raceDict} roomDict={roomDict} locale={locale} />
         <Countdown startsAt={race.startsAt} endsAt={race.deadline} dict={raceDict} />
       </div>
 
