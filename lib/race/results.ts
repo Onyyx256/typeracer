@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { raceResults, races, rooms, texts } from "@/db/schema";
+import type { BotLevel } from "@/lib/bots/levels";
 import { raceConfigSchema, type RaceConfig } from "@/lib/rooms/settings";
 import type { BonusKind } from "./bonuses";
 import type { ParticipantResult } from "./engine";
@@ -33,11 +34,12 @@ export async function saveRace(race: {
       await tx.insert(raceResults).values(
         race.results.map((result) => ({
           raceId: row.id,
-          // Guests keep no history.
-          userId: result.isGuest ? null : result.userId,
+          // Guests keep no history, and bots have no account.
+          userId: result.isGuest || result.botLevel ? null : result.userId,
           guestId: result.isGuest ? result.userId : null,
           name: result.name,
           isGuest: result.isGuest,
+          botLevel: result.botLevel,
           rank: result.rank,
           status: result.status,
           wpm: result.wpm,
@@ -65,6 +67,7 @@ export type ResultRow = {
   guestId?: string | null;
   name: string;
   isGuest: boolean;
+  botLevel: BotLevel | null;
   rank: number;
   status: ResultStatus;
   wpm: number;
@@ -137,6 +140,7 @@ async function loadRaceResults(raceId: string): Promise<RaceResultsView | null> 
       guestId: raceResults.guestId,
       name: raceResults.name,
       isGuest: raceResults.isGuest,
+      botLevel: raceResults.botLevel,
       rank: raceResults.rank,
       status: raceResults.status,
       wpm: raceResults.wpm,

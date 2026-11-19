@@ -201,7 +201,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
           <aside className="border border-line bg-surface p-6 rounded-leaf">
             <h2 className="font-display text-xl font-semibold">{t.settings}</h2>
             <div className="mt-4">
-              <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
+              <RoomSummary dict={dict.createRoom} botsDict={t.bots} locale={locale} settings={settings} />
             </div>
             {isHost && (
               <EditSettings
@@ -213,7 +213,12 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             )}
           </aside>
           {isHost && room.state === "waiting" && (
-            <StartRace dict={dict.race} runners={runners.length} minRunners={MIN_RUNNERS} />
+            <StartRace
+              dict={dict.race}
+              runners={runners.length}
+              bots={settings.bots.length}
+              minRunners={MIN_RUNNERS}
+            />
           )}
           {isHost && results && <NewGame dict={dict.race} />}
           {!member && joinable && (

@@ -117,6 +117,11 @@ export function RaceResults({
                     {row.isGuest && (
                       <span className="ml-2 font-mono text-xs text-muted uppercase">{roomDict.guestBadge}</span>
                     )}
+                    {row.botLevel && (
+                      <span className="ml-2 font-mono text-xs text-muted uppercase">
+                        {roomDict.bots.badge} · {roomDict.bots.levels[row.botLevel]}
+                      </span>
+                    )}
                   </th>
                   <td className="px-4 py-3 text-right font-semibold">{formatNumber(locale, row.wpm)}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(locale, row.rawWpm)}</td>
@@ -132,7 +137,9 @@ export function RaceResults({
                   </td>
                   <td className="px-4 py-3 text-right">{row.errors}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">{seconds(row)}</td>
-                  <td className="px-4 py-3">{dict.statuses[row.status]}</td>
+                  <td className="px-4 py-3">
+                    {row.botLevel && row.status === "timeUp" ? dict.botUnfinished : dict.statuses[row.status]}
+                  </td>
                   <td className="px-4 py-3">
                     {row.bonuses.length === 0 ? (
                       <>

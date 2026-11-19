@@ -35,6 +35,11 @@ async function SignedInForm() {
 
   // Only the form's strings are sent to the browser, not the whole dictionary.
   return (
-    <CreateRoomForm dict={dict.createRoom} locale={locale} defaultName={user.displayName} />
+    <CreateRoomForm
+      dict={dict.createRoom}
+      botsDict={dict.room.bots}
+      locale={locale}
+      defaultName={user.displayName}
+    />
   );
 }

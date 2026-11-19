@@ -1,10 +1,13 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
+import { BotList } from "@/app/components/bot-list";
 import { formatSeconds } from "@/app/components/room-summary";
+import { BOTS_MAX } from "@/lib/bots/levels";
+import { addBot, removeBot, setBotLevel } from "@/lib/bots/list";
 import { TextField } from "@/app/components/text-field";
 import { LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
-import type { CreateRoomDictionary } from "@/lib/i18n/dictionaries/fr";
+import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { plural } from "@/lib/i18n/format";
 import {
   CAPACITY_MAX,
@@ -26,6 +29,7 @@ export type UpdateSettings = (changes: Partial<EditableSettings>) => void;
 
 type RoomSettingsFieldsProps = {
   dict: CreateRoomDictionary;
+  botsDict: RoomDictionary["bots"];
   locale: Locale;
   settings: EditableSettings;
   update: UpdateSettings;
@@ -35,6 +39,7 @@ type RoomSettingsFieldsProps = {
 /** Used to create a room and, by the host, to change it between races. */
 export function RoomSettingsFields({
   dict,
+  botsDict,
   locale,
   settings,
   update,
@@ -76,8 +81,17 @@ export function RoomSettingsFields({
           checked={settings.bonuses}
           onChange={(value) => update({ bonuses: value })}
         />
-        <p className="font-mono text-sm text-muted">&gt; {dict.botsNote}</p>
       </Section>
+
+      <BotList
+        dict={botsDict}
+        bots={settings.bots}
+        max={BOTS_MAX}
+        empty={botsDict.empty}
+        onAdd={(level) => update({ bots: addBot(settings, level).bots })}
+        onRemove={(index) => update({ bots: removeBot(settings, index).bots })}
+        onLevel={(index, level) => update({ bots: setBotLevel(settings, index, level).bots })}
+      />
     </>
   );
 }

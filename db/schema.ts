@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { BotLevel } from "@/lib/bots/levels";
 import type { BonusKind } from "@/lib/race/bonuses";
 import type { ResultStatus, WpmPoint } from "@/lib/race/types";
 import type {
@@ -317,6 +318,8 @@ export const raceResults = pgTable(
     guestId: uuid("guest_id").references(() => users.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     isGuest: boolean("is_guest").notNull(),
+    /** Null for a human. */
+    botLevel: text("bot_level").$type<BotLevel>(),
     rank: integer("rank").notNull(),
     status: text("status").$type<ResultStatus>().notNull(),
     wpm: real("wpm").notNull(),
@@ -348,6 +351,14 @@ export const raceResults = pgTable(
     ),
     check("race_results_guest_has_no_user", sql`not (${table.isGuest} and ${table.userId} is not null)`),
     check("race_results_only_guests_have_guest_id", sql`${table.isGuest} or ${table.guestId} is null`),
+    check(
+      "race_results_bot_level",
+      sql`${table.botLevel} in ('noob', 'beginner', 'intermediate', 'expert', 'impossible')`,
+    ),
+    check(
+      "race_results_bot_has_no_user",
+      sql`${table.botLevel} is null or (${table.userId} is null and ${table.guestId} is null and not ${table.isGuest})`,
+    ),
   ],
 );
 

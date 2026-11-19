@@ -10,7 +10,7 @@ test("a visitor without an account practices alone", async ({ page }) => {
   await expect(page).toHaveURL(/\/en\/practice$/);
   await expect(page.getByRole("heading", { name: "Practice", level: 1 })).toBeVisible();
 
-  // Bots can be added and removed; they don't race yet.
+  // Bots can be added and removed.
   await expect(page.getByText("no bots: you race alone")).toBeVisible();
   const add = page.getByRole("button", { name: "Add a bot" });
   await add.click();

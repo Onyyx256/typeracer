@@ -68,7 +68,18 @@ function logFailure(action: string, error: unknown): void {
 export type StartRaceError =
   | "notHost"
   | "notEnoughRunners"
+  | "noHuman"
   | "notStartable";
+
+/** Ids that can't be a user's uuid; the bots' names are the same in both languages. */
+function botParticipants(config: RaceConfig): RaceParticipant[] {
+  return config.bots.map((bot, index) => ({
+    userId: `bot-${index + 1}`,
+    name: `Bot ${index + 1}`,
+    isGuest: false,
+    bot: { level: bot.level, seed: randomInt(2 ** 31) },
+  }));
+}
 
 export type StartRaceResult = { ok: true } | { ok: false; error: StartRaceError };
 
@@ -111,12 +122,14 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
         .innerJoin(users, eq(users.id, roomMembers.userId))
         .where(and(eq(roomMembers.roomId, room.id), eq(roomMembers.role, "participant")))
         .orderBy(asc(roomMembers.joinedAt));
-      // Every runner is human until bots exist, so "at least one human" holds.
-      if (runners.length < MIN_RUNNERS) {
+      if (runners.length + config.bots.length < MIN_RUNNERS) {
         return "notEnoughRunners";
       }
+      if (runners.length === 0) {
+        return "noHuman";
+      }
       await tx.update(rooms).set({ state: "countdown" }).where(eq(rooms.id, room.id));
-      return runners;
+      return [...runners, ...botParticipants(config)];
     },
   );
   if (typeof checked === "string") {
@@ -147,7 +160,9 @@ export async function startRace(hostId: string): Promise<StartRaceResult> {
   runtime.loop.unref?.();
   store().byCode.set(room.code, runtime);
   for (const runner of checked) {
-    store().byUser.set(runner.userId, room.code);
+    if (!runner.bot) {
+      store().byUser.set(runner.userId, room.code);
+    }
   }
   // Pages re-render into the race and ask for it (race:sync).
   notifyRoomChanged(room.code);

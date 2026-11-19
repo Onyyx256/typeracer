@@ -358,3 +358,109 @@ describe("catch-up bonuses (BONUS-01, BONUS-04)", () => {
     expect(kinds(42)).toEqual(kinds(42));
   });
 });
+
+describe("bots in a race (BOT-04)", () => {
+  const LONG = "le petit jardin fleurit sous la pluie douce du matin";
+
+  function botRace(options: { timeLimit?: number; level?: "noob" | "impossible"; seed?: number } = {}) {
+    return new Race({
+      text: LONG,
+      errorMode: "strict",
+      timeLimit: options.timeLimit ?? 0,
+      participants: [
+        { userId: "a", name: "Alice", isGuest: false },
+        { userId: "bot-1", name: "Bot 1", isGuest: false, bot: { level: options.level ?? "impossible", seed: options.seed ?? 1 } },
+      ],
+      now: T0,
+    });
+  }
+
+  function runFor(race: Race, ms: number): number {
+    let now = START;
+    for (; now <= START + ms; now += 200) {
+      race.tick(now);
+    }
+    return now;
+  }
+
+  test("type on their own as time passes, and show as bots", () => {
+    const race = botRace();
+    race.tick(START - 1);
+    expect(race.track(START - 1).find((entry) => entry.userId === "bot-1")?.progress).toBe(0);
+    const now = runFor(race, 2_000);
+    const bot = race.track(now).find((entry) => entry.userId === "bot-1");
+    expect(bot?.botLevel).toBe("impossible");
+    expect(bot?.progress).toBeGreaterThan(0);
+    expect(race.track(now).find((entry) => entry.userId === "a")?.botLevel).toBeNull();
+  });
+
+  test("finish at the time of their last key, not of the tick", () => {
+    const race = botRace();
+    const now = runFor(race, 30_000);
+    expect(race.track(now).find((entry) => entry.userId === "bot-1")?.status).toBe("finished");
+    const once = race.results(now).find((entry) => entry.userId === "bot-1");
+    const again = botRace();
+    const later = runFor(again, 60_000);
+    expect(again.results(later).find((entry) => entry.userId === "bot-1")?.durationMs).toBe(once?.durationMs ?? -1);
+    expect(once?.status).toBe("finished");
+    expect(once?.botLevel).toBe("impossible");
+  });
+
+  test("are the same race after race from the same seed (BOT-05)", () => {
+    const first = botRace({ seed: 5 });
+    const second = botRace({ seed: 5 });
+    const now = runFor(first, 5_000);
+    runFor(second, 5_000);
+    expect(second.track(now)).toEqual(first.track(now));
+  });
+
+  test("can't be typed for from outside", () => {
+    const race = botRace();
+    expect(race.applyKeys("bot-1", ["l"], START + 500)).toEqual({ ok: false, reason: "notRacing" });
+  });
+
+  test("don't keep the race going once no human is racing", () => {
+    const race = botRace({ level: "noob" });
+    runFor(race, 1_000);
+    expect(race.isOver(START + 1_000)).toBe(false);
+    race.abandon("a", START + 1_000);
+    expect(race.isOver(START + 1_000)).toBe(true);
+    const bot = race.results(START + 1_000).find((entry) => entry.userId === "bot-1");
+    expect(bot?.status).toBe("timeUp");
+    expect(bot?.rank).toBe(1);
+  });
+
+  test("stop typing at the time limit", () => {
+    const race = botRace({ level: "noob", timeLimit: 30 });
+    runFor(race, 40_000);
+    const typed = race.track(START + 30_000).find((entry) => entry.userId === "bot-1")?.progress ?? 0;
+    expect(typed).toBeGreaterThan(0);
+    expect(typed).toBeLessThan(1);
+    race.tick(START + 60_000);
+    expect(race.track(START + 60_000).find((entry) => entry.userId === "bot-1")?.progress).toBe(typed);
+  });
+
+  test("get catch-up effects like humans, and follow a longer text", () => {
+    const race = new Race({
+      text: LONG,
+      errorMode: "strict",
+      timeLimit: 0,
+      participants: [
+        { userId: "a", name: "Alice", isGuest: false },
+        { userId: "bot-1", name: "Bot 1", isGuest: false, bot: { level: "impossible", seed: 2 } },
+      ],
+      now: T0,
+      bonuses: { seed: 3, reserve: "encore des mots pour la nuit qui tombe sur le jardin" },
+    });
+    const events = [];
+    let now = START;
+    for (; now <= START + 60_000; now += 200) {
+      events.push(...race.tick(now));
+    }
+    expect(events.some((event) => event.targets.includes("bot-1"))).toBe(true);
+    expect(events.some((event) => event.targets.includes("a"))).toBe(true);
+    const bot = race.track(now).find((entry) => entry.userId === "bot-1");
+    expect(bot?.status).toBe("finished");
+    expect(race.results(now).find((entry) => entry.userId === "bot-1")?.bonuses.length).toBeGreaterThan(0);
+  });
+});

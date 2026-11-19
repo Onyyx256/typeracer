@@ -7,8 +7,10 @@ import {
   Section,
   TextSettingsSection,
 } from "@/app/components/room-settings-fields";
-import { Race, type ParticipantResult } from "@/lib/race/engine";
+import { BotList } from "@/app/components/bot-list";
+import { Race, type ParticipantResult, type RaceParticipant } from "@/lib/race/engine";
 import type { Locale } from "@/lib/i18n/config";
+import { interpolate } from "@/lib/i18n/format";
 import type {
   CreateRoomDictionary,
   PracticeDictionary,
@@ -16,16 +18,14 @@ import type {
   ResultsDictionary,
   RoomDictionary,
 } from "@/lib/i18n/dictionaries/fr";
+import { addBot, removeBot, setBotLevel } from "@/lib/bots/list";
 import {
-  addBot,
   defaultPracticeSettings,
+  PRACTICE_BOTS_MAX,
   practiceSettingsSchema,
-  removeBot,
-  setBotLevel,
   type PracticeSettings,
 } from "@/lib/practice/settings";
 import { practiceTextAction, type PracticeTextError } from "./actions";
-import { BotList } from "./bot-list";
 import { InRoomNotice } from "./in-room-notice";
 import { PRACTICE_PLAYER, PracticeRace } from "./practice-race";
 
@@ -88,12 +88,20 @@ export function PracticeMode({
         setPhase({ kind: "setup" });
         return;
       }
+      const bots = settings.bots.map(
+        (bot, index): RaceParticipant => ({
+          userId: `bot-${index + 1}`,
+          name: interpolate(roomDict.bots.name, { number: index + 1 }),
+          isGuest: false,
+          bot: { level: bot.level, seed: Math.floor(Math.random() * 2 ** 31) },
+        }),
+      );
       // Created now, so the countdown starts as the text appears.
       const race = new Race({
         text: result.text,
         errorMode: settings.errorMode,
         timeLimit: settings.timeLimit,
-        participants: [{ userId: PRACTICE_PLAYER, name: playerName, isGuest }],
+        participants: [{ userId: PRACTICE_PLAYER, name: playerName, isGuest }, ...bots],
         now: Date.now(),
       });
       setPhase({ kind: "race", race, source: result.source, id: Date.now() });
@@ -123,7 +131,6 @@ export function PracticeMode({
         <PracticeRace
           key={phase.id}
           race={phase.race}
-          hasBots={settings.bots.length > 0}
           onEnd={onEnd}
           dict={dict}
           raceDict={raceDict}
@@ -166,8 +173,10 @@ export function PracticeMode({
           <RaceRulesFields dict={settingsDict} settings={settings} update={update} />
         </Section>
         <BotList
-          dict={dict.bots}
+          dict={roomDict.bots}
           bots={settings.bots}
+          max={PRACTICE_BOTS_MAX}
+          empty={dict.noBots}
           onAdd={(level) => setSettings((current) => addBot(current, level))}
           onRemove={(index) => setSettings((current) => removeBot(current, index))}
           onLevel={(index, level) => setSettings((current) => setBotLevel(current, index, level))}

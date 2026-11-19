@@ -81,7 +81,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
         <aside className="border border-line bg-surface p-6 rounded-leaf">
           <h2 className="font-display text-xl font-semibold">{dict.room.settings}</h2>
           <div className="mt-4">
-            <RoomSummary dict={dict.createRoom} locale={locale} settings={settings} />
+            <RoomSummary dict={dict.createRoom} botsDict={dict.room.bots} locale={locale} settings={settings} />
           </div>
         </aside>
         {JOINABLE_STATES.includes(room.state) ? (

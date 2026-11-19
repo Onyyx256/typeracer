@@ -86,6 +86,7 @@ export function EditSettings({
             </div>
             <RoomSettingsFields
               dict={fieldsDict}
+              botsDict={dict.bots}
               locale={locale}
               settings={settings}
               update={update}

@@ -99,6 +99,7 @@ erDiagram
         uuid guest_id FK "invité seulement : retrouver sa ligne"
         text name
         boolean is_guest
+        text bot_level "null pour un humain"
         int rank
         text status
         real wpm
@@ -178,14 +179,15 @@ stateDiagram-v2
 - Présence : chaque onglet ouvert garde un socket. Un membre qui n'a plus aucun onglet ouvert pendant 30 secondes est considéré comme parti (même délai que COURSE-08). Ça libère sa place et, si c'était l'hôte, passe le rôle au membre connecté présent depuis le plus longtemps (SALLE-08). Après un redémarrage du serveur, les membres qui ne se reconnectent pas dans les 30 secondes partent aussi.
 - L'état temps réel (sockets ouverts, minuteries) est sur `globalThis`, parce que `server.ts`, l'instrumentation et les server actions ne partagent pas les mêmes instances de modules.
 
-## Approche prévue pour les bots
+## Bots
 
-Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le serveur, un bot est un participant comme les autres : sa progression est envoyée aux clients de la même façon que celle d'un humain, et il reçoit les bonus et malus aussi (BOT-04).
+Les bots courent dans le même moteur que les humains (`lib/race/engine.ts`) : sur le serveur pour une salle, dans le navigateur pour l'entraînement. Pour le moteur, un bot est un participant avec un niveau et une graine ; sa progression part sur la piste comme celle d'un humain, et il reçoit les bonus et malus (BOT-04).
 
-- Le moteur d'un bot sera une fonction pure : avec une graine (seed), un niveau et un texte, elle donne toujours la même séquence de frappes. Comme ça je peux le tester unitairement (BOT-05).
-- Chaque niveau a une plage de MPM et un taux d'erreur, selon le tableau de BOT-01.
-- La vitesse n'est pas constante : elle varie un peu au hasard autour du MPM visé, et le bot ralentit sur les mots longs ou avec des caractères spéciaux (BOT-02).
-- Quand le bot fait une erreur, il perd du temps pour la corriger, selon le mode d'erreur de la salle (BOT-03).
+- **Le typiste (`lib/bots/typist.ts`).** `BotTypist` décide une touche à la fois, à partir du texte actuel du coureur et de son état de frappe : il suit donc un texte raccourci ou allongé par un bonus. Tout le hasard vient d'un générateur à graine : même graine, même niveau et mêmes touches donnent la même course, ce qui le rend testable (BOT-05).
+- **Vitesse (BOT-01, BOT-02).** Au départ, le bot vise un MPM tiré dans les 80 % du milieu de la plage de son niveau. Sa vitesse change à chaque mot (une humeur qui dérive), avec des rafales de 2 à 5 mots plus rapides, des hésitations en début de mot (plus fréquentes aux niveaux lents), et il ralentit sur les mots de 8 lettres ou plus et sur les majuscules, chiffres, ponctuation et accents. Chaque touche varie aussi de ±25 %. Le soleil aveuglant le ralentit pendant qu'il cache les mots. Les pauses sont comptées en « temps de touche » du bot, et le temps de touche est calculé depuis le MPM visé avec un coût moyen par caractère mesuré sur le corpus ; les tests vérifient que la moyenne de chaque niveau tombe dans sa plage.
+- **Erreurs (BOT-03).** À chaque caractère, le bot se trompe selon le taux de son niveau, sur une touche voisine du clavier. En correction obligatoire, il s'en rend compte après 0 à 2 touches, marque un temps de réaction et efface jusqu'à l'erreur. En mode libre, il corrige tout de suite une fois sur deux, sinon il hésite et continue en laissant l'erreur.
+- **Dans le moteur.** À chaque `tick`, le moteur joue les touches du bot jusqu'à maintenant, chacune à l'heure où le bot l'a tapée : son temps d'arrivée ne dépend pas du moment du tick. Choix : une course se termine quand plus aucun humain ne court ; les bots encore en route sont classés selon leur progression, comme à la limite de temps, et les résultats les marquent « Pas fini ».
+- **Salles.** L'hôte ajoute jusqu'à 5 bots dans les réglages (création ou modification), gardés dans la colonne `config` de la salle. Ils ne prennent pas de place dans la capacité, qui compte les humains. Ils comptent pour le minimum de 2 coureurs, mais il faut au moins un humain (COURSE-02). Leur ligne de résultats a `bot_level` et pas de compte : elle n'entre dans aucun historique.
 
 ## Mise en œuvre de la course
 
@@ -202,12 +204,12 @@ Les bots vont rouler sur le serveur, dans la même boucle que la course. Pour le
 
 Une course seul, ouverte à tous sauf à quelqu'un qui est dans une salle (`app/[lang]/practice/`) : la page le renvoie vers sa salle, et la server action du texte le refuse aussi. Elle n'a pas de salle : rien en base, pas de socket.
 
-1. **Réglages.** Les mêmes champs que pour une salle pour le texte, la limite de temps et le mode d'erreur (`TextSettingsSection`, `RaceRulesFields`), plus une liste de bots : jusqu'à 5, chacun avec un niveau (`lib/practice/settings.ts`, `lib/bots/levels.ts`).
+1. **Réglages.** Les mêmes champs que pour une salle pour le texte, la limite de temps et le mode d'erreur (`TextSettingsSection`, `RaceRulesFields`), plus une liste de bots : jusqu'à 5, chacun avec un niveau (`lib/practice/settings.ts`, `lib/bots/levels.ts`, `app/components/bot-list.tsx`).
 2. **Texte.** La server action `practiceTextAction` refuse quelqu'un qui est dans une salle, valide les réglages avec Zod et génère le texte comme pour une salle (`lib/texts/generate.ts`). C'est le seul appel au serveur.
 3. **Course.** Le navigateur crée un `Race` (`lib/race/engine.ts`), le même moteur que le serveur : décompte de 3 s, règles de frappe, limite de temps, échantillons de MPM et classement. Chaque touche acceptée par `useTyping` lui est passée, et la piste est rafraîchie 5 fois par seconde.
 4. **Résultats.** Le tableau et le podium des salles, avec « Recommencer » (nouveau texte, mêmes réglages) et « Changer les réglages ».
 
-Comme le serveur n'arbitre pas cette course, ses résultats ne sont pas enregistrés. Les bots sont configurés mais ne courent pas encore : quand leur moteur existera, chaque bot deviendra un participant du même `Race`, à qui le moteur donnera ses touches au fil du temps.
+Comme le serveur n'arbitre pas cette course, ses résultats ne sont pas enregistrés. Chaque bot configuré devient un participant du même `Race`, avec une graine tirée au hasard.
 
 ## Bonus de rattrapage
 

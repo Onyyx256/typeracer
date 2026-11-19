@@ -11,16 +11,19 @@ type StartError = Extract<StartRaceActionResult, { ok: false }>["error"];
 export function StartRace({
   dict,
   runners,
+  bots,
   minRunners,
 }: {
   dict: RaceDictionary;
+  /** Humans only. */
   runners: number;
+  bots: number;
   minRunners: number;
 }) {
   const router = useRouter();
   const [error, setError] = useState<StartError | null>(null);
   const [pending, startTransition] = useTransition();
-  const enough = runners >= minRunners;
+  const enough = runners + bots >= minRunners && runners > 0;
 
   function start() {
     setError(null);
@@ -49,7 +52,12 @@ export function StartRace({
         {error ? (
           <span className="text-danger">&gt; {dict.startErrors[error]}</span>
         ) : (
-          !enough && <>&gt; {interpolate(dict.needRunners, { min: minRunners })}</>
+          !enough && (
+            <>
+              &gt;{" "}
+              {runners + bots >= minRunners ? dict.needHuman : interpolate(dict.needRunners, { min: minRunners })}
+            </>
+          )
         )}
       </p>
     </div>

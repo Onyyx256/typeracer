@@ -1,0 +1,3 @@
+ALTER TABLE "race_results" ADD COLUMN "bot_level" text;--> statement-breakpoint
+ALTER TABLE "race_results" ADD CONSTRAINT "race_results_bot_level" CHECK ("race_results"."bot_level" in ('noob', 'beginner', 'intermediate', 'expert', 'impossible'));--> statement-breakpoint
+ALTER TABLE "race_results" ADD CONSTRAINT "race_results_bot_has_no_user" CHECK ("race_results"."bot_level" is null or ("race_results"."user_id" is null and "race_results"."guest_id" is null and not "race_results"."is_guest"));

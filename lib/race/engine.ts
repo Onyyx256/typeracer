@@ -1,3 +1,5 @@
+import type { BotLevel } from "@/lib/bots/levels";
+import { BotTypist, type BotKey } from "@/lib/bots/typist";
 import { createRng, type Rng } from "@/lib/texts/rng";
 import {
   appendWords,
@@ -12,6 +14,7 @@ import {
 } from "./bonuses";
 import type { ErrorMode, TypingState } from "./typing";
 import {
+  applyKey,
   applyKeys,
   correctChars,
   initialTyping,
@@ -53,15 +56,30 @@ export const MAX_KEYS_PER_BATCH = 60;
 
 export const EFFECT_SHOW_MS = 3_000;
 
+export type BotSetup = { level: BotLevel; seed: number };
+
 export type RaceParticipant = {
   userId: string;
   name: string;
   isGuest: boolean;
+  /** Set for a bot: the engine types for it. */
+  bot?: BotSetup;
+};
+
+/** What the track and the results show of a runner. */
+export type RunnerIdentity = {
+  userId: string;
+  name: string;
+  isGuest: boolean;
+  botLevel: BotLevel | null;
 };
 
 export type RunnerStatus = "racing" | "finished" | "abandoned";
 
-type Runner = RaceParticipant & {
+type BotRun = { typist: BotTypist; next: BotKey | null; at: number };
+
+type Runner = RunnerIdentity & {
+  bot: BotRun | null;
   /** Bonuses make it shorter or longer. */
   text: string;
   /** Words rain took off the end, in text order, shown crossed out. */
@@ -90,7 +108,7 @@ export type KeysResult =
   | { ok: true; finished: boolean }
   | { ok: false; reason: "notRacing" | "tooFast" | "tooMany" };
 
-export type TrackEntry = RaceParticipant & {
+export type TrackEntry = RunnerIdentity & {
   progress: number;
   wpm: number;
   status: RunnerStatus;
@@ -110,7 +128,7 @@ export type PlayerState = {
   correctKeystrokes: number;
 };
 
-export type ParticipantResult = RaceParticipant & {
+export type ParticipantResult = RunnerIdentity & {
   rank: number;
   status: ResultStatus;
   wpm: number;
@@ -151,11 +169,14 @@ export class Race {
       options.bonuses && reserve.length > 0
         ? { rng: createRng(options.bonuses.seed), reserve, baseWords: this.text.split(" ").length }
         : null;
-    for (const participant of options.participants) {
+    for (const { bot, ...participant } of options.participants) {
+      const typing = initialTyping();
       this.runners.set(participant.userId, {
         ...participant,
+        botLevel: bot?.level ?? null,
+        bot: bot ? this.startBot(bot, typing) : null,
         text: options.text,
-        typing: initialTyping(),
+        typing,
         status: "racing",
         endedAt: null,
         series: [],
@@ -169,6 +190,12 @@ export class Race {
     }
   }
 
+  private startBot(setup: BotSetup, typing: TypingState): BotRun {
+    const typist = new BotTypist({ ...setup, errorMode: this.mode });
+    const next = typist.next(this.text, this.mode, typing);
+    return { typist, next, at: this.startsAt + (next?.delayMs ?? 0) };
+  }
+
   isRunner(userId: string): boolean {
     return this.runners.has(userId);
   }
@@ -177,11 +204,17 @@ export class Race {
     return now >= this.startsAt && (this.deadline === null || now < this.deadline);
   }
 
+  /**
+   * Bots don't keep a race going once no human is left in it: those still
+   * typing are ranked by their progress, like at the time limit.
+   */
   isOver(now: number): boolean {
     if (this.deadline !== null && now >= this.deadline) {
       return true;
     }
-    return [...this.runners.values()].every((runner) => runner.status !== "racing");
+    const runners = [...this.runners.values()];
+    const humans = runners.filter((runner) => runner.bot === null);
+    return (humans.length > 0 ? humans : runners).every((runner) => runner.status !== "racing");
   }
 
   /**
@@ -199,7 +232,7 @@ export class Race {
     typedAt: number = now,
   ): KeysResult {
     const runner = this.runners.get(userId);
-    if (!runner || runner.status !== "racing" || !this.isTypingOpen(now)) {
+    if (!runner || runner.bot || runner.status !== "racing" || !this.isTypingOpen(now)) {
       return { ok: false, reason: "notRacing" };
     }
     if (keys.length > MAX_KEYS_PER_BATCH) {
@@ -232,11 +265,15 @@ export class Race {
     return true;
   }
 
-  /** Call it often: samples WPM about once a second and fires the checkpoints. */
+  /**
+   * Call it often: types for the bots up to now, samples WPM about once a
+   * second and fires the checkpoints.
+   */
   tick(now: number): BonusEvent[] {
     if (now < this.startsAt) {
       return [];
     }
+    this.advanceBots(now);
     for (const runner of this.runners.values()) {
       if (runner.status !== "racing") {
         continue;
@@ -248,6 +285,25 @@ export class Race {
       }
     }
     return this.isTypingOpen(now) ? this.fireCheckpoints(now) : [];
+  }
+
+  /** Each key lands at the time the bot typed it, even if the tick comes later. */
+  private advanceBots(now: number): void {
+    const until = this.deadline === null ? now : Math.min(now, this.deadline);
+    for (const runner of this.runners.values()) {
+      const { bot } = runner;
+      while (bot && bot.next && runner.status === "racing" && bot.at <= until) {
+        runner.typing = applyKey(runner.text, this.mode, runner.typing, bot.next.key);
+        if (isComplete(runner.text, this.mode, runner.typing)) {
+          this.end(runner, "finished", bot.at);
+          bot.next = null;
+          break;
+        }
+        const glare = runner.effect?.kind === "glare" && bot.at < runner.effect.until;
+        bot.next = bot.typist.next(runner.text, this.mode, runner.typing, glare);
+        bot.at += bot.next?.delayMs ?? 0;
+      }
+    }
   }
 
   private fireCheckpoints(now: number): BonusEvent[] {
@@ -315,6 +371,7 @@ export class Race {
       userId: runner.userId,
       name: runner.name,
       isGuest: runner.isGuest,
+      botLevel: runner.botLevel,
       progress: typingProgress(runner.text, this.mode, runner.typing),
       wpm: Math.round(this.wpm(runner, now)),
       status: runner.status,
@@ -347,6 +404,7 @@ export class Race {
         userId: runner.userId,
         name: runner.name,
         isGuest: runner.isGuest,
+        botLevel: runner.botLevel,
         status,
         wpm,
         rawWpm: rawWpm(keystrokes, durationMs),
