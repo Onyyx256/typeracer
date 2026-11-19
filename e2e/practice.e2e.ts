@@ -89,7 +89,7 @@ test("someone in a room can't practice", async ({ browser }) => {
 
   await practice.goto("/en/practice");
   await expect(practice.getByRole("button", { name: "Start", exact: true })).toHaveCount(0);
-  await practice.getByRole("link", { name: `Back to ${code}` }).click();
+  await practice.getByRole("link", { name: `Back to room ${code}` }).click();
   await expect(practice).toHaveURL(new RegExp(`/en/rooms/${code}$`));
 
   await context.close();
