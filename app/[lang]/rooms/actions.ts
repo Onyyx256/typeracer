@@ -297,7 +297,7 @@ export async function leaveRoomAction(formData: FormData): Promise<void> {
       throw new Error("Could not leave the room.");
     }
   }
-  redirect(localePath(lang, "/"));
+  redirect(localePath(lang, "/rooms"));
 }
 
 export async function leaveClosesRoomAction(): Promise<boolean> {

@@ -1,192 +1,62 @@
+import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { LiveLobby } from "@/app/components/live-updates";
-import { getViewer } from "@/lib/auth/current-user";
-import { LOCALES, LOCALE_NAMES, localePath, type Locale } from "@/lib/i18n/config";
+import logo from "@/app/icon.png";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { localePath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
-import { renderTime } from "@/lib/realtime/render-time";
-import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
-import { interpolate } from "@/lib/i18n/format";
-import { filterQuery, parseRoomFilters, type RoomFilters } from "@/lib/rooms/filters";
-import { roomLabel } from "@/lib/rooms/label";
-import { findCurrentRoom, listPublicRooms } from "@/lib/rooms/rooms";
-import { COMPLEXITIES } from "@/lib/rooms/settings";
-import { JoinByCode } from "./join-by-code";
 
-export default async function Home({ searchParams }: PageProps<"/[lang]">) {
-  const [dict, locale] = await Promise.all([getDictionary(), getLocale()]);
+const BUTTON =
+  "flex h-12 w-full items-center justify-center px-6 font-medium transition-[color,border-color,filter] rounded-leaf sm:w-44";
 
+export default function Home() {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10 sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl leading-tight font-semibold">
-            {dict.roomsPage.heading}
-          </h1>
-          <p className="mt-2 max-w-2xl text-muted">{dict.roomsPage.lead}</p>
-        </div>
-        <JoinByCode dict={dict.roomsPage.joinByCode} locale={locale} />
-      </div>
-      {/* The list changes all the time, so it renders on each request. */}
+    <main className="flex flex-1 flex-col items-center justify-center px-5 py-16 text-center sm:px-8">
+      {/* Signed-in members go straight to the rooms, so the page waits for the session before showing anything. */}
       <Suspense fallback={null}>
-        <RoomList searchParams={searchParams} />
+        <Landing />
       </Suspense>
     </main>
   );
 }
 
-async function RoomList({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const filters = parseRoomFilters(await searchParams);
-  // Before reading the rooms, so a change made while they load still counts as newer.
-  const renderedAt = await renderTime();
-  const filtered = filters.lang !== undefined || filters.complexity !== undefined;
-  const [dict, locale, viewer, rooms] = await Promise.all([
-    getDictionary(),
-    getLocale(),
-    getViewer(),
-    listPublicRooms(filters),
-  ]);
-  const current = viewer ? await findCurrentRoom(viewer.id) : null;
-  const canCreate = viewer !== null && !viewer.isGuest;
-  const t = dict.roomsPage;
+async function Landing() {
+  const [user, dict, locale] = await Promise.all([getCurrentUser(), getDictionary(), getLocale()]);
+  if (user) {
+    redirect(localePath(locale, "/rooms"));
+  }
+  const t = dict.landing;
 
   return (
     <>
-      <LiveLobby renderedAt={renderedAt} />
-      {current && (
-        <p className="mt-6 flex flex-wrap items-center gap-3 border border-primary-text bg-surface px-4 py-3 rounded-leaf">
-          {interpolate(t.current, { room: roomLabel(dict.roomNames, current) })}
-          <Link
-            href={localePath(locale, `/rooms/${current.code}`)}
-            className="font-medium text-primary-text underline underline-offset-4"
-          >
-            {t.backToRoom}
-          </Link>
-        </p>
-      )}
-
-      <Filters dict={dict} locale={locale} filters={filters} />
-
-      {rooms.length === 0 ? (
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <p className="font-mono text-sm text-muted">&gt; {filtered ? t.noMatch : t.empty}</p>
-          {filtered && (
-            <Link
-              href={localePath(locale, "/")}
-              scroll={false}
-              className="font-medium text-primary-text underline underline-offset-4"
-            >
-              {t.clearFilters}
-            </Link>
-          )}
-          {canCreate && (
-            <Link
-              href={localePath(locale, "/rooms/new")}
-              className="flex h-11 items-center bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 rounded-leaf"
-            >
-              {t.create}
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="mt-8 overflow-x-auto">
-          <table className="w-full min-w-xl border-collapse text-left text-sm">
-            <caption className="sr-only">{t.caption}</caption>
-            <thead>
-              <tr className="border-b border-line font-mono text-xs tracking-wide text-accent-text uppercase">
-                <th scope="col" className="py-2 pr-4 font-normal">{t.columns.room}</th>
-                <th scope="col" className="py-2 pr-4 font-normal">{t.columns.host}</th>
-                <th scope="col" className="py-2 pr-4 font-normal">{t.columns.runners}</th>
-                <th scope="col" className="py-2 pr-4 font-normal">{t.columns.text}</th>
-                <th scope="col" className="py-2 font-normal">{t.columns.state}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {rooms.map((room) => (
-                <tr key={room.code}>
-                  <td className="py-3 pr-4">
-                    <Link
-                      href={localePath(locale, `/rooms/${room.code}`)}
-                      aria-label={interpolate(t.open, { code: room.code })}
-                      className="font-mono font-medium tracking-widest text-primary-text underline underline-offset-4"
-                    >
-                      {room.code}
-                    </Link>
-                  </td>
-                  <td className="py-3 pr-4">{room.hostName}</td>
-                  <td className="py-3 pr-4 font-mono">
-                    {room.participants}/{room.capacity}
-                  </td>
-                  <td className="py-3 pr-4">
-                    {LOCALE_NAMES[room.language]} ·{" "}
-                    {dict.createRoom.textType[room.textType]} ·{" "}
-                    {dict.createRoom.complexity[room.complexity]}
-                  </td>
-                  <td className="py-3">{dict.room.states[room.state]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Image src={logo} alt="" width={144} height={144} priority className="size-28 sm:size-36" />
+      <h1 className="mt-6 font-display text-5xl font-semibold tracking-tight sm:text-6xl">
+        Nelumbo<span className="text-accent-text">Type</span>
+      </h1>
+      <p className="mt-4 max-w-md font-display text-2xl leading-snug text-muted sm:text-3xl">
+        {t.tagline}
+      </p>
+      <div className="mt-10 flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+        <Link
+          href={localePath(locale, "/login")}
+          className={`${BUTTON} border border-line hover:border-primary-text`}
+        >
+          {t.login}
+        </Link>
+        <Link
+          href={localePath(locale, "/practice")}
+          className={`${BUTTON} border border-line hover:border-primary-text`}
+        >
+          {t.practice}
+        </Link>
+        <Link
+          href={localePath(locale, "/rooms")}
+          className={`${BUTTON} bg-primary text-on-primary hover:brightness-110`}
+        >
+          {t.join}
+        </Link>
+      </div>
     </>
-  );
-}
-
-type FiltersProps = { dict: Dictionary; locale: Locale; filters: RoomFilters };
-
-function Filters({ dict, locale, filters }: FiltersProps) {
-  const t = dict.roomsPage.filters;
-  const groups = [
-    {
-      key: "lang",
-      label: t.language,
-      options: LOCALES.map((value) => ({ value, label: LOCALE_NAMES[value] })),
-    },
-    {
-      key: "complexity",
-      label: t.complexity,
-      options: COMPLEXITIES.map((value) => ({ value, label: dict.createRoom.complexity[value] })),
-    },
-  ] as const;
-
-  return (
-    <nav aria-label={t.label} className="mt-8 grid gap-3">
-      {groups.map((group) => (
-        <div key={group.key} className="flex flex-wrap items-center gap-2">
-          <span
-            id={`filter-${group.key}`}
-            className="w-36 font-mono text-xs tracking-wide text-accent-text uppercase"
-          >
-            {group.label}
-          </span>
-          <ul aria-labelledby={`filter-${group.key}`} className="flex flex-wrap gap-2">
-            {[{ value: undefined, label: t.any }, ...group.options].map((option) => {
-              const active = filters[group.key] === option.value;
-              return (
-                <li key={option.value ?? "any"}>
-                  <Link
-                    href={localePath(locale, "/") + filterQuery(filters, group.key, option.value)}
-                    scroll={false}
-                    aria-current={active ? "true" : undefined}
-                    className={`flex h-9 items-center border px-3 text-sm transition-colors rounded-leaf ${
-                      active
-                        ? "border-primary-text bg-surface font-medium text-primary-text"
-                        : "border-line hover:border-primary-text"
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-    </nav>
   );
 }

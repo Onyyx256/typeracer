@@ -5,7 +5,7 @@ import { TextField } from "@/app/components/text-field";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
 import { ROOM_CODE_LENGTH } from "@/lib/rooms/code";
-import { findRoomAction, type FindRoomError } from "./rooms/actions";
+import { findRoomAction, type FindRoomError } from "./actions";
 
 type JoinByCodeProps = {
   dict: Dictionary["roomsPage"]["joinByCode"];

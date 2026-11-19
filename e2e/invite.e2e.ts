@@ -13,7 +13,7 @@ async function signUp(page: Page, username: string): Promise<void> {
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByLabel("Confirm").fill(PASSWORD);
   await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en$/);
+  await expect(page).toHaveURL(/\/en\/rooms$/);
 }
 
 async function hostRoom(browser: Browser, visibility: "By code" | "Private") {
@@ -38,13 +38,13 @@ async function joinAsGuest(page: Page, nickname: string): Promise<void> {
   await expect(page.getByRole("button", { name: "Leave the room" })).toBeVisible();
 }
 
-test("a guest joins a code-only room with its code from the home page", async ({ browser }) => {
+test("a guest joins a code-only room with its code from the rooms page", async ({ browser }) => {
   const host = await hostRoom(browser, "By code");
   await expect(host.page.getByRole("button", { name: "Make a link" })).toBeVisible();
 
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
-  await guest.goto("/en");
+  await guest.goto("/en/rooms");
   await expect(guest.getByRole("link", { name: `Open room ${host.code}` })).toHaveCount(0);
 
   await guest.getByLabel("Room code").fill("ZZZZZZ");
@@ -74,7 +74,7 @@ test("a private room opens only with an invite link, once", async ({ browser }) 
 
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
-  await guest.goto("/en");
+  await guest.goto("/en/rooms");
   await guest.getByLabel("Room code").fill(host.code);
   await guest.getByRole("button", { name: "Join", exact: true }).click();
   await expect(guest.getByText("no open room has this code")).toBeVisible();
