@@ -65,3 +65,11 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** en jouant à l'entraînement avec un bot Noob (une course finie, « Recommencer », abandon) : 5 erreurs React dans le serveur de dev.
 - **Correction :** le graphique ne dessine rien si aucun temps n'a passé, et les résultats cachent sa section (ef6239c) ; le test e2e vérifie que le graphique est là après une vraie course et absent après un abandon pendant le décompte (4d56c86).
 - **Leçon :** penser aux cas limites des divisions (durée nulle), et ne pas compter sur les tests e2e de production pour voir les avertissements de React.
+
+## 2026-11-19 — Une personne exclue pouvait encore suivre une salle publique
+
+- **Outil / agent :** Claude Code (audit de sécurité SEC-01 à SEC-03, demandé à l'IA).
+- **Ce que l'IA a fait :** en écrivant l'exclusion (SALLE-07), elle a bloqué le retour dans la salle et retiré les onglets du canal, mais `canWatchRoom` (`lib/rooms/rooms.ts`) ne regardait pas `room_bans` : dans une salle publique, la personne exclue recevait de nouveau les mises à jour en direct au prochain `room:watch` ou `race:sync`. Il manquait aussi une limite aux connexions ratées, et le serveur Socket.IO ne vérifiait pas l'origine des connexions.
+- **Comment je l'ai détecté :** audit de sécurité ligne à ligne contre les exigences SEC, en relisant chaque chemin qui donne accès à une salle.
+- **Correction :** `canWatchRoom` refuse un utilisateur exclu, avec un test (7056329) ; limite des connexions ratées (d1721c1) ; origine vérifiée à la connexion Socket.IO (42551b5).
+- **Leçon :** une règle d'accès doit être vérifiée sur tous les chemins (page, action, socket), pas seulement sur celui de la fonctionnalité qu'on écrit.
