@@ -138,21 +138,21 @@ C'est la machine à états de COURSE-01. L'état est la colonne `rooms.state` (`
 
 ```mermaid
 stateDiagram-v2
-    [*] --> EN_ATTENTE : l'hôte crée la salle
-    EN_ATTENTE --> DECOMPTE : l'hôte lance (min. 2 participants, dont 1 humain)
-    DECOMPTE --> EN_COURSE : fin du décompte 3, 2, 1
-    EN_COURSE --> RESULTATS : tous ont terminé ou abandonné, ou temps écoulé
-    RESULTATS --> EN_ATTENTE : l'hôte clique « Nouvelle partie »
-    DECOMPTE --> EN_ATTENTE : redémarrage du serveur
-    EN_COURSE --> EN_ATTENTE : redémarrage du serveur
-    EN_ATTENTE --> FERMEE : fermeture (*)
-    DECOMPTE --> FERMEE : fermeture (*)
-    EN_COURSE --> FERMEE : fermeture (*)
-    RESULTATS --> FERMEE : fermeture (*)
+    [*] --> OUVERTE : l'hôte crée la salle
+    state "Salle ouverte" as OUVERTE {
+        [*] --> EN_ATTENTE
+        EN_ATTENTE --> DECOMPTE : l'hôte lance (min. 2 participants, dont 1 humain)
+        DECOMPTE --> EN_COURSE : fin du décompte 3, 2, 1
+        EN_COURSE --> RESULTATS : tous ont terminé ou abandonné, ou temps écoulé
+        RESULTATS --> EN_ATTENTE : l'hôte clique « Nouvelle partie »
+        DECOMPTE --> EN_ATTENTE : redémarrage du serveur
+        EN_COURSE --> EN_ATTENTE : redémarrage du serveur
+    }
+    OUVERTE --> FERMEE : fermeture (*), depuis n'importe quel état
     FERMEE --> [*]
 ```
 
-(*) Une salle ferme, dans n'importe quel état, dans trois cas :
+(*) Une salle ouverte ferme, quel que soit son état, dans trois cas :
 
 - l'hôte supprime la salle ;
 - le dernier membre connecté part ;
