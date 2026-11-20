@@ -190,6 +190,20 @@ stateDiagram-v2
 - Une page qui demande un compte (`/stats`, `/account`, `/rooms/new`, liste dans `lib/auth/session-cookie.ts`) envoie tout de suite un visiteur sans cookie de session vers la page de connexion (307). Sans ça, la page répondait 200 puis redirigeait après coup, ce qui coûtait plusieurs secondes sur un téléphone. Le proxy regarde seulement si le cookie existe : un cookie périmé ou falsifié arrive quand même à la page, dont `requireUser` vérifie la signature.
 - Un code de salle inconnu ou un lien d'invitation mort est réécrit vers `/rooms/gone` ou `/invite/gone`, avec un vrai statut 404 (`lib/rooms/missing-pages.ts`). Si la base de données ne répond pas, le proxy laisse passer et la page affiche l'erreur.
 
+## Limites de tentatives
+
+Les limites sont des compteurs en mémoire sur une fenêtre fixe (`lib/rate-limit.ts`). L'application roule dans un seul processus, et perdre les compteurs à un redémarrage donne seulement une fenêtre de plus à un attaquant (SEC-02).
+
+| Quoi | Clé | Limite |
+| --- | --- | --- |
+| Connexions ratées | adresse et nom d'utilisateur | 5 par 15 min |
+| Connexions ratées | adresse | 30 par 15 min (`LOGIN_FAILURE_LIMIT`) |
+| Codes de salle inconnus | adresse | 10 par minute (`CODE_MISS_LIMIT`) |
+| Comptes invités créés | adresse | 20 par 10 min (`GUEST_LIMIT`) |
+| Photos de profil envoyées | utilisateur | 10 par 10 min |
+
+Seuls les échecs comptent pour la connexion et les codes : quelqu'un qui tape le bon mot de passe ou le bon code n'est jamais ralenti. Le compteur des codes est gardé sur `globalThis`, parce que le proxy et les pages le partagent. Un invité est créé seulement au moment de rejoindre une salle, et son compte est supprimé si l'entrée échoue (salle pleine, nom refusé) : le cookie de session n'est posé qu'après une entrée réussie.
+
 ## Bots
 
 Les bots courent dans le même moteur que les humains (`lib/race/engine.ts`) : sur le serveur pour une salle, dans le navigateur pour l'entraînement. Pour le moteur, un bot est un participant avec un niveau et une graine ; sa progression part sur la piste comme celle d'un humain, et il reçoit les bonus et malus (BOT-04).
