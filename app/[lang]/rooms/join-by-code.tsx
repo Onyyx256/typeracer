@@ -38,9 +38,12 @@ export function JoinByCode({ dict, locale }: JoinByCodeProps) {
             label={dict.label}
             name="code"
             value={code}
-            onChange={(value) => setCode(value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+            // Cut after cleaning rather than with maxLength, which would cut a
+            // pasted " ABC123" before its space is dropped.
+            onChange={(value) =>
+              setCode(value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, ROOM_CODE_LENGTH))
+            }
             autoComplete="off"
-            maxLength={ROOM_CODE_LENGTH}
             hint={dict.hint}
             error={error ? dict.errors[error] : undefined}
           />
