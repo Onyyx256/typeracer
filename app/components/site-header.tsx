@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import logo from "@/app/icon.png";
+import logo from "@/app/logo.png";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getLooks } from "@/lib/profile/profile";
 import { localePath } from "@/lib/i18n/config";
