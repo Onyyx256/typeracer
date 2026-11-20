@@ -29,7 +29,7 @@ export function JoinByCode({ dict, locale }: JoinByCodeProps) {
           setError(result.error);
         });
       }}
-      className="grid w-full max-w-sm gap-2"
+      className="grid w-full max-w-sm grid-cols-1 gap-2"
     >
       <h2 className="font-display text-xl font-semibold">{dict.heading}</h2>
       <div className="flex items-end gap-2">
