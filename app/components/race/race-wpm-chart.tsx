@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useChartWidth } from "@/app/components/charts/use-chart-width";
 import type { Locale } from "@/lib/i18n/config";
-import { plural, type PluralForms } from "@/lib/i18n/format";
+import { plural, youSuffixNeeded, type PluralForms } from "@/lib/i18n/format";
 import { mistakesOf } from "@/lib/race/mistakes";
 import type { WpmPoint } from "@/lib/race/types";
 import { niceScale, tickDecimals } from "@/lib/stats/series";
@@ -148,7 +148,7 @@ export function RaceWpmChart({
             </svg>
             <span className={runner.you ? "font-medium text-foreground" : ""}>
               {runner.name}
-              {runner.you && ` (${labels.you})`}
+              {runner.you && youSuffixNeeded(locale, runner.name, labels.you) && ` (${labels.you})`}
             </span>
           </li>
         ))}

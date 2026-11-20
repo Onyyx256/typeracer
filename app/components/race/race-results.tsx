@@ -8,7 +8,7 @@ import { cosmeticClasses } from "@/lib/profile/cosmetics";
 import type { PlayerLooks } from "@/lib/profile/look";
 import type { Locale } from "@/lib/i18n/config";
 import type { RoomDictionary, ResultsDictionary } from "@/lib/i18n/dictionaries/fr";
-import { formatNumber, formatPercent, interpolate } from "@/lib/i18n/format";
+import { formatNumber, formatPercent, interpolate, youSuffixNeeded } from "@/lib/i18n/format";
 
 /**
  * In rank order in the page, so screen readers start with the winner;
@@ -90,7 +90,9 @@ export function RaceResults({
                 />
                 <span className="max-w-full truncate font-medium" title={row.name}>
                   {row.name}
-                  {isViewer(row, userId) && <span className="text-muted"> ({roomDict.you})</span>}
+                  {isViewer(row, userId) && youSuffixNeeded(locale, row.name, roomDict.you) && (
+                    <span className="text-muted"> ({roomDict.you})</span>
+                  )}
                 </span>
                 <span className="font-mono text-sm text-muted tabular-nums">
                   {formatNumber(locale, row.wpm)} {dict.columns.wpm}
@@ -133,7 +135,9 @@ export function RaceResults({
                   <td className="px-4 py-3 font-mono">{row.rank}</td>
                   <th scope="row" className="px-4 py-3 font-medium">
                     {row.name}
-                    {you && <span className="text-muted"> ({roomDict.you})</span>}
+                    {you && youSuffixNeeded(locale, row.name, roomDict.you) && (
+                      <span className="text-muted"> ({roomDict.you})</span>
+                    )}
                     {row.isGuest && (
                       <span className="ml-2 font-mono text-xs text-muted uppercase">{roomDict.guestBadge}</span>
                     )}
