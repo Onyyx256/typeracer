@@ -535,6 +535,7 @@ export const en: Dictionary = {
       keysHeading: "Missed keys",
       keysLead: "The keys with mistakes, darker for more of them.",
       none: "no missed keys, well done",
+      noneGaveUp: "no missed keys before you gave up",
       fewer: "fewer",
       more: "more",
       otherChars: "Accents and other characters",

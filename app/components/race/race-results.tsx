@@ -267,7 +267,7 @@ function RaceCharts({
           <MissedKeys
             missedKeys={own.missedKeys}
             labels={{
-              none: t.none,
+              none: own.status === "abandoned" ? t.noneGaveUp : t.none,
               fewer: t.fewer,
               more: t.more,
               otherChars: t.otherChars,

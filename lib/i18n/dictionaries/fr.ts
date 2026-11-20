@@ -537,6 +537,7 @@ export const fr = {
       keysHeading: "Touches ratées",
       keysLead: "Les touches où il y a eu des erreurs, plus foncées quand il y en a eu plus.",
       none: "aucune touche ratée, bravo",
+      noneGaveUp: "aucune touche ratée avant l'abandon",
       fewer: "moins",
       more: "plus",
       otherChars: "Accents et autres caractères",
