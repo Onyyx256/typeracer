@@ -745,6 +745,7 @@ export const fr = {
       confirmMismatch: "Ne correspond pas.",
       usernameTaken: "Ce nom est déjà pris.",
       badCredentials: "nom d'utilisateur ou mot de passe incorrect",
+      tooManyLogins: "trop d'essais ratés, attends 15 minutes",
       signupUnavailable: "inscription impossible pour le moment, réessaie plus tard",
       loginUnavailable: "connexion impossible pour le moment, réessaie plus tard",
       oauthCancelled: "connexion annulée",

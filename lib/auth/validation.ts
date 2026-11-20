@@ -26,6 +26,7 @@ export const AUTH_ERRORS = [
   "confirmMismatch",
   "usernameTaken",
   "badCredentials",
+  "tooManyLogins",
   "signupUnavailable",
   "loginUnavailable",
   "oauthCancelled",

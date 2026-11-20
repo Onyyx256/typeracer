@@ -3,9 +3,11 @@
 import { redirect } from "next/navigation";
 import * as z from "zod";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { recordLoginFailure, tooManyLoginFailures } from "@/lib/auth/login-attempts";
 import { createSession, deleteSession } from "@/lib/auth/session";
 import { createUser, findCredentials } from "@/lib/auth/users";
 import { DEFAULT_LOCALE, localePath, localeSchema } from "@/lib/i18n/config";
+import { requestIp } from "@/lib/request";
 import {
   loginSchema,
   signupSchema,
@@ -65,9 +67,14 @@ export async function login(input: unknown): Promise<LoginResult> {
   const { username, password } = parsed.data;
 
   try {
+    const ip = await requestIp();
+    if (tooManyLoginFailures(ip, username)) {
+      return { ok: false, message: "tooManyLogins" };
+    }
     const user = await findCredentials(username);
     const valid = await verifyPassword(user?.passwordHash ?? null, password);
     if (!user || !valid) {
+      recordLoginFailure(ip, username);
       return { ok: false, message: BAD_CREDENTIALS };
     }
     await createSession(user.id);

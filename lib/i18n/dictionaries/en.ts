@@ -743,6 +743,7 @@ export const en: Dictionary = {
       confirmMismatch: "Doesn't match.",
       usernameTaken: "This name is already taken.",
       badCredentials: "incorrect username or password",
+      tooManyLogins: "too many failed attempts, wait 15 minutes",
       signupUnavailable: "sign-up unavailable right now, try again later",
       loginUnavailable: "log-in unavailable right now, try again later",
       oauthCancelled: "sign-in cancelled",
