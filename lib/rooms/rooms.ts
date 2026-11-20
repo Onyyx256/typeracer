@@ -5,7 +5,7 @@ import { roomBans, roomInvites, roomMembers, rooms, users } from "@/db/schema";
 import { abandonRace, closeRace } from "@/lib/race/manager";
 import { notifyKicked, notifyRoomChanged, notifyRoomClosed } from "@/lib/realtime/notify";
 import { isConnected } from "@/lib/realtime/presence";
-import { generateRoomCode } from "./code";
+import { generateRoomCode } from "./generate-code";
 import type { RoomFilters } from "./filters";
 import type { CurrentRoom } from "./label";
 import {
