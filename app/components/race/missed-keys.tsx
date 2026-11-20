@@ -56,7 +56,7 @@ export function MissedKeys({
         <p className="font-mono text-sm text-muted">&gt; {labels.none}</p>
       ) : (
         <>
-          <div aria-hidden="true" className="grid w-full max-w-2xl gap-1 overflow-x-auto font-mono text-sm">
+          <div aria-hidden="true" className="relative grid w-full max-w-2xl gap-1 overflow-x-auto font-mono text-sm">
             {KEYBOARD_ROWS.map((row, rowIndex) => (
               <div key={rowIndex} className="flex gap-1" style={{ paddingLeft: `${rowIndex * 0.6}rem` }}>
                 {row.map((key) => {

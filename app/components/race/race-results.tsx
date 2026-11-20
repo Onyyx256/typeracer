@@ -111,7 +111,7 @@ export function RaceResults({
         </ol>
       </div>
 
-      <div className="overflow-x-auto border border-line rounded-leaf">
+      <div className="relative overflow-x-auto border border-line rounded-leaf">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{dict.caption}</caption>
           <thead className="bg-surface font-mono text-xs tracking-wide text-muted uppercase">

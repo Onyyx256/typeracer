@@ -106,7 +106,7 @@ async function RoomList({
           )}
         </div>
       ) : (
-        <div className="mt-8 overflow-x-auto">
+        <div className="relative mt-8 overflow-x-auto">
           <table className="w-full min-w-xl border-collapse text-left text-sm">
             <caption className="sr-only">{t.caption}</caption>
             <thead>

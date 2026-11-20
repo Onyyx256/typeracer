@@ -258,7 +258,7 @@ function HistoryTable({
 }) {
   const t = dict.history;
   return (
-    <div className="overflow-x-auto border border-line rounded-leaf">
+    <div className="relative overflow-x-auto border border-line rounded-leaf">
       <table className="w-full min-w-[40rem] text-left text-sm">
         <caption className="sr-only">{t.caption}</caption>
         <thead className="bg-surface font-mono text-xs tracking-wide text-muted uppercase">
