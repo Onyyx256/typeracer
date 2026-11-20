@@ -49,6 +49,7 @@ export const users = pgTable(
   },
   (table) => [
     uniqueIndex("users_username_lower_idx").on(sql`lower(${table.username})`),
+    index("users_guest_created_idx").on(table.createdAt).where(sql`${table.isGuest}`),
     check(
       "users_username_length",
       sql`char_length(${table.username}) between 3 and 20`,
@@ -173,6 +174,8 @@ export const rooms = pgTable(
   (table) => [
     uniqueIndex("rooms_code_idx").on(table.code),
     index("rooms_visibility_state_idx").on(table.visibility, table.state),
+    index("rooms_host_idx").on(table.hostId),
+    index("rooms_closed_at_idx").on(table.closedAt),
     check("rooms_code_format", sql`${table.code} ~ '^[A-HJKMNP-Z2-9]{6}$'`),
     check(
       "rooms_visibility",
@@ -338,6 +341,7 @@ export const raceResults = pgTable(
     // One row per account per race; guests (null) aren't constrained.
     uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
     index("race_results_user_idx").on(table.userId),
+    index("race_results_guest_idx").on(table.guestId),
     check("race_results_rank", sql`${table.rank} >= 1`),
     check(
       "race_results_status",

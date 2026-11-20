@@ -99,6 +99,13 @@
       "when": 1795098291797,
       "tag": "0013_add_race_result_bot_level",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795190063193,
+      "tag": "0014_index_cleanup_columns",
+      "breakpoints": true
     }
   ]
 }
