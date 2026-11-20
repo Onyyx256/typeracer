@@ -76,6 +76,8 @@ export function RaceTrack({
           const progress = shown[entry.userId] ?? 0;
           const look = looks[entry.userId];
           const cosmetics = entry.botLevel ? BOT_COSMETICS[entry.botLevel] : look?.cosmetics;
+          // Only the drawings fade: faded text would fail the contrast ratio.
+          const faded = entry.status === "abandoned" ? "opacity-50 grayscale" : "";
           return (
             <li
               key={entry.userId}
@@ -89,8 +91,8 @@ export function RaceTrack({
                 (entry.effect ? ` · ${dict.bonuses[entry.effect]}` : "")
               }
               className={`relative flex min-w-0 flex-col items-center gap-1.5 px-1 pt-2 pb-2 rounded-leaf ${
-                you ? "bg-on-panel/10 ring-2 ring-on-panel" : ""
-              } ${entry.status === "abandoned" ? "opacity-50 grayscale" : ""} ${
+                you ? "bg-on-panel/5 ring-2 ring-on-panel" : ""
+              } ${
                 cosmetics ? cosmeticClasses(cosmetics) : ""
               }`}
             >
@@ -104,10 +106,10 @@ export function RaceTrack({
               <GrowingStem
                 progress={progress}
                 zoomed
-                className="h-[clamp(7rem,calc(100dvh-37.5rem),18rem)] w-auto"
+                className={`h-[clamp(7rem,calc(100dvh-37.5rem),18rem)] w-auto ${faded}`}
               />
               <span className="flex max-w-full items-center gap-1.5">
-                <Avatar name={entry.name} src={look?.avatarUrl} className="size-6 shrink-0 text-xs" />
+                <Avatar name={entry.name} src={look?.avatarUrl} className={`size-6 shrink-0 text-xs ${faded}`} />
                 <span className="truncate text-sm font-medium" title={entry.name}>
                   {entry.name}
                 </span>

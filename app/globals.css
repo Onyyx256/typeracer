@@ -19,9 +19,10 @@
   --accent-text: #8b2e74;
   --danger: #a3262f;
   --on-danger: #fdfdf8;
-  --panel: #309975;
+  /* Dark enough for the small muted labels on the race track (4.5:1). */
+  --panel: #1f7354;
   --on-panel: #fdfdf8;
-  --on-panel-muted: #d9f0e6;
+  --on-panel-muted: #e6f5ee;
   --stem: #dad873;
   --petal: #f3d3e2;
   --petal-line: #8b2e74;
