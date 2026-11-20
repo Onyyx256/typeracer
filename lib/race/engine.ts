@@ -38,11 +38,12 @@ export const SAMPLE_MS = 1_000;
 
 /**
  * Speed check: keys refill at this rate, up to a small burst, and a batch
- * needing more than what's left is refused. 25 keys/s is 300 WPM held
- * for good, above the best human typists; the burst covers messages that
- * arrive bunched up after a network hiccup.
+ * needing more than what's left is refused. 17 keys/s is about 200 WPM held
+ * for a whole race, past the best typists in competition (about 170 to 190);
+ * the burst lets a fast word through and covers messages that arrive bunched
+ * up after a network hiccup, without raising the speed over a race.
  */
-export const MAX_KEYS_PER_SECOND = 25;
+export const MAX_KEYS_PER_SECOND = 17;
 export const BURST_KEYS = 40;
 export const START_KEYS = 8;
 
