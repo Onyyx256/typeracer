@@ -20,7 +20,7 @@ export const fr = {
     language: "Langue",
   },
   footer: {
-    credit: "NelumboType · projet de session, Web V · 2026",
+    credit: "NelumboType · 2026",
   },
   landing: {
     tagline: "Des courses de dactylo où chaque mot fait pousser ta fleur.",

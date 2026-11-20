@@ -18,7 +18,7 @@ export const en: Dictionary = {
     language: "Language",
   },
   footer: {
-    credit: "NelumboType · Web V term project · 2026",
+    credit: "NelumboType · 2026",
   },
   landing: {
     tagline: "Typing races where every word grows your flower.",
