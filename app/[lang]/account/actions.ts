@@ -16,6 +16,7 @@ import {
   setCosmetics,
   setDisplayName,
 } from "@/lib/profile/profile";
+import { recordUpload, tooManyUploads } from "@/lib/profile/upload-attempts";
 
 export type AccountError =
   | AvatarImageError
@@ -23,6 +24,7 @@ export type AccountError =
   | "nameLength"
   | "nameChars"
   | "locked"
+  | "tooManyUploads"
   | "invalid"
   | "unavailable";
 
@@ -45,6 +47,10 @@ export async function uploadAvatarAction(formData: FormData): Promise<AccountRes
   if (!user) {
     return { ok: false, error: "signedOut" };
   }
+  if (tooManyUploads(user.id)) {
+    return { ok: false, error: "tooManyUploads" };
+  }
+  recordUpload(user.id);
   const parsed = avatarFormSchema.safeParse({ photo: formData.get("photo") });
   if (!parsed.success) {
     return { ok: false, error: "avatarMissing" };

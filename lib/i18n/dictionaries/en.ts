@@ -175,6 +175,7 @@ export const en: Dictionary = {
       nameLength: "between {min} and {max} characters",
       nameChars: "letters, digits, spaces and . _ ' - only",
       locked: "this colour isn't unlocked yet",
+      tooManyUploads: "too many photos sent, wait a few minutes",
       invalid: "this colour doesn't exist",
       unavailable: "can't save right now, try again",
     },

@@ -177,6 +177,7 @@ export const fr = {
       nameLength: "entre {min} et {max} caractères",
       nameChars: "lettres, chiffres, espaces et . _ ' - seulement",
       locked: "cette couleur n'est pas encore débloquée",
+      tooManyUploads: "trop de photos envoyées, attends quelques minutes",
       invalid: "cette couleur n'existe pas",
       unavailable: "impossible d'enregistrer pour l'instant, réessaie",
     },
