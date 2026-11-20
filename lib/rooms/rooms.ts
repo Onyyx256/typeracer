@@ -180,6 +180,10 @@ export async function canWatchRoom(userId: string | null, code: string): Promise
   if (!room) {
     return false;
   }
+  // Kicking takes the member's tabs off the channel; this keeps them off.
+  if (userId && (await isBannedFrom(getDb(), room.id, userId))) {
+    return false;
+  }
   if (room.visibility === "public") {
     return true;
   }

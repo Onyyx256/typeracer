@@ -7,6 +7,7 @@ import { createTestAccount, createTestGuest, deleteTestUsers, uniqueName } from 
 import { installFakeIo, resetRealtime } from "@/test/realtime";
 import { ROOM_CODE_PATTERN } from "./code";
 import {
+  canWatchRoom,
   createRoom,
   deleteRoom,
   findCurrentRoom,
@@ -451,6 +452,15 @@ describe("kickMember (SALLE-07)", () => {
     const runner = await guestJoins(code);
     await setState(code, "racing");
     expect(await kickMember(hostId, runner.userId)).toEqual({ ok: true });
+  });
+
+  test("a kicked member can no longer follow a public room's live updates", async () => {
+    const { hostId, code } = await hostRoom({ visibility: "public" });
+    const runner = await guestJoins(code);
+    expect(await canWatchRoom(runner.userId, code)).toBe(true);
+    await kickMember(hostId, runner.userId);
+    expect(await canWatchRoom(runner.userId, code)).toBe(false);
+    expect(await canWatchRoom(null, code)).toBe(true);
   });
 
   test("the ban only covers that room", async () => {
