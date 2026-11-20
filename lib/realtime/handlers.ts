@@ -20,6 +20,7 @@ import {
   type WatchReply,
 } from "./events";
 import { lastChange } from "./notify";
+import { isSameOrigin } from "./origin";
 import { scheduleGone, socketClosed, socketOpened } from "./presence";
 import { realtimeState } from "./state";
 
@@ -140,6 +141,11 @@ export async function attachHandlers(io: Server): Promise<void> {
   state.handlersAttached = true;
 
   io.use((socket, next) => {
+    const { origin, host } = socket.handshake.headers;
+    if (!isSameOrigin(origin, host)) {
+      next(new Error("forbidden"));
+      return;
+    }
     userIdFromCookieHeader(socket.handshake.headers.cookie)
       .then((userId) => {
         socket.data = { userId } satisfies SocketData;
