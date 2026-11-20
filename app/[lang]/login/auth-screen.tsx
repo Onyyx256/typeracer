@@ -8,6 +8,7 @@ import * as z from "zod";
 import { DiscordIcon, GitHubIcon } from "@/app/components/brand-icons";
 import { GrowingStem } from "@/app/components/growing-stem";
 import { TextField } from "@/app/components/text-field";
+import { useHydrated } from "@/app/components/use-hydrated";
 import {
   AUTH_LIMITS,
   OAUTH_ERRORS,
@@ -91,6 +92,7 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
   // The OAuth callback sends failures back as ?error=, shown until the visitor moves on.
   const [showUrlNotice, setShowUrlNotice] = useState(true);
   const [submitting, startSubmit] = useTransition();
+  const hydrated = useHydrated();
   const router = useRouter();
 
   const copy = dict[mode];
@@ -224,7 +226,7 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
             <span className="h-px flex-1 bg-line" />
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+          <form method="post" onSubmit={handleSubmit} noValidate className="grid gap-4">
             <TextField
               label={dict.username}
               name="username"
@@ -283,8 +285,9 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
 
             <button
               type="submit"
+              disabled={!hydrated}
               aria-disabled={submitting || undefined}
-              className={`mt-1 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 aria-disabled:cursor-progress aria-disabled:opacity-60 rounded-leaf`}
+              className={`mt-1 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 aria-disabled:cursor-progress aria-disabled:opacity-60 disabled:cursor-wait disabled:opacity-60 rounded-leaf`}
             >
               {copy.submit}
             </button>

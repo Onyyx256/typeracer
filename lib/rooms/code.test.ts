@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   ROOM_CODE_ALPHABET,
   ROOM_CODE_PATTERN,
-  generateRoomCode,
   roomCodeSchema,
 } from "./code";
+import { generateRoomCode } from "./generate-code";
 
 describe("room codes", () => {
   test("the alphabet has no ambiguous characters", () => {
