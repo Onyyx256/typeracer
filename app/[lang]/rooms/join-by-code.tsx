@@ -21,6 +21,7 @@ export function JoinByCode({ dict, locale }: JoinByCodeProps) {
     <form
       onSubmit={(event) => {
         event.preventDefault();
+        if (pending || code.length === 0) return;
         setError(null);
         startTransition(async () => {
           // On success the action redirects to the room.
@@ -46,8 +47,8 @@ export function JoinByCode({ dict, locale }: JoinByCodeProps) {
         </div>
         <button
           type="submit"
-          disabled={pending || code.length === 0}
-          className="h-11 shrink-0 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
+          aria-disabled={pending || code.length === 0 || undefined}
+          className="h-11 shrink-0 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 rounded-leaf"
         >
           {dict.submit}
         </button>

@@ -35,6 +35,7 @@ export function InviteLinks({ dict, invites, codeOnly }: InviteLinksProps) {
   const [copied, setCopied] = useState<{ index: number; ok: boolean } | null>(null);
 
   function create() {
+    if (pending) return;
     setError(null);
     startTransition(async () => {
       const result = await createInviteAction();
@@ -120,8 +121,8 @@ export function InviteLinks({ dict, invites, codeOnly }: InviteLinksProps) {
       <button
         type="button"
         onClick={create}
-        disabled={pending}
-        className="mt-3 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 rounded-leaf"
+        aria-disabled={pending || undefined}
+        className="mt-3 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 rounded-leaf"
       >
         {dict.create}
       </button>

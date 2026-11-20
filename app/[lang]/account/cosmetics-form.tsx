@@ -52,6 +52,7 @@ export function CosmeticsForm({
 
   function save(event: React.FormEvent) {
     event.preventDefault();
+    if (pending || !changed) return;
     startTransition(async () => {
       const result = await updateCosmeticsAction(choice);
       if (result.ok) {
@@ -104,7 +105,7 @@ export function CosmeticsForm({
         />
 
         <div className="flex flex-wrap items-center gap-4">
-          <button type="submit" className={primaryButton} disabled={pending || !changed}>
+          <button type="submit" className={primaryButton} aria-disabled={pending || !changed || undefined}>
             {dict.save}
           </button>
           <p role="status" className="font-mono text-sm text-accent-text">

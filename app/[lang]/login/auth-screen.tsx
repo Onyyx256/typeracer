@@ -129,6 +129,7 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
     setShowUrlNotice(false);
     const found = validate(mode, username, password, confirm);
     setErrors(found);
@@ -282,8 +283,8 @@ export function AuthScreen({ dict, locale }: AuthScreenProps) {
 
             <button
               type="submit"
-              disabled={submitting}
-              className={`mt-1 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-progress disabled:opacity-60 rounded-leaf`}
+              aria-disabled={submitting || undefined}
+              className={`mt-1 h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 aria-disabled:cursor-progress aria-disabled:opacity-60 rounded-leaf`}
             >
               {copy.submit}
             </button>

@@ -26,6 +26,7 @@ export function NameForm({
 
   function save(event: React.FormEvent) {
     event.preventDefault();
+    if (pending || name.trim() === displayName) return;
     setError(null);
     setSaved(false);
     startTransition(async () => {
@@ -59,7 +60,7 @@ export function NameForm({
         <button
           type="submit"
           className={primaryButton}
-          disabled={pending || name.trim() === displayName}
+          aria-disabled={pending || name.trim() === displayName || undefined}
         >
           {dict.name.save}
         </button>

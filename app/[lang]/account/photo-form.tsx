@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/app/components/avatar";
 import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
 import { removeAvatarAction, uploadAvatarAction, type AccountError } from "./actions";
@@ -24,6 +24,7 @@ export function PhotoForm({
 }) {
   const router = useRouter();
   const inputId = useId();
+  const input = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ error: AccountError } | { done: string } | null>(null);
 
@@ -45,11 +46,14 @@ export function PhotoForm({
   }
 
   function remove() {
+    if (pending) return;
     setStatus(null);
     startTransition(async () => {
       const result = await removeAvatarAction();
       setStatus(result.ok ? { done: dict.photo.removed } : { error: result.error });
       if (result.ok) {
+        // The remove button goes away with the photo, so focus moves to the one that adds one.
+        input.current?.focus();
         router.refresh();
       }
     });
@@ -64,11 +68,15 @@ export function PhotoForm({
           {/* The real input is hidden; its label is the button, so it stays keyboard-reachable. */}
           <input
             id={inputId}
+            ref={input}
             type="file"
             name="photo"
             accept="image/jpeg,image/png,image/webp"
             className="peer sr-only"
-            disabled={pending}
+            aria-disabled={pending || undefined}
+            onClick={(event) => {
+              if (pending) event.preventDefault();
+            }}
             onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = "";
@@ -86,7 +94,7 @@ export function PhotoForm({
             {dict.photo.choose}
           </label>
           {avatarUrl && (
-            <button type="button" className={secondaryButton} disabled={pending} onClick={remove}>
+            <button type="button" className={secondaryButton} aria-disabled={pending || undefined} onClick={remove}>
               {dict.photo.remove}
             </button>
           )}
