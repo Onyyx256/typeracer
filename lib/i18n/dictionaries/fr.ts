@@ -408,6 +408,7 @@ export const fr = {
       inviteInvalid: "ce lien d'invitation ne marche plus, demande-en un nouveau à l'hôte",
       inviteUsed: "ce lien a déjà servi à quelqu'un d'autre ou depuis un autre appareil",
       tooMany: "trop de codes de salle inconnus venus de ton réseau, attends une minute",
+      tooManyGuests: "trop d'invités venus de ton réseau, attends quelques minutes ou connecte-toi",
       notSignedIn: "connecte-toi pour entrer dans une salle",
       notFound: "cette salle n'existe plus",
       notJoinable: "une course est en cours, tu pourras entrer à la fin",
@@ -682,6 +683,7 @@ export const fr = {
       inviteInvalid: "ce lien d'invitation ne marche plus",
       inviteUsed: "ce lien d'invitation a déjà servi",
       tooMany: "trop d'essais, attends une minute",
+      tooManyGuests: "trop d'invités venus de ton réseau, attends quelques minutes ou connecte-toi",
     },
   },
   invitePage: {

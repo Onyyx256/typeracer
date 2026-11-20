@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import * as z from "zod";
 import { createSession, getSessionUserId } from "@/lib/auth/session";
-import { createGuest, findProfile, setGuestNickname } from "@/lib/auth/users";
+import { tooManyGuests, recordGuest } from "@/lib/auth/guest-attempts";
+import { createGuest, deleteGuest, findProfile, setGuestNickname } from "@/lib/auth/users";
 import { nicknameSchema } from "@/lib/auth/validation";
 import {
   backToLobby,
@@ -60,6 +61,7 @@ export type RoomActionError =
   | "noWords"
   | "notSignedIn"
   | "tooMany"
+  | "tooManyGuests"
   | "unavailable";
 
 export type RoomActionResult = {
@@ -151,7 +153,7 @@ export async function createRoomAction(input: unknown): Promise<RoomActionResult
 /**
  * A visitor without a session becomes a guest under the name they chose, and
  * that name becomes their default for the next rooms; a refused one (taken in
- * this room) doesn't.
+ * this room) doesn't. A guest is only kept, and signed in, once the join works.
  */
 async function joinAs(
   name: string,
@@ -162,15 +164,31 @@ async function joinAs(
   if ("error" in checked) {
     return { ok: false, error: checked.error };
   }
-  let userId = user?.id;
-  if (!userId) {
-    userId = (await createGuest(checked.name)).id;
-    await createSession(userId);
+  if (user) {
+    const result = await join(user.id, checked.name);
+    if (result.ok && user.isGuest) {
+      await setGuestNickname(user.id, checked.name);
+    }
+    return result;
   }
-  const result = await join(userId, checked.name);
-  if (result.ok && (!user || user.isGuest)) {
-    await setGuestNickname(userId, checked.name);
+  const ip = await requestIp();
+  if (tooManyGuests(ip)) {
+    return { ok: false, error: "tooManyGuests" };
   }
+  recordGuest(ip);
+  const guest = await createGuest(checked.name);
+  let result: RoomResult | RoomActionResult;
+  try {
+    result = await join(guest.id, checked.name);
+  } catch (error) {
+    await deleteGuest(guest.id);
+    throw error;
+  }
+  if (!result.ok) {
+    await deleteGuest(guest.id);
+    return result;
+  }
+  await createSession(guest.id);
   return result;
 }
 

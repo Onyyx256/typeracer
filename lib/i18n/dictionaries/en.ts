@@ -406,6 +406,7 @@ export const en: Dictionary = {
       inviteInvalid: "this invite link doesn't work anymore, ask the host for a new one",
       inviteUsed: "this link was already used by someone else or from another device",
       tooMany: "too many unknown room codes came from your network, wait a minute",
+      tooManyGuests: "too many guests joined from your network, wait a few minutes or log in",
       notSignedIn: "log in to join a room",
       notFound: "this room doesn't exist anymore",
       notJoinable: "a race is on, you can join when it ends",
@@ -680,6 +681,7 @@ export const en: Dictionary = {
       inviteInvalid: "this invite link doesn't work anymore",
       inviteUsed: "this invite link was already used",
       tooMany: "too many tries, wait a minute",
+      tooManyGuests: "too many guests joined from your network, wait a few minutes or log in",
     },
   },
   invitePage: {

@@ -124,3 +124,8 @@ export async function findOrCreateOAuthUser(
   }
   throw new Error("No free username found for the OAuth account.");
 }
+
+/** For a guest made for a join that then failed; it has nothing attached yet. */
+export async function deleteGuest(id: string): Promise<void> {
+  await getDb().delete(users).where(and(eq(users.id, id), eq(users.isGuest, true)));
+}
