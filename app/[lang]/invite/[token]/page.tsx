@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { notFound, redirect } from "next/navigation";
 import { Notice } from "@/app/components/notice";
 import { RoomSummary } from "@/app/components/room-summary";
 import { getViewer } from "@/lib/auth/current-user";
@@ -20,13 +19,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: dict.invitePage.title, referrer: "no-referrer", robots: { index: false } };
 }
 
+// Rendered before anything streams, so a dead link gets a real 404 status.
+export const instant = false;
+
 export default function InvitePage({ params }: PageProps<"/[lang]/invite/[token]">) {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-8 sm:px-8">
-      {/* Whether the link still works depends on the visitor, so it renders per request. */}
-      <Suspense fallback={null}>
-        <Invite params={params} />
-      </Suspense>
+      <Invite params={params} />
     </main>
   );
 }
@@ -39,22 +38,20 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
     getLocale(),
   ]);
   const t = dict.invitePage;
-  const invalid = <Notice title={t.invalid.title} lead={t.invalid.lead} back={t.back} locale={locale} />;
   if (!inviteTokenSchema.safeParse(token).success) {
-    return invalid;
+    notFound();
   }
 
   const found = await lookUpInvite(token, user?.id ?? null, await requestIp());
   if (!found.ok) {
-    return found.error === "inviteUsed" ? (
-      <Notice title={t.used.title} lead={t.used.lead} back={t.back} locale={locale} />
-    ) : (
-      invalid
-    );
+    if (found.error !== "inviteUsed") {
+      notFound();
+    }
+    return <Notice title={t.used.title} lead={t.used.lead} back={t.back} locale={locale} />;
   }
   const room = await getRoom(found.code);
   if (!room) {
-    return invalid;
+    notFound();
   }
   if (user && room.members.some((member) => member.userId === user.id)) {
     redirect(localePath(locale, `/rooms/${room.code}`));
