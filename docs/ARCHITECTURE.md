@@ -240,6 +240,61 @@ Les bots courent dans le même moteur que les humains (`lib/race/engine.ts`) : s
 - **Piste (COURSE-05).** Chaque coureur est une fleur (`GrowingStem`) qui pousse avec sa progression et fleurit à l'arrivée. Entre deux mises à jour, la progression affichée rejoint la vraie image par image, pour que les fleurs poussent sans saccades.
 - **Composants partagés.** La piste, la zone de frappe (`TypingBox` et `useTyping`), le décompte, le dialogue d'abandon et les résultats sont dans `app/components/race/`, sans dépendre d'une salle ni du socket. La zone de frappe d'une salle (`typing-area.tsx`) ajoute seulement l'envoi des touches au serveur et la resynchronisation.
 
+## Flux des messages temps réel
+
+Le diagramme suit une course dans une salle, du point de vue d'un joueur. Les autres membres et les spectateurs reçoivent les mêmes messages diffusés à la salle. Les flèches pleines sont des messages Socket.IO ; « action » est une server action (requête HTTP).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant N as Navigateur du joueur
+    participant S as Serveur (Next.js + Socket.IO)
+    participant B as Base de données
+    participant A as Autres membres de la salle
+
+    N->>S: connexion (cookie de session lu à la poignée de main)
+    N->>S: room:watch { code }
+    S-->>N: accusé { changedAt }
+    Note over N: si un changement a eu lieu avant l'abonnement, router.refresh()
+
+    Note over N,A: l'hôte clique « Lancer »
+    N->>S: action startRaceAction
+    S->>B: verrou de la salle, vérifie l'hôte et les coureurs, state = countdown
+    S->>N: room:changed
+    S->>A: room:changed (et lobby:changed à la liste des salles)
+    N->>S: router.refresh() puis race:sync { code }
+    S-->>N: race:state (texte, piste, sa propre frappe, temps restant)
+
+    loop toutes les 150 ms au plus pendant la course
+        N->>S: race:keys { seq, keys, at }
+        alt lot refusé (trop rapide, trop de touches, ou hors de la course)
+            S-->>N: race:resync (état du serveur)
+            Note over N: rejoue les lots envoyés après celui-là
+        end
+    end
+    loop 5 fois par seconde
+        S->>N: race:track (progression et effets de tous)
+        S->>A: race:track
+    end
+    opt bonus ou malus qui change son texte
+        S->>N: race:text (à ce joueur seulement)
+        N->>S: race:text-sync si la longueur sur la piste ne correspond pas
+    end
+    opt le joueur abandonne
+        N->>S: race:abandon
+    end
+
+    Note over S: tous ont fini ou abandonné, ou temps écoulé
+    S->>B: résultats en une transaction, state = results
+    S->>N: room:changed
+    S->>A: room:changed
+    N->>S: router.refresh() : la page affiche les résultats
+```
+
+- Le serveur n'envoie jamais de données de salle dans `room:changed` : la page se rafraîchit côté serveur et refait les vérifications de droits. Seuls les messages `race:*` portent des données, et `race:state` ne part que vers le socket qui l'a demandé.
+- Après une déconnexion, Socket.IO se reconnecte, et la page renvoie `room:watch` puis `race:sync`. Le joueur retrouve sa frappe (COURSE-08).
+- Quand l'hôte exclut quelqu'un, ses onglets sont retirés du canal de la salle et reçoivent `room:changed` ; quand la salle ferme, chaque membre libéré reçoit `room:closed`.
+
 ## Mode entraînement
 
 Une course seul, ouverte à tous sauf à quelqu'un qui est dans une salle (`app/[lang]/practice/`) : la page le renvoie vers sa salle, et la server action du texte le refuse aussi. Elle n'a pas de salle : rien en base, pas de socket.
