@@ -1,21 +1,10 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // When the host leaves, the role goes to the signed-in member who has been
 // there longest, never to a guest. With only guests left, the room is
 // deleted and their pages say so.
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 async function hostRoom(browser: Browser): Promise<{ host: Page; code: string }> {
   const hostName = e2eName();

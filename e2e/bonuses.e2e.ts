@@ -1,22 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // Catch-up bonuses in a real race between two browsers: when the host
 // passes 25% of the text, the guest gets a bonus and the host a hindrance,
 // shown on both tracks, and the results list what each runner received.
 
-const PASSWORD = "e2e-password-1234";
 const EFFECT = /rain and sun|night|blinding sun/;
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 /** The runner's text as shown now (bonuses can change its end); empty once the race is over. */
 async function shownText(page: Page): Promise<string> {

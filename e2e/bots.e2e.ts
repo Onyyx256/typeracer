@@ -1,21 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // Bots race on their own: in practice (in the browser) and in a room (on
 // the server). An Impossible bot finishes 10 random words in a few
 // seconds; the human then gives up, which ends the race.
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 /** Random words: the e2e database has no passage corpus. */
 async function shortRandomText(page: Page): Promise<void> {

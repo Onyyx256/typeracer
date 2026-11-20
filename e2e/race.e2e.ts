@@ -1,21 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // A whole race between two browsers: the host types the text to the end,
 // with a mistake fixed on the way; the guest gives up. Both pages then
 // show the results.
-
-const PASSWORD = "e2e-password-1234";
-
-async function signUp(page: Page, username: string): Promise<void> {
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
-}
 
 test("two runners race; one finishes, the other gives up", async ({ browser }) => {
   test.slow();

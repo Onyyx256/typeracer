@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { signUp } from "./accounts";
 import { e2eName } from "./database";
 
 // Practice without an account: bots can be configured, then a race alone
@@ -63,16 +64,9 @@ test("a visitor without an account practices alone", async ({ page }) => {
 
 test("someone in a room can't practice", async ({ browser }) => {
   const username = e2eName();
-  const password = "e2e-password-1234";
   const context = await browser.newContext();
   const practice = await context.newPage();
-  await practice.goto("/en/login");
-  await practice.getByRole("button", { name: "Sign up", exact: true }).click();
-  await practice.getByLabel("Username").fill(username);
-  await practice.getByLabel("Password", { exact: true }).fill(password);
-  await practice.getByLabel("Confirm").fill(password);
-  await practice.getByRole("button", { name: "Create my account" }).click();
-  await expect(practice).toHaveURL(/\/en\/rooms$/);
+  await signUp(practice, username);
 
   // Practice opens while not in a room...
   await practice.goto("/en/practice");
@@ -103,14 +97,7 @@ test("someone in a room can't practice", async ({ browser }) => {
 
 test("a signed-in player's flower colours show in practice", async ({ page }) => {
   const username = e2eName();
-  const password = "e2e-password-1234";
-  await page.goto("/en/login");
-  await page.getByRole("button", { name: "Sign up", exact: true }).click();
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByLabel("Confirm").fill(password);
-  await page.getByRole("button", { name: "Create my account" }).click();
-  await expect(page).toHaveURL(/\/en\/rooms$/);
+  await signUp(page, username);
 
   await page.goto("/en/account");
   await page.getByRole("radio", { name: /^Fern/ }).check({ force: true });
