@@ -122,7 +122,7 @@ Quelques précisions :
 - Pour SALLE-06, `room_members.user_id` a une contrainte unique, donc une personne ne peut pas être dans deux salles en même temps, même si l'interface a un bogue ou si deux onglets envoient la demande en même temps. Comme les invités sont des lignes de `users`, la même contrainte s'applique à eux.
 - Le code de salle a un index unique et une contrainte `check` sur son format (6 caractères sans 0/O ni 1/I/L, SALLE-02). La capacité est vérifiée entre 2 et 30 par la base aussi (SALLE-05).
 - La visibilité et la capacité ont leur propre colonne parce que la liste des salles filtre dessus. Le reste de la configuration (texte, temps, mode d'erreur, bonus) est dans la colonne `jsonb` `config`, parce que ce sont beaucoup d'options qui sont toujours lues ensemble. Elle est relue avec le schéma Zod `raceConfigSchema`.
-- Quand l'hôte quitte, le membre présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il ne reste personne, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
+- Quand l'hôte quitte, le membre connecté avec un compte présent depuis le plus longtemps (`joined_at`) devient l'hôte ; s'il n'y en a pas, la salle passe à `closed` (SALLE-08). Rejoindre ou quitter verrouille la ligne de la salle (`select ... for update`), pour que deux personnes ne prennent pas la dernière place en même temps.
 - Quand l'hôte exclut quelqu'un (SALLE-07), son départ est enregistré dans `room_bans`, avec un index unique sur (`room_id`, `user_id`). Rejoindre la salle vérifie cette table, donc la personne ne peut plus revenir. Un invité qui efface ses cookies devient un nouvel utilisateur : la base ne peut pas le reconnaître.
 - Un lien d'invitation (SALLE-04) est une ligne de `room_invites`. Son jeton fait 32 octets aléatoires (256 bits) et a un index unique. La première utilisation enregistre `used_by` et `used_ip` ; ensuite, le lien ne marche que pour cette personne, depuis cette adresse. Exclure quelqu'un remplit `revoked_at` sur ses liens. Quand la salle ferme, tous ses liens deviennent invalides, parce que l'état de la salle est vérifié à chaque utilisation.
 - `texts` contient les passages des textes cohérents. Leur provenance et le calcul de la difficulté sont expliqués dans [TEXTES.md](TEXTES.md).
@@ -133,21 +133,36 @@ Quelques précisions :
 
 ## Machine à états d'une course
 
+C'est la machine à états de COURSE-01. L'état est la colonne `rooms.state` (`waiting`, `countdown`, `racing`, `results`, `closed`, dans `lib/rooms/settings.ts`). Le diagramme garde les noms de l'énoncé.
+
 ```mermaid
 stateDiagram-v2
-    [*] --> EN_ATTENTE
+    [*] --> EN_ATTENTE : l'hôte crée la salle
     EN_ATTENTE --> DECOMPTE : l'hôte lance (min. 2 participants, dont 1 humain)
     DECOMPTE --> EN_COURSE : fin du décompte 3, 2, 1
     EN_COURSE --> RESULTATS : tous ont terminé ou abandonné, ou temps écoulé
     RESULTATS --> EN_ATTENTE : l'hôte clique « Nouvelle partie »
-    RESULTATS --> FERMEE : l'hôte ferme la salle
-    EN_ATTENTE --> FERMEE : plus aucun humain dans la salle
+    DECOMPTE --> EN_ATTENTE : redémarrage du serveur
+    EN_COURSE --> EN_ATTENTE : redémarrage du serveur
+    EN_ATTENTE --> FERMEE : fermeture (*)
+    DECOMPTE --> FERMEE : fermeture (*)
+    EN_COURSE --> FERMEE : fermeture (*)
+    RESULTATS --> FERMEE : fermeture (*)
     FERMEE --> [*]
 ```
 
+(*) Une salle ferme, dans n'importe quel état, dans trois cas :
+
+- l'hôte supprime la salle ;
+- le dernier membre connecté part ;
+- l'hôte part et aucun membre connecté avec un compte ne peut le remplacer (un invité ne devient jamais hôte).
+
+Quand la salle ferme pendant une course, la course s'arrête : les coureurs encore en route comptent comme ayant abandonné, les résultats sont enregistrés, et la salle reste `closed`. Chaque membre libéré reçoit `room:closed`.
+
 - On peut rejoindre la salle seulement dans `EN_ATTENTE` et `RESULTATS` (SALLE-09), sinon on est spectateur.
 - Le texte est envoyé aux joueurs seulement quand on arrive dans `DECOMPTE` (COURSE-03).
-- C'est le serveur qui fait toutes les transitions. Le client ne fait que demander, et le serveur vérifie que c'est bien l'hôte (SEC-01).
+- C'est le serveur qui fait toutes les transitions. Le client ne fait que demander, et le serveur vérifie que c'est bien l'hôte (SEC-01). Lancer et passer à « Nouvelle partie » vérifient l'état dans la même requête, donc deux clics ne font la transition qu'une fois.
+- La course est en mémoire (voir l'ADR 1). Au redémarrage, une salle restée en `DECOMPTE` ou `EN_COURSE` revient donc en `EN_ATTENTE`, sans résultats.
 
 ## ADR 1 : Technologie temps réel
 
