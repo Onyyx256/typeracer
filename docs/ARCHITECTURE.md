@@ -283,7 +283,7 @@ sequenceDiagram
     N->>S: connexion (cookie de session lu à la poignée de main)
     N->>S: room:watch { code }
     S-->>N: accusé { changedAt }
-    Note over N: si un changement a eu lieu avant l'abonnement, router.refresh()
+    Note over N,S: si un changement a eu lieu avant l'abonnement, router.refresh()
 
     Note over N,A: l'hôte clique « Lancer »
     N->>S: action startRaceAction
@@ -297,7 +297,7 @@ sequenceDiagram
         N->>S: race:keys { seq, keys, at }
         alt lot refusé (trop rapide, trop de touches, ou hors de la course)
             S-->>N: race:resync (état du serveur)
-            Note over N: rejoue les lots envoyés après celui-là
+            Note over N,S: rejoue les lots envoyés après celui-là
         end
     end
     loop 5 fois par seconde
