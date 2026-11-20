@@ -5,6 +5,10 @@ import { mock } from "bun:test";
 // bundle, not tests, so it is replaced with an empty module here.
 mock.module("server-only", () => ({}));
 
+// Likewise, "use cache" only works inside Next, and outside it `cacheLife`
+// throws. Tests ignore the directive and read the database every time.
+mock.module("next/cache", () => ({ cacheLife: () => {} }));
+
 /** The database the tests write to; never the dev one (it would lose its rooms). */
 const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? "postgres://typeracer:typeracer@localhost:5432/typeracer_test";

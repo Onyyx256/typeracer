@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, desc, eq, inArray, lt, max } from "drizzle-orm";
+import { cacheLife } from "next/cache";
 import { getDb } from "@/db";
 import { raceResults, races, rooms, texts } from "@/db/schema";
 import type { BotLevel } from "@/lib/bots/levels";
@@ -152,7 +153,13 @@ export async function getPersonalBest(raceId: string, userId: string): Promise<P
   return entry.wpm > best ? { wpm: entry.wpm, previous: best } : null;
 }
 
+/**
+ * A race and its results are written once and never change, so they are
+ * cached for good. Callers check access before, outside the cache.
+ */
 async function loadRaceResults(raceId: string): Promise<RaceResultsView | null> {
+  "use cache";
+  cacheLife("max");
   const db = getDb();
   const [race] = await db
     .select({
