@@ -73,3 +73,19 @@ Notes brutes, prises au fil du projet, pour rédiger `docs/IA.md` (situations o�
 - **Comment je l'ai détecté :** audit de sécurité ligne à ligne contre les exigences SEC, en relisant chaque chemin qui donne accès à une salle.
 - **Correction :** `canWatchRoom` refuse un utilisateur exclu, avec un test (7056329) ; limite des connexions ratées (d1721c1) ; origine vérifiée à la connexion Socket.IO (42551b5).
 - **Leçon :** une règle d'accès doit être vérifiée sur tous les chemins (page, action, socket), pas seulement sur celui de la fonctionnalité qu'on écrit.
+
+## 2026-11-20 — Mot de passe dans l'URL si on se connecte avant l'hydratation
+
+- **Outil / agent :** Claude Code (écran de connexion, commits 633f751 et 6505f00).
+- **Ce que l'IA a fait :** le formulaire de `app/[lang]/login/auth-screen.tsx` n'avait qu'un `onSubmit` JavaScript, sans `method`. Envoyé avant que React prenne la page (téléphone lent, gestionnaire de mots de passe), le navigateur faisait un GET vers `/en/login?username=…&password=…` : le mot de passe finissait dans l'historique et peut-être les journaux du serveur. Le même piège avait déjà été corrigé pour le formulaire de création de salle (c26c63f), mais pas ici.
+- **Comment je l'ai détecté :** test en production avec JavaScript désactivé. Un premier essai de l'IA (`method="post"` seul) donnait une page blanche : Next répond à un POST sur une page en prérendu partiel sans la coquille HTML.
+- **Correction :** bouton désactivé tant que la page n'est pas hydratée (hook `useHydrated` partagé), et `method="post"` en filet de sécurité (adc2e01, ecb1a75) ; test e2e sans JavaScript (1e2dfcf).
+- **Leçon :** quand un bug est corrigé à un endroit, chercher le même motif dans tout le projet ; tester les formulaires avec JavaScript désactivé.
+
+## 2026-11-20 — Bibliothèque crypto de 134 Ko chargée sur chaque page
+
+- **Outil / agent :** Claude Code (codes de salle, commit 3dbb565 ; canaux temps réel, 89133cb).
+- **Ce que l'IA a fait :** `lib/rooms/code.ts` importait `randomInt` de `node:crypto` à côté du schéma Zod du code. Ce fichier arrive au navigateur par `lib/realtime/events.ts` et `room-closed.tsx` (dans le layout), donc chaque page chargeait un remplacement de crypto de 450 Ko non compressé, presque entièrement inutilisé.
+- **Comment je l'ai détecté :** Lighthouse en production (« unused JavaScript: 188 KiB »), puis en suivant les imports.
+- **Correction :** `generateRoomCode` déplacé dans `lib/rooms/generate-code.ts`, marqué `server-only` (3e3b6c4) ; plus aucun morceau de crypto dans les fichiers JavaScript du build.
+- **Leçon :** un fichier partagé entre client et serveur ne doit importer aucun module `node:` ; marquer `server-only` tout ce qui en dépend.
