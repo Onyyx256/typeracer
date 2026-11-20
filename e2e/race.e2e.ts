@@ -81,7 +81,7 @@ test("two runners race; one finishes, the other gives up", async ({ browser }) =
   // Each runner sees only their own missed keys, the guest included.
   await expect(guest.getByRole("row").nth(2)).toContainText("(you)");
   await expect(host.getByText("Most missed:")).toBeVisible();
-  await expect(guest.getByText("no missed keys, well done")).toBeVisible();
+  await expect(guest.getByText("no missed keys before you gave up")).toBeVisible();
   await expect(guest.getByText("Most missed:")).toHaveCount(0);
   await expect(host.getByRole("button", { name: "Start the race" })).toHaveCount(0);
   await expect(guest.getByText("the host can start a new game")).toBeVisible();

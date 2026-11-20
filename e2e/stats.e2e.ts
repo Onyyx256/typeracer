@@ -99,8 +99,7 @@ test("the stats page shows a player's races and opens one again", async ({ brows
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(1)).toContainText("1 of 2");
   await expect(rows.nth(1)).toContainText("Finished");
-  // Random words come from no stored passage.
-  await expect(rows.nth(1)).toContainText("text removed");
+  await expect(rows.nth(1)).toContainText("random words");
 
   await rows.nth(1).getByRole("link").click();
   await expect(host).toHaveURL(/\/en\/stats\/races\/[0-9a-f-]{36}$/);
