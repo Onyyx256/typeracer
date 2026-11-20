@@ -1,9 +1,10 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE as COOKIE_NAME } from "./session-cookie";
-
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+import {
+  SESSION_COOKIE as COOKIE_NAME,
+  SESSION_MAX_AGE_SECONDS as MAX_AGE_SECONDS,
+} from "./session-cookie";
 
 function secretKey(): Uint8Array {
   const secret = process.env.SESSION_SECRET;

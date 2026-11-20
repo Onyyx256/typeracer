@@ -1,5 +1,8 @@
 export const SESSION_COOKIE = "session";
 
+/** Sessions are never renewed, so a guest is unreachable this long after being created. */
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
 const SIGNED_IN_PATHS = ["/stats", "/account", "/rooms/new"];
 
 /**
