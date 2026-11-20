@@ -124,6 +124,7 @@ export type HistoryEntry = {
   wpm: number;
   accuracy: number | null;
   sourceTitle: string | null;
+  randomText: boolean;
 };
 
 /** Newest first. */
@@ -138,6 +139,7 @@ export async function getHistory(userId: string, page: number): Promise<HistoryE
       wpm: raceResults.wpm,
       accuracy: raceResults.accuracy,
       sourceTitle: texts.sourceTitle,
+      randomText: sql<boolean>`coalesce(${races.config}->>'textType' = 'random', false)`,
     })
     .from(raceResults)
     .innerJoin(races, eq(races.id, raceResults.raceId))

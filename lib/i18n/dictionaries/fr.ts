@@ -104,6 +104,7 @@ export const fr = {
       },
       place: "{rank} sur {runners}",
       noText: "texte retiré",
+      randomText: "mots au hasard",
       nav: "Pages de l'historique",
       previous: "Précédente",
       next: "Suivante",

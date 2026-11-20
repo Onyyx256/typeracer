@@ -102,6 +102,7 @@ export const en: Dictionary = {
       },
       place: "{rank} of {runners}",
       noText: "text removed",
+      randomText: "random words",
       nav: "History pages",
       previous: "Previous",
       next: "Next",

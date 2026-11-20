@@ -30,6 +30,7 @@ type RaceOptions = {
   accuracy?: number;
   missedKeys?: Record<string, number>;
   textId?: string;
+  config?: { textType: "coherent" | "random" };
 };
 
 let minutes = 0;
@@ -39,14 +40,14 @@ let minutes = 0;
  * `rank`; guests fill the other places up to `runners`.
  */
 async function addRace(userId: string, options: RaceOptions = {}): Promise<string> {
-  const { wpm = 60, rank = 1, status = "finished", missedKeys = {}, textId } = options;
+  const { wpm = 60, rank = 1, status = "finished", missedKeys = {}, textId, config = {} } = options;
   const runners = Math.max(options.runners ?? rank, rank);
   const accuracy = status === "abandoned" ? null : (options.accuracy ?? 95);
   const db = getDb();
   const endedAt = new Date(Date.UTC(2026, 0, 1) + ++minutes * 60_000);
   const [race] = await db
     .insert(races)
-    .values({ content: "test", config: {} as never, textId, startedAt: endedAt, endedAt })
+    .values({ content: "test", config: config as never, textId, startedAt: endedAt, endedAt })
     .returning({ id: races.id });
   raceIds.push(race.id);
 
@@ -221,6 +222,16 @@ describe("getHistory", () => {
     expect(history.map((entry) => entry.raceId)).toEqual([newer, older]);
     expect(history[0]).toMatchObject({ rank: 1, runners: 1, status: "abandoned", accuracy: null, sourceTitle: null });
     expect(history[1]).toMatchObject({ rank: 2, runners: 4, status: "finished", sourceTitle: "A Test Book" });
+  });
+
+  test("tells a random-text race apart from one whose passage was removed", async () => {
+    const account = await createTestAccount();
+    const removed = await addRace(account.id, { config: { textType: "coherent" } });
+    const random = await addRace(account.id, { config: { textType: "random" } });
+
+    const history = await getHistory(account.id, 1);
+    expect(history.find((entry) => entry.raceId === random)).toMatchObject({ sourceTitle: null, randomText: true });
+    expect(history.find((entry) => entry.raceId === removed)).toMatchObject({ sourceTitle: null, randomText: false });
   });
 
   test("splits the races into pages", async () => {

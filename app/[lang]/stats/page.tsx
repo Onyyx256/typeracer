@@ -283,7 +283,9 @@ function HistoryTable({
                 </Link>
               </th>
               <td className="max-w-[16rem] truncate px-4 py-3" title={entry.sourceTitle ?? undefined}>
-                {entry.sourceTitle ?? <span className="text-muted">{t.noText}</span>}
+                {entry.sourceTitle ?? (
+                  <span className="text-muted">{entry.randomText ? t.randomText : t.noText}</span>
+                )}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 {interpolate(t.place, { rank: entry.rank, runners: entry.runners })}
