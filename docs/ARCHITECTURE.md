@@ -1,6 +1,6 @@
 # Architecture
 
-Les tables `users`, `accounts`, `texts`, `rooms`, `room_members`, `room_bans`, `room_invites`, `races` et `race_results` existent.
+Les tables `users`, `user_avatars`, `accounts`, `texts`, `rooms`, `room_members`, `room_bans`, `room_invites`, `races` et `race_results` existent. Le diagramme montre les colonnes utiles pour comprendre le modèle ; les `created_at` et `updated_at` sont omis.
 
 ## Modèle de données
 
@@ -81,6 +81,7 @@ erDiagram
         int word_count
         boolean has_digits
         text source_title
+        text source_author
         text source_ref UK
     }
     races {
@@ -110,6 +111,7 @@ erDiagram
         int duration_ms
         jsonb wpm_series
         jsonb missed_keys
+        jsonb bonuses "effets reçus"
     }
 ```
 
@@ -126,6 +128,7 @@ Quelques précisions :
 - `texts` contient les passages des textes cohérents. Leur provenance et le calcul de la difficulté sont expliqués dans [TEXTES.md](TEXTES.md).
 - `races` garde le texte exact et la configuration de la course, pour réafficher les résultats plus tard (HIST-02).
 - `race_results` a une ligne par participant, invités compris, pour que le tableau complet puisse être réaffiché. Mais la ligne d'un invité n'a pas de `user_id` : elle ne devient jamais son historique (AUTH-03, RES-05). `wpm_series` garde le MPM échantillonné chaque seconde et `missed_keys` les touches ratées, pour les graphiques (RES-03).
+- Index pour le nettoyage des données (TECH-04) : un index partiel sur `users.created_at` pour les invités seulement (trouver les invités expirés), `rooms.closed_at` (les salles fermées depuis longtemps), et `rooms.host_id` et `race_results.guest_id`, pour que supprimer un invité ne parcoure pas toute la table lors de la cascade. La tâche de nettoyage elle-même n'est pas encore écrite.
 - La progression pendant la course n'est pas dans la base de données. Elle reste en mémoire sur le serveur et les résultats sont écrits une seule fois à la fin (PERF-02).
 
 ## Machine à états d'une course
