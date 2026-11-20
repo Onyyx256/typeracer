@@ -192,7 +192,8 @@ export async function joinRoomAction(input: unknown): Promise<RoomActionResult> 
 
   return enterRoom("joinRoom", lang, async () => {
     const ip = await requestIp();
-    if (tooManyCodeMisses(ip)) {
+    // Public rooms are listed anyway, so their Join button never counts as guessing.
+    if (tooManyCodeMisses(ip) && (await getRoom(code))?.visibility !== "public") {
       return { ok: false, error: "tooMany" };
     }
     const result = await joinAs(name, (userId, checked) =>

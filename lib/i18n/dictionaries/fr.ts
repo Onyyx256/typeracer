@@ -353,7 +353,7 @@ export const fr = {
     },
     tooMany: {
       title: "Trop de codes essayés",
-      lead: "Tu as essayé beaucoup de codes de salle en peu de temps. Attends une minute, puis réessaie.",
+      lead: "Beaucoup de codes de salle inconnus sont venus de ton réseau en peu de temps. Attends une minute, puis réessaie.",
     },
     invites: {
       heading: "Liens d'invitation",
@@ -407,7 +407,7 @@ export const fr = {
       banned: "l'hôte t'a retiré de cette salle, tu ne peux plus y entrer",
       inviteInvalid: "ce lien d'invitation ne marche plus, demande-en un nouveau à l'hôte",
       inviteUsed: "ce lien a déjà servi à quelqu'un d'autre ou depuis un autre appareil",
-      tooMany: "trop de codes essayés, attends une minute",
+      tooMany: "trop de codes de salle inconnus venus de ton réseau, attends une minute",
       notSignedIn: "connecte-toi pour entrer dans une salle",
       notFound: "cette salle n'existe plus",
       notJoinable: "une course est en cours, tu pourras entrer à la fin",

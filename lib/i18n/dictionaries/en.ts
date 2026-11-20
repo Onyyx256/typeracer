@@ -351,7 +351,7 @@ export const en: Dictionary = {
     },
     tooMany: {
       title: "Too many codes tried",
-      lead: "You tried a lot of room codes in a short time. Wait a minute, then try again.",
+      lead: "A lot of unknown room codes came from your network in a short time. Wait a minute, then try again.",
     },
     invites: {
       heading: "Invite links",
@@ -405,7 +405,7 @@ export const en: Dictionary = {
       banned: "the host removed you from this room, you can't join it again",
       inviteInvalid: "this invite link doesn't work anymore, ask the host for a new one",
       inviteUsed: "this link was already used by someone else or from another device",
-      tooMany: "too many codes tried, wait a minute",
+      tooMany: "too many unknown room codes came from your network, wait a minute",
       notSignedIn: "log in to join a room",
       notFound: "this room doesn't exist anymore",
       notJoinable: "a race is on, you can join when it ends",
