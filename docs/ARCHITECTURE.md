@@ -219,7 +219,35 @@ Les limites sont des compteurs en mémoire sur une fenêtre fixe (`lib/rate-limi
 
 Seuls les échecs comptent pour la connexion et les codes : quelqu'un qui tape le bon mot de passe ou le bon code n'est jamais ralenti. Le compteur des codes est gardé sur `globalThis`, parce que le proxy et les pages le partagent. Un invité est créé seulement au moment de rejoindre une salle, et son compte est supprimé si l'entrée échoue (salle pleine, nom refusé) : le cookie de session n'est posé qu'après une entrée réussie.
 
-## Bots
+## ADR 2 : Gestion des bots
+
+**Statut :** accepté
+
+**Contexte :** Des bots doivent pouvoir courir dans une salle avec des humains et dans le mode entraînement (BOT-01). Leur vitesse doit varier pendant la course (BOT-02), ils doivent faire des erreurs et respecter le mode d'erreur (BOT-03), recevoir les bonus et malus comme les humains (BOT-04), et leur comportement doit être déterministe à partir d'une graine, pour être testé (BOT-05). Dans une salle, le serveur est la source de vérité (COURSE-06). Un bot ne doit pas prendre la place d'un humain ni entrer dans un historique.
+
+**Décision :** Un bot est un participant du moteur de course (`lib/race/engine.ts`), comme un humain, avec un niveau et une graine. Un « typiste » (`lib/bots/typist.ts`) décide chaque touche et son délai à partir du texte actuel du bot et de son état de frappe, avec un générateur à graine. Dans une salle, il tourne sur le serveur, dans le même processus que la course ; à l'entraînement, il tourne dans le navigateur, dans le même moteur. Les bots d'une salle sont gardés dans sa configuration (`rooms.config`), pas dans `users` ni `room_members`.
+
+**Options considérées :**
+
+| Option | Pourquoi oui / non |
+| --- | --- |
+| Participant du moteur, touche par touche (choisi) | Le bot passe par les mêmes règles de frappe que les humains : erreurs, mode d'erreur, texte changé par un bonus et classement marchent sans code à part. Avec la graine, une course se rejoue à l'identique dans les tests. |
+| Progression calculée d'après le temps (une courbe) | Plus simple, mais un bot ne taperait aucune touche : impossible de faire de vraies erreurs, de respecter le mode d'erreur ou de suivre un texte raccourci ou allongé par un bonus. |
+| Faux client Socket.IO (un processus qui se connecte comme un joueur) | Teste tout le chemin réseau, mais demande un processus à part, les délais du réseau rendent la course non déterministe, et le serveur devrait faire confiance à ce client comme à un humain. |
+| Bots comme lignes de `users` et `room_members` | Les réutiliserait partout, mais ils prendraient de la capacité, compteraient pour SALLE-06 et pourraient entrer dans les historiques. |
+| Bots de l'entraînement sur le serveur | Le serveur arbitrerait aussi l'entraînement, mais il faudrait une salle et un socket pour une course seul, alors que ses résultats ne sont pas enregistrés. |
+
+**Conséquences :**
+
+- Les bots d'une course sont en mémoire avec elle : un redémarrage du serveur les perd aussi (voir l'ADR 1).
+- Le serveur simule chaque touche de chaque bot. Avec au plus 5 bots par salle, c'est négligeable à côté des humains.
+- La graine d'un bot de salle est tirée au lancement et n'est pas enregistrée : les tests rejouent une course à partir d'une graine choisie, mais une course passée ne peut pas être rejouée.
+- À l'entraînement, le navigateur fait courir les bots, donc il pourrait les truquer. Comme les résultats de l'entraînement ne sont pas enregistrés, ce n'est pas un problème.
+- La ligne de résultats d'un bot a `bot_level` et pas de `user_id` : elle n'entre dans aucun historique.
+
+Le détail du comportement des bots est dans la section suivante.
+
+## Mise en œuvre des bots
 
 Les bots courent dans le même moteur que les humains (`lib/race/engine.ts`) : sur le serveur pour une salle, dans le navigateur pour l'entraînement. Pour le moteur, un bot est un participant avec un niveau et une graine ; sa progression part sur la piste comme celle d'un humain, et il reçoit les bonus et malus (BOT-04).
 
