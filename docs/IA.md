@@ -64,4 +64,8 @@ Tous ces fichiers sont commités dans le dépôt.
 
 ## 4. Réflexion sur ma façon de travailler avec les agents
 
-<!-- À rédiger -->
+C'était la première que j'utilisais des agents à proprement parler et que je me faisais un setup avec plusieurs skills et sous-agents. C'est sûr que mon workflow n'est pas parfait, surtout avec ce que j'utilsais au début. Je trouve que, de façon générale, mes agents ont fait trop de commits et qu'il y a trop de commentaires. Je n'ai pas pris le temps d'ajuster mes agents, même si j'aurais probablement dû le faire. 
+
+De façon générale, j'ai laissé l'IA coder pour moi et créer la documentation pour ce qu'il faisait. Je lui ai demandé de ne jamais push sans que je lui dise de le faire. Je voulais tester et regarder son code avant de l'envoyer sur main. Au début, je regardais de très près le code qu'il générait. Petit à petit, j'ai commencé à lui faire beaucoup plus confiance, au point où j'ai arrêté de regarder ce qu'il générait. Je n'ai jamais arrêter de tester moi-même par contre. Je l'ai laissé tester par lui-même aussi et j'ai pris ce qu'il a trouvé en compte, mais j'ai troujours insité à regarder l'entièreté du site moi-même et tester toutes les nouvelles fonctionnalités moi-même.
+
+N'aimant pas vraiment coder de base, j'ai bien aimé ne pas avoir à ne pas faire ce code moi-même. Certaines personnes n'aiment pas juste regarder l'IA travailler, mais je ne trouvais pas que je devais attendre après Claude souvent. Je partais 3-4 agents différents en même temps, et vu que je ne fais pas totalement confiance à l'IA et que je lui demandais de valider avec moi ses questionnements, je devais répondre à ses questions plutôt fréquemment. Aussi, vu que j'ai tout testé de mon côté et que Claude était très productif, j'avais presque toujours quelque chose de nouveau à tester. Dans l'ensemble, j'ai bien aimé travailler avec l'IA.
