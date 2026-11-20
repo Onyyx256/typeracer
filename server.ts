@@ -1,12 +1,13 @@
 /**
  * Starts Next.js and Socket.IO on one HTTP server (ADR 1 in docs/ARCHITECTURE.md).
  *
- * Node runs this file directly (type stripping), outside Next's bundler, so
- * it stays minimal and imports no app code. The Socket.IO server is shared
- * on globalThis; the app attaches its handlers in instrumentation.ts and
- * broadcasts from server actions (lib/realtime/).
+ * It runs outside Next's bundler (type stripping in dev, compiled to
+ * build/server.mjs for production, since some Node builds lack type
+ * stripping), so it stays minimal and imports no app code. The Socket.IO
+ * server is shared on globalThis; the app attaches its handlers in
+ * instrumentation.ts and broadcasts from server actions (lib/realtime/).
  *   dev:  bun run dev
- *   prod: NODE_ENV=production node --experimental-strip-types server.ts
+ *   prod: bun run build && bun run start
  */
 import { createServer } from "node:http";
 import next from "next";

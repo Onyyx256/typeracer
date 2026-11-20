@@ -172,7 +172,7 @@ stateDiagram-v2
 
 ## Mise en œuvre du temps réel
 
-- `server.ts` démarre Next.js et Socket.IO sur le même serveur HTTP. Node l'exécute directement (suppression des types), donc ce fichier n'importe aucun code de l'application. Le serveur Socket.IO est rangé sur `globalThis`, et `instrumentation.ts` y branche les gestionnaires de `lib/realtime/handlers.ts` au démarrage de Next.
+- `server.ts` démarre Next.js et Socket.IO sur le même serveur HTTP. Node l'exécute directement en développement (suppression des types) ; `bun run build` le compile en `build/server.mjs` pour la production, car le Node du VPS n'a pas la suppression des types. Ce fichier n'importe aucun code de l'application. Le serveur Socket.IO est rangé sur `globalThis`, et `instrumentation.ts` y branche les gestionnaires de `lib/realtime/handlers.ts` au démarrage de Next.
 - La poignée de main lit le cookie de session : un utilisateur connecté est identifié, un invité peut quand même se connecter pour suivre la liste des salles.
 - Pour l'instant, le serveur envoie seulement des avis « cette salle a changé » (`room:changed`) et « la liste a changé » (`lobby:changed`). La page se rafraîchit alors côté serveur (`router.refresh()`), ce qui refait toutes les vérifications de droits. La progression pendant la course aura ses propres messages, avec les données.
 - Suivre une salle (`room:watch`) est validé avec Zod et permis seulement pour une salle publique ou pour un membre (TECH-07).

@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server.ts",
-    "build": "next build",
-    "start": "NODE_ENV=production node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server.ts",
+    "build": "next build && bun build server.ts --target=node --format=esm --packages=external --define process.env.NODE_ENV=process.env.NODE_ENV --outfile=build/server.mjs",
+    "start": "NODE_ENV=production node build/server.mjs",
     "lint": "eslint",
     "db:up": "docker compose up -d --wait",
     "db:generate": "drizzle-kit generate",
