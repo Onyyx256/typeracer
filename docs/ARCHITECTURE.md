@@ -127,6 +127,7 @@ Quelques précisions :
 - `races` garde le texte exact et la configuration de la course, pour réafficher les résultats plus tard (HIST-02).
 - `race_results` a une ligne par participant, invités compris, pour que le tableau complet puisse être réaffiché. Mais la ligne d'un invité n'a pas de `user_id` : elle ne devient jamais son historique (AUTH-03, RES-05). `wpm_series` garde le MPM échantillonné chaque seconde et `missed_keys` les touches ratées, pour les graphiques (RES-03).
 - La progression pendant la course n'est pas dans la base de données. Elle reste en mémoire sur le serveur et les résultats sont écrits une seule fois à la fin (PERF-02).
+- Une fois par jour, le serveur supprime les données qui ne servent plus (`lib/maintenance/cleanup.ts`) : les invités créés il y a plus de 30 jours, parce que leur session n'est jamais renouvelée et ne peut plus servir, et les salles fermées depuis plus de 7 jours, avec leurs liens et leurs exclusions. Un invité encore dans une salle est gardé. L'historique des courses reste : les résultats perdent seulement le lien vers l'invité (`guest_id`) et les courses le lien vers la salle (`room_id`). Ces colonnes ont un index, pour que la suppression ne parcoure pas toute la table.
 
 ## Machine à états d'une course
 
