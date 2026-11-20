@@ -119,15 +119,15 @@ export function RaceResults({
           <caption className="sr-only">{dict.caption}</caption>
           <thead className="bg-surface font-mono text-xs tracking-wide text-muted uppercase">
             <tr>
-              <th scope="col" className="px-4 py-3">{dict.columns.rank}</th>
-              <th scope="col" className="px-4 py-3">{dict.columns.participant}</th>
-              <th scope="col" className="px-4 py-3 text-right">{dict.columns.wpm}</th>
-              <th scope="col" className="px-4 py-3 text-right">{dict.columns.rawWpm}</th>
-              <th scope="col" className="px-4 py-3 text-right">{dict.columns.accuracy}</th>
-              <th scope="col" className="px-4 py-3 text-right">{dict.columns.errors}</th>
-              <th scope="col" className="px-4 py-3 text-right">{dict.columns.time}</th>
-              <th scope="col" className="px-4 py-3">{dict.columns.status}</th>
-              <th scope="col" className="px-4 py-3">{dict.columns.bonuses}</th>
+              <th scope="col" className="px-3 py-3">{dict.columns.rank}</th>
+              <th scope="col" className="px-3 py-3">{dict.columns.participant}</th>
+              <th scope="col" className="px-3 py-3 text-right">{dict.columns.wpm}</th>
+              <th scope="col" className="px-3 py-3 text-right">{dict.columns.rawWpm}</th>
+              <th scope="col" className="px-3 py-3 text-right">{dict.columns.accuracy}</th>
+              <th scope="col" className="px-3 py-3 text-right">{dict.columns.errors}</th>
+              <th scope="col" className="px-3 py-3 text-right">{dict.columns.time}</th>
+              <th scope="col" className="px-3 py-3">{dict.columns.status}</th>
+              <th scope="col" className="px-3 py-3">{dict.columns.bonuses}</th>
             </tr>
           </thead>
           <tbody className="tabular-nums">
@@ -135,8 +135,8 @@ export function RaceResults({
               const you = isViewer(row, userId);
               return (
                 <tr key={row.rank} className={`border-t border-line ${you ? "bg-primary/10" : ""}`}>
-                  <td className="px-4 py-3 font-mono">{row.rank}</td>
-                  <th scope="row" className="px-4 py-3 font-medium">
+                  <td className="px-3 py-3 font-mono">{row.rank}</td>
+                  <th scope="row" className="px-3 py-3 font-medium">
                     {row.name}
                     {you && youSuffixNeeded(locale, row.name, roomDict.you) && (
                       <span className="text-muted"> ({roomDict.you})</span>
@@ -150,9 +150,9 @@ export function RaceResults({
                       </span>
                     )}
                   </th>
-                  <td className="px-4 py-3 text-right font-semibold">{formatNumber(locale, row.wpm)}</td>
-                  <td className="px-4 py-3 text-right">{formatNumber(locale, row.rawWpm)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-3 py-3 text-right font-semibold">{formatNumber(locale, row.wpm)}</td>
+                  <td className="px-3 py-3 text-right">{formatNumber(locale, row.rawWpm)}</td>
+                  <td className="px-3 py-3 text-right">
                     {row.accuracy === null ? (
                       <>
                         <span aria-hidden="true">—</span>
@@ -162,19 +162,19 @@ export function RaceResults({
                       formatPercent(locale, row.accuracy / 100, 1)
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">{row.errors}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">{seconds(row)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 text-right">{row.errors}</td>
+                  <td className="px-3 py-3 text-right whitespace-nowrap">{seconds(row)}</td>
+                  <td className="px-3 py-3">
                     {row.botLevel && row.status === "timeUp" && !timeRanOut ? dict.botUnfinished : dict.statuses[row.status]}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     {row.bonuses.length === 0 ? (
                       <>
                         <span aria-hidden="true">—</span>
                         <span className="sr-only">{dict.noBonuses}</span>
                       </>
                     ) : (
-                      <ul className="flex gap-1 text-accent-text">
+                      <ul className="flex flex-wrap gap-1 text-accent-text">
                         {row.bonuses.map((kind, index) => (
                           <BonusTip
                             key={index}
