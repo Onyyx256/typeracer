@@ -37,7 +37,15 @@ export function PhotoForm({
     form.set("photo", file);
     setStatus(null);
     startTransition(async () => {
-      const result = await uploadAvatarAction(form);
+      let result: Awaited<ReturnType<typeof uploadAvatarAction>>;
+      try {
+        result = await uploadAvatarAction(form);
+      } catch {
+        // Over the server's body limit Next rejects the request before the
+        // action runs, so the action can't answer "too big" itself.
+        setStatus({ error: file.size > MAX_BYTES ? "avatarTooBig" : "unavailable" });
+        return;
+      }
       setStatus(result.ok ? { done: dict.photo.saved } : { error: result.error });
       if (result.ok) {
         router.refresh();
