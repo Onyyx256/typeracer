@@ -4,7 +4,11 @@ import * as z from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { nicknameSchema } from "@/lib/auth/validation";
 import { canWear, cosmeticsSchema } from "@/lib/profile/cosmetics";
-import { prepareAvatar, type AvatarImageError } from "@/lib/profile/avatar-image";
+import {
+  AVATAR_MAX_BYTES,
+  prepareAvatar,
+  type AvatarImageError,
+} from "@/lib/profile/avatar-image";
 import {
   getPlayerProgress,
   removeAvatar,
@@ -44,6 +48,10 @@ export async function uploadAvatarAction(formData: FormData): Promise<AccountRes
   const parsed = avatarFormSchema.safeParse({ photo: formData.get("photo") });
   if (!parsed.success) {
     return { ok: false, error: "avatarMissing" };
+  }
+  // Refused before reading it into memory; prepareAvatar checks the bytes again.
+  if (parsed.data.photo.size > AVATAR_MAX_BYTES) {
+    return { ok: false, error: "avatarTooBig" };
   }
 
   const prepared = await prepareAvatar(Buffer.from(await parsed.data.photo.arrayBuffer()));
