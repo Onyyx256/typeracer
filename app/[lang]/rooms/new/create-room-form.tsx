@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore, useTransition } from "react";
+import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { ChoiceGroup, RoomSettingsFields } from "@/app/components/room-settings-fields";
 import { RoomSummary } from "@/app/components/room-summary";
 import { TextField } from "@/app/components/text-field";
+import { useHydrated } from "@/app/components/use-hydrated";
 import { localePath, type Locale } from "@/lib/i18n/config";
 import { USERNAME_MAX, USERNAME_MIN } from "@/lib/auth/validation";
 import type { CreateRoomDictionary, Dictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
@@ -29,13 +30,6 @@ type CreateRoomFormProps = {
 };
 
 const NAME_LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
-
-const noSubscribe = () => () => {};
-
-/** False in the server HTML and until React has taken over the page, then true. */
-function useHydrated(): boolean {
-  return useSyncExternalStore(noSubscribe, () => true, () => false);
-}
 
 export function CreateRoomForm({
   dict,
