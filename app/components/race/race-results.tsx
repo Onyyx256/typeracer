@@ -46,6 +46,9 @@ export function RaceResults({
 }) {
   const seconds = (row: ResultRow) =>
     interpolate(dict.seconds, { value: formatNumber(locale, row.durationMs / 1000, 1) });
+  // Bots never hold a race open: once every human is done, the ones still
+  // typing stop early. Only a human out of time means the limit was reached.
+  const timeRanOut = view.results.some((row) => !row.botLevel && row.status === "timeUp");
 
   return (
     <section aria-labelledby="results-heading" className="grid gap-8">
@@ -162,7 +165,7 @@ export function RaceResults({
                   <td className="px-4 py-3 text-right">{row.errors}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">{seconds(row)}</td>
                   <td className="px-4 py-3">
-                    {row.botLevel && row.status === "timeUp" ? dict.botUnfinished : dict.statuses[row.status]}
+                    {row.botLevel && row.status === "timeUp" && !timeRanOut ? dict.botUnfinished : dict.statuses[row.status]}
                   </td>
                   <td className="px-4 py-3">
                     {row.bonuses.length === 0 ? (
