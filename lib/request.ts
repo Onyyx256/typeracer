@@ -9,7 +9,10 @@ const MAX_IP_LENGTH = 64;
  * visitor shares "unknown".
  */
 export async function requestIp(): Promise<string> {
-  const list = await headers();
+  return ipFromHeaders(await headers());
+}
+
+export function ipFromHeaders(list: Headers): string {
   const forwarded = list.get("x-forwarded-for")?.split(",").at(-1)?.trim();
   const ip = forwarded || list.get("x-real-ip")?.trim() || "unknown";
   return ip.slice(0, MAX_IP_LENGTH);

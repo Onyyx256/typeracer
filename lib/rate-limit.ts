@@ -9,13 +9,23 @@ export type AttemptLimiter = {
 
 const PRUNE_ABOVE = 10_000;
 
+type Attempts = Map<string, { count: number; resetAt: number }>;
+
+const shared = globalThis as unknown as { attemptLimiters?: Map<string, Attempts> };
+
 /**
  * At most `max` recorded attempts per key in a fixed window. In memory: the
  * app runs as a single process, and losing the counts on a restart only
- * gives an attacker one extra window.
+ * gives an attacker one extra window. A named limiter keeps its counts on
+ * globalThis, so the proxy and the pages, bundled apart, count together.
  */
-export function attemptLimiter(max: number, windowMs: number): AttemptLimiter {
-  const attempts = new Map<string, { count: number; resetAt: number }>();
+export function attemptLimiter(max: number, windowMs: number, name?: string): AttemptLimiter {
+  let attempts: Attempts = new Map();
+  if (name) {
+    shared.attemptLimiters ??= new Map();
+    attempts = shared.attemptLimiters.get(name) ?? attempts;
+    shared.attemptLimiters.set(name, attempts);
+  }
   return {
     blocked(key, now = Date.now()) {
       const entry = attempts.get(key);

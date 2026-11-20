@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 import { Notice } from "@/app/components/notice";
 import { RoomSummary } from "@/app/components/room-summary";
 import { getViewer } from "@/lib/auth/current-user";
@@ -19,13 +20,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: dict.invitePage.title, referrer: "no-referrer", robots: { index: false } };
 }
 
-// Rendered before anything streams, so a dead link gets a real 404 status.
-export const instant = false;
-
 export default function InvitePage({ params }: PageProps<"/[lang]/invite/[token]">) {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-8 sm:px-8">
-      <Invite params={params} />
+      {/* Whether the link still works depends on the visitor, so it renders per request. */}
+      <Suspense fallback={null}>
+        <Invite params={params} />
+      </Suspense>
     </main>
   );
 }
