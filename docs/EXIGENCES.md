@@ -153,7 +153,7 @@ Statut : `complet`, `partiel` ou `non fait`. Un `partiel` dit ce qui manque.
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 | --- | --- | --- | --- | --- |
-| PERF-01 | non fait | — | — | Lighthouse pas encore mesuré. |
+| PERF-01 | complet | `app/[lang]/page.tsx`, `app/[lang]/layout.tsx`, `app/components/presence.tsx` | `docs/lighthouse/accueil-mobile.html`, `docs/lighthouse/accueil-desktop.html` | Lighthouse 13.6 donne 100 dans les quatre catégories (performance, accessibilité, bonnes pratiques, SEO), sur mobile comme sur ordinateur. Mesuré le 19 novembre 2026 sur `/en` (`/` redirige vers la langue), avec la version de production lancée en local et Chrome sans interface. Le client Socket.IO et Zod ne sont plus chargés par la mise en page commune : la page d'accueil charge environ 184 Kio de JavaScript au lieu de 349 Kio. Choix : la mesure est locale, donc sans la latence réseau de l'hébergement ; les scores du site déployé peuvent être un peu plus bas. |
 | PERF-02 | complet | `app/[lang]/rooms/[code]/race/typing-area.tsx`, `lib/race/manager.ts` | — | Le navigateur envoie ses touches par lots, au plus toutes les 150 ms (moins de 7 messages/s), et seulement s'il y en a. La progression reste en mémoire sur le serveur : aucune écriture en base pendant la course, une seule transaction à la fin. |
 | PERF-03 | non fait | — | — | |
 
