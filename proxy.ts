@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { userIdFromCookieHeader } from "@/lib/auth/session";
-import { LOCALE_COOKIE, hasLocale, negotiateLocale } from "@/lib/i18n/config";
+import { SESSION_COOKIE, needsSignIn } from "@/lib/auth/session-cookie";
+import { LOCALE_COOKIE, hasLocale, localePath, negotiateLocale } from "@/lib/i18n/config";
 import { ipFromHeaders } from "@/lib/request";
 import { invitePageMissing, roomPageMissing } from "@/lib/rooms/missing-pages";
 
@@ -32,12 +33,21 @@ async function missingPage(request: NextRequest, locale: string): Promise<URL | 
 /**
  * Every page lives under /fr or /en. A URL without a locale is redirected to
  * the saved choice, or else to the browser's preferred language. Room and
- * invite pages that would only say "not found" get a 404 status here.
+ * invite pages that would only say "not found" get a 404 status here. A page
+ * that needs an account sends a visitor without a session to the login
+ * page here; a stale cookie still gets the page's own redirect.
  */
 export async function proxy(request: NextRequest): Promise<NextResponse | undefined> {
   const { pathname } = request.nextUrl;
   const first = pathname.split("/")[1] ?? "";
   if (hasLocale(first)) {
+    const rest = pathname.slice(first.length + 1) || "/";
+    if (needsSignIn(rest) && !request.cookies.has(SESSION_COOKIE)) {
+      const url = request.nextUrl.clone();
+      url.pathname = localePath(first, "/login");
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
     const gone = await missingPage(request, first);
     return gone ? NextResponse.rewrite(gone) : undefined;
   }

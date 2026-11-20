@@ -36,7 +36,7 @@ function typeSlowly(race: Race, userId: string, text: string, from: number): num
   let now = from;
   const keys = [...text];
   for (let index = 0; index < keys.length; index += 4) {
-    now += 200;
+    now += 250;
     expect(race.applyKeys(userId, keys.slice(index, index + 4), now).ok).toBe(true);
   }
   return now;
@@ -104,6 +104,26 @@ describe("Race", () => {
     expect(big.applyKeys("a", keys(MAX_KEYS_PER_SECOND), START + 6100).ok).toBe(true);
   });
 
+  test("a script sending as fast as it's allowed can't finish much above 200 WPM", () => {
+    const text = "a ".repeat(150).trim();
+    const race = new Race({ text, errorMode: "strict", timeLimit: 0, participants: PEOPLE, now: T0 });
+    let sent = 0;
+    let now = START;
+    while (race.playerState("a")?.input !== text && now < START + 60_000) {
+      now += 50;
+      for (let count = Math.min(MAX_KEYS_PER_BATCH, text.length - sent); count > 0; count--) {
+        if (race.applyKeys("a", [...text.slice(sent, sent + count)], now).ok) {
+          sent += count;
+          break;
+        }
+      }
+    }
+    const result = race.results(now).find((entry) => entry.userId === "a");
+    expect(result?.status).toBe("finished");
+    expect(result?.wpm).toBeGreaterThan(180);
+    expect(result?.wpm).toBeLessThan(215);
+  });
+
   describe("speed judged on when the keys were typed", () => {
     const long = () =>
       new Race({ text: "a ".repeat(200), errorMode: "strict", timeLimit: 0, participants: PEOPLE, now: T0 });
@@ -111,12 +131,12 @@ describe("Race", () => {
 
     test("batches held by a network stall and delivered together are accepted", () => {
       const race = long();
-      // 30 batches of 3 keys typed 150 ms apart (about 240 WPM) over 4.5 s,
-      // all reaching the server in the same instant.
-      const arrival = START + 10_000;
+      // 30 batches of 3 keys typed 200 ms apart (180 WPM) over 6 s, all
+      // reaching the server in the same instant.
+      const arrival = START + 12_000;
       const text = keys(90);
       for (let index = 0; index < 30; index++) {
-        const typedAt = START + 5_500 + index * 150;
+        const typedAt = START + 5_500 + index * 200;
         const batch = text.slice(index * 3, index * 3 + 3);
         expect(race.applyKeys("a", batch, arrival, typedAt).ok).toBe(true);
       }

@@ -1,8 +1,8 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { SESSION_COOKIE as COOKIE_NAME } from "./session-cookie";
 
-const COOKIE_NAME = "session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 function secretKey(): Uint8Array {

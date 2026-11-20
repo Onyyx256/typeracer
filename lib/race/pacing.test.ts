@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { COUNTDOWN_MS, MAX_KEYS_PER_BATCH, Race, START_KEYS } from "./engine";
+import { COUNTDOWN_MS, MAX_KEYS_PER_BATCH, MAX_KEYS_PER_SECOND, Race, START_KEYS } from "./engine";
 import { keysAllowed, SEND_BURST, spendAllowance, startAllowance } from "./pacing";
 
 const T0 = 1_000_000;
@@ -50,7 +50,7 @@ describe("send pacing", () => {
   test("refills over time, up to the burst and the batch size", () => {
     const empty = spendAllowance(startAllowance(START), START, START_KEYS);
     expect(keysAllowed(empty, START)).toBe(0);
-    expect(keysAllowed(empty, START + 200)).toBe(5);
+    expect(keysAllowed(empty, START + 200)).toBe(Math.floor(MAX_KEYS_PER_SECOND / 5));
     expect(keysAllowed(empty, START + 60_000)).toBe(Math.min(SEND_BURST, MAX_KEYS_PER_BATCH));
   });
 
