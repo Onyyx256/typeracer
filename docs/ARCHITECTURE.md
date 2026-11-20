@@ -182,6 +182,14 @@ stateDiagram-v2
 - Présence : chaque onglet ouvert garde un socket. Un membre qui n'a plus aucun onglet ouvert pendant 30 secondes est considéré comme parti (même délai que COURSE-08). Ça libère sa place et, si c'était l'hôte, passe le rôle au membre connecté présent depuis le plus longtemps (SALLE-08). Après un redémarrage du serveur, les membres qui ne se reconnectent pas dans les 30 secondes partent aussi.
 - L'état temps réel (sockets ouverts, minuteries) est sur `globalThis`, parce que `server.ts`, l'instrumentation et les server actions ne partagent pas les mêmes instances de modules.
 
+## Proxy
+
+`proxy.ts` passe avant chaque page (le `middleware` de Next 16 s'appelle maintenant `proxy`) :
+
+- Une adresse sans langue (`/rooms/…`) est redirigée vers `/fr` ou `/en`, selon le choix gardé dans un cookie ou la langue préférée du navigateur.
+- Une page qui demande un compte (`/stats`, `/account`, `/rooms/new`, liste dans `lib/auth/session-cookie.ts`) envoie tout de suite un visiteur sans cookie de session vers la page de connexion (307). Sans ça, la page répondait 200 puis redirigeait après coup, ce qui coûtait plusieurs secondes sur un téléphone. Le proxy regarde seulement si le cookie existe : un cookie périmé ou falsifié arrive quand même à la page, dont `requireUser` vérifie la signature.
+- Un code de salle inconnu ou un lien d'invitation mort est réécrit vers `/rooms/gone` ou `/invite/gone`, avec un vrai statut 404 (`lib/rooms/missing-pages.ts`). Si la base de données ne répond pas, le proxy laisse passer et la page affiche l'erreur.
+
 ## Bots
 
 Les bots courent dans le même moteur que les humains (`lib/race/engine.ts`) : sur le serveur pour une salle, dans le navigateur pour l'entraînement. Pour le moteur, un bot est un participant avec un niveau et une graine ; sa progression part sur la piste comme celle d'un humain, et il reçoit les bonus et malus (BOT-04).
