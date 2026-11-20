@@ -19,6 +19,9 @@ export const fr = {
     themeTitle: "Changer de thème",
     language: "Langue",
   },
+  footer: {
+    credit: "NelumboType · projet de session, Web V · 2026",
+  },
   landing: {
     tagline: "Des courses de dactylo où chaque mot fait pousser ta fleur.",
     join: "Rejoindre une course",

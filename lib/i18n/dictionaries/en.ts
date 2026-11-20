@@ -17,6 +17,9 @@ export const en: Dictionary = {
     themeTitle: "Switch theme",
     language: "Language",
   },
+  footer: {
+    credit: "NelumboType · Web V term project · 2026",
+  },
   landing: {
     tagline: "Typing races where every word grows your flower.",
     join: "Join a race",

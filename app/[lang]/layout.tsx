@@ -3,6 +3,7 @@ import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { Presence } from "@/app/components/presence";
 import { RoomClosed } from "@/app/components/room-closed";
+import { SiteFooter } from "@/app/components/site-footer";
 import { SiteHeader } from "@/app/components/site-header";
 import { getViewer } from "@/lib/auth/current-user";
 import { ThemeScript } from "@/app/components/theme-script";
@@ -71,6 +72,7 @@ export default async function RootLayout({
         {/* In the layout so every page, including 404 and error pages, gets the language switch. */}
         <SiteHeader />
         {children}
+        <SiteFooter />
         <Suspense fallback={null}>
           <SessionPresence />
         </Suspense>
