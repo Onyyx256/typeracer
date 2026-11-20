@@ -48,7 +48,7 @@ export function TextField({
         )}
       </div>
       <div
-        className={`mt-1.5 flex h-11 items-center border bg-surface transition-colors focus-within:border-primary-text rounded-leaf ${
+        className={`mt-1.5 flex h-11 items-center border bg-surface transition-colors focus-within:border-primary-text has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent-text rounded-leaf ${
           error ? "border-danger" : "border-line"
         }`}
       >
