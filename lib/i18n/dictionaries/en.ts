@@ -378,6 +378,10 @@ export const en: Dictionary = {
         unavailable: "not possible right now, try again later",
       },
     },
+    gone: {
+      title: "No room here",
+      lead: "This room has closed, or no room has this code. Pick another one from the list.",
+    },
     kicked: {
       title: "You were removed from this room",
       lead: "The host removed you. You can't join this room again, but you can join another one.",

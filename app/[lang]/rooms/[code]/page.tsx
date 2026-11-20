@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Suspense } from "react";
 import { LiveRoom } from "@/app/components/live-updates";
 import { Notice } from "@/app/components/notice";
 import { RoomSummary } from "@/app/components/room-summary";
@@ -32,20 +31,37 @@ import { RaceView } from "./race/race-view";
 import { NewGame } from "./race/new-game";
 import { StartRace } from "./race/start-race";
 
+/** Says no more than the page does: a room the visitor can't see gets the 404 title. */
 export async function generateMetadata({
   params,
 }: PageProps<"/[lang]/rooms/[code]">): Promise<Metadata> {
   const [{ code }, dict] = await Promise.all([params, getDictionary()]);
-  return { title: interpolate(dict.room.title, { code: code.toUpperCase() }) };
+  const parsed = roomCodeSchema.safeParse(code);
+  const [room, user] = parsed.success
+    ? await Promise.all([getRoom(parsed.data), getViewer()])
+    : [null, null];
+  const member = user !== null && room?.members.some((entry) => entry.userId === user.id);
+  if (!room || (!member && room.visibility === "private")) {
+    return { title: dict.room.gone.title };
+  }
+  if (!member && room.visibility !== "public" && tooManyCodeMisses(await requestIp())) {
+    return { title: dict.room.tooMany.title };
+  }
+  return {
+    title:
+      room.visibility === "private"
+        ? dict.room.privateHeading
+        : interpolate(dict.room.title, { code: room.code }),
+  };
 }
+
+// Rendered before anything streams, so an unknown code gets a real 404 status.
+export const instant = false;
 
 export default function RoomPage({ params }: PageProps<"/[lang]/rooms/[code]">) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
-      {/* The room depends on the code and the session, so it renders per request. */}
-      <Suspense fallback={null}>
-        <Room params={params} />
-      </Suspense>
+      <Room params={params} />
     </main>
   );
 }

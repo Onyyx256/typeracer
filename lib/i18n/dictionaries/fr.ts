@@ -380,6 +380,10 @@ export const fr = {
         unavailable: "impossible pour le moment, réessaie plus tard",
       },
     },
+    gone: {
+      title: "Pas de salle ici",
+      lead: "Cette salle est fermée, ou aucune salle n'a ce code. Choisis-en une autre dans la liste.",
+    },
     kicked: {
       title: "Tu as été retiré de cette salle",
       lead: "L'hôte t'a retiré. Tu ne peux plus entrer dans cette salle, mais tu peux en rejoindre une autre.",
