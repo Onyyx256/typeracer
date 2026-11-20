@@ -6,6 +6,7 @@ import { Countdown } from "@/app/components/race/countdown";
 import { RaceTrack } from "@/app/components/race/race-track";
 import { TypingBox, useTyping } from "@/app/components/race/typing-box";
 import type { ParticipantResult, Race } from "@/lib/race/engine";
+import { keysAllowed, spendAllowance, startAllowance } from "@/lib/race/pacing";
 import { initialTyping } from "@/lib/race/typing";
 import type { Locale } from "@/lib/i18n/config";
 import type { PlayerLooks } from "@/lib/profile/look";
@@ -48,17 +49,39 @@ export function PracticeRace({
   const { press, set, state } = typing;
   const [track, setTrack] = useState(() => race.track(Date.now()));
   const ended = useRef(false);
+  // Paced like a room's sends, so text that lands all at once (a text
+  // expander) reaches the engine over a few ticks instead of being refused.
+  const pending = useRef<string[]>([]);
+  const allowance = useRef(startAllowance(race.startsAt));
+
+  const flush = useCallback(
+    (now: number) => {
+      const count = Math.min(pending.current.length, keysAllowed(allowance.current, now));
+      if (count === 0) {
+        return;
+      }
+      allowance.current = spendAllowance(allowance.current, now, count);
+      const result = race.applyKeys(PRACTICE_PLAYER, pending.current.splice(0, count), now);
+      const engine = race.playerState(PRACTICE_PLAYER);
+      if (!result.ok && engine) {
+        pending.current = [];
+        set({ ...engine, missed: state.current.missed });
+      }
+    },
+    [race, set, state],
+  );
 
   /** Refreshes the track; once the race is over, hands the results up once. */
   const refresh = useCallback(() => {
     const now = Date.now();
+    flush(now);
     race.tick(now);
     setTrack(race.track(now));
     if (!ended.current && race.isOver(now)) {
       ended.current = true;
       onEnd(race.results(now));
     }
-  }, [race, onEnd]);
+  }, [race, onEnd, flush]);
 
   const onKeys = useCallback(
     (keys: string[]) => {
@@ -66,15 +89,10 @@ export function PracticeRace({
       if (accepted.length === 0) {
         return;
       }
-      const result = race.applyKeys(PRACTICE_PLAYER, accepted, Date.now());
-      const engine = race.playerState(PRACTICE_PLAYER);
-      // Refused (a burst too fast to be typed by hand): back to the engine's state.
-      if (!result.ok && engine) {
-        set({ ...engine, missed: state.current.missed });
-      }
+      pending.current.push(...accepted);
       refresh();
     },
-    [press, set, state, race, refresh],
+    [press, refresh],
   );
 
   useEffect(() => {
