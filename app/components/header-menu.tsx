@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 type HeaderMenuProps = {
   label: string;
@@ -18,10 +18,27 @@ export function HeaderMenu({ label, children }: HeaderMenuProps) {
   // Remembering where it was opened closes the menu after any navigation.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
+  const toggle = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function close(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      // Hiding the links would otherwise drop focus on the page body.
+      if (menu.current?.contains(document.activeElement)) {
+        toggle.current?.focus();
+      }
+      setOpenOn(null);
+    }
+    document.addEventListener("keydown", close);
+    return () => document.removeEventListener("keydown", close);
+  }, [open]);
 
   return (
     <>
       <button
+        ref={toggle}
         type="button"
         aria-label={label}
         aria-expanded={open}
@@ -46,10 +63,8 @@ export function HeaderMenu({ label, children }: HeaderMenuProps) {
         </svg>
       </button>
       <div
+        ref={menu}
         id={id}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") setOpenOn(null);
-        }}
         className={`${open ? "flex" : "hidden"} order-3 w-full flex-col gap-4 border-t border-line pt-3 lg:order-1 lg:flex lg:w-auto lg:flex-1 lg:flex-row lg:items-center lg:gap-6 lg:border-0 lg:pt-0`}
       >
         {children}
