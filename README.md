@@ -6,7 +6,9 @@ Site en production : <https://nelumbotype.online>
 
 Projet de session du cours Web V.
 
-<!-- Capture : page d'accueil -->
+![Home page](image.png)
+![Join page](image-1.png)
+![Race example](image-2.png)
 
 ## Fonctionnalités
 
