@@ -6,6 +6,7 @@ import {
   formatPercent,
   interpolate,
   plural,
+  youSuffixNeeded,
 } from "./format";
 
 // Intl puts narrow no-break spaces in French numbers; compare with plain spaces.
@@ -80,5 +81,17 @@ describe("formatDateTime", () => {
     const shown = spaced(formatDateTime("en", date));
     expect(shown).toContain("Mar 1, 2026");
     expect(shown).toContain("8:30 PM");
+  });
+});
+
+describe("youSuffixNeeded", () => {
+  test("is false when the name already says you, in any case", () => {
+    expect(youSuffixNeeded("en", "You", "you")).toBe(false);
+    expect(youSuffixNeeded("fr", "Toi", "toi")).toBe(false);
+  });
+
+  test("is true for any other name", () => {
+    expect(youSuffixNeeded("en", "demo_lotus", "you")).toBe(true);
+    expect(youSuffixNeeded("fr", "Youssef", "toi")).toBe(true);
   });
 });

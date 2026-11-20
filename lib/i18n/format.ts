@@ -61,3 +61,8 @@ export function formatDateTime(locale: Locale, date: Date): string {
     timeZone: DISPLAY_TIME_ZONE,
   }).format(date);
 }
+
+/** A guest practising is named "You": adding "(you)" after it would say it twice. */
+export function youSuffixNeeded(locale: Locale, name: string, you: string): boolean {
+  return name.toLocaleLowerCase(locale) !== you.toLocaleLowerCase(locale);
+}
