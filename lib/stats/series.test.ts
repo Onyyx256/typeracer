@@ -1,5 +1,22 @@
 import { describe, expect, test } from "bun:test";
-import { historyPageSchema, keyLabel, movingAverage, niceScale, pageCount } from "./series";
+import { historyPageSchema, keyLabel, movingAverage, niceScale, pageCount, tickDecimals } from "./series";
+
+describe("tickDecimals", () => {
+  test("needs no decimals for whole steps", () => {
+    expect(tickDecimals([0, 1, 2, 3])).toBe(0);
+    expect(tickDecimals([0, 20, 40])).toBe(0);
+  });
+
+  test("keeps half and fifth seconds apart", () => {
+    expect(tickDecimals(niceScale(0, 2.4, 6).ticks)).toBe(1);
+    expect(tickDecimals(niceScale(0, 0.8, 6).ticks)).toBe(1);
+    expect(tickDecimals([0, 0.05, 0.1])).toBe(2);
+  });
+
+  test("needs no decimals for a single tick", () => {
+    expect(tickDecimals([0])).toBe(0);
+  });
+});
 
 describe("movingAverage", () => {
   test("averages each point with the ones before it, up to the window", () => {

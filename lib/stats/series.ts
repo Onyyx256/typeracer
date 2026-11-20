@@ -42,6 +42,15 @@ export function niceScale(
   return { min: start, max: end, ticks };
 }
 
+/** Decimals needed so ticks less than 1 apart don't round to the same label. */
+export function tickDecimals(ticks: number[]): number {
+  if (ticks.length < 2) {
+    return 0;
+  }
+  const step = ticks[1] - ticks[0];
+  return Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+}
+
 const KEY_NAMES: Record<string, string> = {
   " ": "␣",
   "\n": "↵",
