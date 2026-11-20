@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { plural, type PluralForms } from "@/lib/i18n/format";
 import { mistakesOf } from "@/lib/race/mistakes";
 import type { WpmPoint } from "@/lib/race/types";
-import { niceScale } from "@/lib/stats/series";
+import { niceScale, tickDecimals } from "@/lib/stats/series";
 
 export type RaceWpmRunner = {
   id: string;
@@ -71,6 +71,8 @@ export function RaceWpmChart({
   const y = (wpm: number) => MARGIN.top + plotHeight - ((wpm - scale.min) / (scale.max - scale.min)) * plotHeight;
   const format = (value: number) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
   const seconds = (ms: number) => labels.time.replace("{seconds}", format(ms / 1000));
+  const wpmTick = new Intl.NumberFormat(locale, { maximumFractionDigits: tickDecimals(scale.ticks) });
+  const timeTick = new Intl.NumberFormat(locale, { maximumFractionDigits: tickDecimals(xScale.ticks) });
   const player = runners.find((runner) => runner.you);
   const mistakes = player ? mistakesOf(player.series) : [];
 
@@ -203,7 +205,7 @@ export function RaceWpmChart({
                 textAnchor="end"
                 className="fill-muted font-mono text-[11px] tabular-nums"
               >
-                {format(tick)}
+                {wpmTick.format(tick)}
               </text>
             </g>
           ))}
@@ -215,7 +217,7 @@ export function RaceWpmChart({
               textAnchor="middle"
               className="fill-muted font-mono text-[11px] tabular-nums"
             >
-              {format(tick)}
+              {timeTick.format(tick)}
             </text>
           ))}
           <text x={MARGIN.left + plotWidth / 2} y={HEIGHT - 2} textAnchor="middle" className="fill-muted text-[11px]">
