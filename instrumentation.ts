@@ -4,9 +4,12 @@ export async function register(): Promise<void> {
   }
   const { getIo } = await import("@/lib/realtime/state");
   const io = getIo();
-  // Null under plain `next dev`/`next build`: the app works, without live updates.
+  // Null under plain `next dev`/`next build`: the app works, without live
+  // updates, and a build never touches the database.
   if (io) {
     const { attachHandlers } = await import("@/lib/realtime/handlers");
     await attachHandlers(io);
+    const { scheduleCleanup } = await import("@/lib/maintenance/schedule");
+    scheduleCleanup();
   }
 }
