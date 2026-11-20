@@ -5,6 +5,7 @@
 import { hash } from "@node-rs/argon2";
 import { inArray, sql } from "drizzle-orm";
 import { getDb } from "@/db";
+import { ARGON2_OPTIONS } from "@/lib/auth/argon2-options";
 import { raceResults, races, texts, users, type NewRaceResult } from "@/db/schema";
 import { rank } from "@/lib/race/ranking";
 import type { ResultStatus, WpmPoint } from "@/lib/race/types";
@@ -45,7 +46,7 @@ function random(seed: number): () => number {
 
 async function demoAccounts(): Promise<Map<string, string>> {
   const db = getDb();
-  const passwordHash = await hash(DEMO_PASSWORD, { memoryCost: 19456, timeCost: 2, parallelism: 1 });
+  const passwordHash = await hash(DEMO_PASSWORD, ARGON2_OPTIONS);
   await db
     .insert(users)
     .values(RACERS.map((racer) => ({ username: racer.username, displayName: racer.username, passwordHash })))
@@ -193,5 +194,5 @@ export async function seedDemoHistory(): Promise<void> {
       await tx.insert(raceResults).values(rows);
     });
   }
-  console.log(`demo: ${RACERS.length} accounts (password "${DEMO_PASSWORD}"), ${RACE_COUNT} races`);
+  console.log(`demo: ${RACERS.length} accounts (password: DEMO_PASSWORD in db/seed/demo.ts), ${RACE_COUNT} races`);
 }

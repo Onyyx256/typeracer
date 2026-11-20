@@ -1,12 +1,6 @@
 import "server-only";
 import { hash, verify } from "@node-rs/argon2";
-
-// Argon2id (the library default) with OWASP's recommended minimum parameters.
-const ARGON2_OPTIONS = {
-  memoryCost: 19456,
-  timeCost: 2,
-  parallelism: 1,
-};
+import { ARGON2_OPTIONS } from "./argon2-options";
 
 export function hashPassword(password: string): Promise<string> {
   return hash(password, ARGON2_OPTIONS);
