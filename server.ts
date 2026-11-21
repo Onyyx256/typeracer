@@ -17,7 +17,10 @@ const port = Number(process.env.PORT ?? 3000);
 const hostname = process.env.HOST ?? "localhost";
 const dev = process.env.NODE_ENV !== "production";
 
-const app = next({ dev, hostname, port });
+// Next builds the proxy's request URL on "localhost" but checks its rewrites
+// against this hostname: any other value (HOST=127.0.0.1 on the VPS) makes
+// every proxy rewrite an external fetch, which fails behind HTTPS.
+const app = next({ dev, hostname: "localhost", port });
 const handle = app.getRequestHandler();
 
 const httpServer = createServer((request, response) => {
