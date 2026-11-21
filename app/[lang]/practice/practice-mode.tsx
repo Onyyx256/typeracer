@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import * as z from "zod";
 import { RaceResults } from "@/app/components/race/race-results";
 import {
   RaceRulesFields,
@@ -8,8 +9,10 @@ import {
   TextSettingsSection,
 } from "@/app/components/room-settings-fields";
 import { BotList } from "@/app/components/bot-list";
+import { useSessionDraft } from "@/app/components/use-session-draft";
 import { Race, type ParticipantResult, type RaceParticipant } from "@/lib/race/engine";
-import type { Locale } from "@/lib/i18n/config";
+import { localeSchema, type Locale } from "@/lib/i18n/config";
+import { followLocale } from "@/lib/rooms/settings";
 import type { PlayerLook, PlayerLooks } from "@/lib/profile/look";
 import { interpolate } from "@/lib/i18n/format";
 import type {
@@ -39,6 +42,12 @@ type Phase =
   | { kind: "setup" }
   | { kind: "race"; race: Race; source: Source; id: number }
   | { kind: "results"; results: ParticipantResult[]; source: Source };
+
+const draftSchema = z.object({
+  locale: localeSchema,
+  languageChosen: z.boolean(),
+  settings: practiceSettingsSchema,
+});
 
 const primary =
   "h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-wait disabled:opacity-70 rounded-leaf";
@@ -70,7 +79,14 @@ export function PracticeMode({
   roomNames: Dictionary["roomNames"];
   locale: Locale;
 }) {
-  const [settings, setSettings] = useState<PracticeSettings>(() => defaultPracticeSettings(locale));
+  const [draft, setDraft] = useSessionDraft("practice", draftSchema, {
+    locale,
+    languageChosen: false,
+    settings: defaultPracticeSettings(locale),
+  });
+  const settings = draft.languageChosen
+    ? draft.settings
+    : followLocale(draft.settings, draft.locale, locale);
   const [phase, setPhase] = useState<Phase>({ kind: "setup" });
   const [error, setError] = useState<PracticeTextError | null>(null);
   // Set when the server refuses because a room was joined meanwhile (another tab).
@@ -79,7 +95,11 @@ export function PracticeMode({
   const looks: PlayerLooks = look ? { [PRACTICE_PLAYER]: look } : {};
 
   function update(changes: Partial<PracticeSettings>) {
-    setSettings((current) => ({ ...current, ...changes }));
+    setDraft({
+      locale,
+      languageChosen: draft.languageChosen || changes.language !== undefined,
+      settings: { ...settings, ...changes },
+    });
     setError(null);
   }
 
@@ -188,9 +208,9 @@ export function PracticeMode({
           bots={settings.bots}
           max={PRACTICE_BOTS_MAX}
           empty={dict.noBots}
-          onAdd={(level) => setSettings((current) => addBot(current, level))}
-          onRemove={(index) => setSettings((current) => removeBot(current, index))}
-          onLevel={(index, level) => setSettings((current) => setBotLevel(current, index, level))}
+          onAdd={(level) => update({ bots: addBot(settings, level).bots })}
+          onRemove={(index) => update({ bots: removeBot(settings, index).bots })}
+          onLevel={(index, level) => update({ bots: setBotLevel(settings, index, level).bots })}
         />
       </div>
 
