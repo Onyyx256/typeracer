@@ -129,3 +129,22 @@ export function defaultRoomSettings(language: Locale): RoomSettings {
     bots: [],
   };
 }
+
+/**
+ * Text settings kept across an interface language switch, when the player
+ * never picked a text language: it follows the interface like the defaults
+ * do, and so do untouched accents.
+ */
+export function followLocale<T extends Pick<RaceConfig, "language" | "accents">>(
+  settings: T,
+  from: Locale,
+  to: Locale,
+): T {
+  if (from === to || settings.language !== from) return settings;
+  const defaultAccents = settings.accents === (from === "fr");
+  return {
+    ...settings,
+    language: to,
+    accents: defaultAccents ? to === "fr" : settings.accents,
+  };
+}

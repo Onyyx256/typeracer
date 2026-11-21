@@ -232,6 +232,7 @@ async function Room({ params }: { params: Promise<{ code: string }> }) {
             </div>
             {isHost && (
               <EditSettings
+                code={room.code}
                 dict={t}
                 fieldsDict={dict.createRoom}
                 locale={locale}

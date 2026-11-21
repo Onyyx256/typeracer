@@ -7,6 +7,7 @@ import {
   LENGTH_MAX,
   LENGTH_MIN,
   defaultRoomSettings,
+  followLocale,
   normalizeSettings,
   raceConfigSchema,
   roomSettingsSchema,
@@ -132,5 +133,32 @@ describe("room bots (CONF-10)", () => {
   test("are kept in the stored race config", () => {
     const config = raceConfigSchema.parse({ ...base, bots: [{ level: "noob" }] });
     expect(config.bots).toEqual([{ level: "noob" }]);
+  });
+});
+
+describe("followLocale", () => {
+  test("moves an unchosen text language to the new interface language", () => {
+    const followed = followLocale(defaultRoomSettings("fr"), "fr", "en");
+    expect(followed).toEqual(defaultRoomSettings("en"));
+  });
+
+  test("turns accents on when an untouched English setup becomes French", () => {
+    expect(followLocale(defaultRoomSettings("en"), "en", "fr").accents).toBe(true);
+  });
+
+  test("keeps a text language that differs from the interface", () => {
+    const english = { ...base, language: "en" as const, accents: false };
+    expect(followLocale(english, "fr", "en")).toBe(english);
+  });
+
+  test("keeps accents the player turned off", () => {
+    const followed = followLocale({ ...base, accents: false }, "fr", "en");
+    expect(followed.language).toBe("en");
+    expect(followed.accents).toBe(false);
+  });
+
+  test("keeps the other settings", () => {
+    const custom = { ...base, length: 120, timeLimit: 60 as const, errorMode: "free" as const };
+    expect(followLocale(custom, "fr", "en")).toMatchObject({ length: 120, timeLimit: 60, errorMode: "free" });
   });
 });

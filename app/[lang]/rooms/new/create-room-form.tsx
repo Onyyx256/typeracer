@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import * as z from "zod";
 import { ChoiceGroup, RoomSettingsFields } from "@/app/components/room-settings-fields";
 import { RoomSummary } from "@/app/components/room-summary";
 import { TextField } from "@/app/components/text-field";
 import { useHydrated } from "@/app/components/use-hydrated";
-import { localePath, type Locale } from "@/lib/i18n/config";
+import { useSessionDraft } from "@/app/components/use-session-draft";
+import { localePath, localeSchema, type Locale } from "@/lib/i18n/config";
 import { USERNAME_MAX, USERNAME_MIN } from "@/lib/auth/validation";
 import type { CreateRoomDictionary, Dictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { roomLabel, type CurrentRoom } from "@/lib/rooms/label";
@@ -15,6 +17,7 @@ import { interpolate } from "@/lib/i18n/format";
 import {
   HOST_ROLES,
   defaultRoomSettings,
+  followLocale,
   roomSettingsSchema,
   type RoomSettings,
 } from "@/lib/rooms/settings";
@@ -31,6 +34,13 @@ type CreateRoomFormProps = {
 
 const NAME_LIMITS = { min: USERNAME_MIN, max: USERNAME_MAX };
 
+const draftSchema = z.object({
+  locale: localeSchema,
+  languageChosen: z.boolean(),
+  name: z.string().max(USERNAME_MAX),
+  settings: roomSettingsSchema,
+});
+
 export function CreateRoomForm({
   dict,
   botsDict,
@@ -38,17 +48,28 @@ export function CreateRoomForm({
   locale,
   defaultName,
 }: CreateRoomFormProps) {
-  const [name, setName] = useState(defaultName);
-  const [settings, setSettings] = useState<RoomSettings>(() =>
-    defaultRoomSettings(locale),
-  );
+  const [draft, setDraft] = useSessionDraft("create-room", draftSchema, {
+    locale,
+    languageChosen: false,
+    name: defaultName,
+    settings: defaultRoomSettings(locale),
+  });
+  const { name, languageChosen } = draft;
+  const settings = languageChosen
+    ? draft.settings
+    : followLocale(draft.settings, draft.locale, locale);
   const [error, setError] = useState<RoomActionError | null>(null);
   const [current, setCurrent] = useState<CurrentRoom | null>(null);
   const [pending, startTransition] = useTransition();
   const hydrated = useHydrated();
 
   function update(changes: Partial<RoomSettings>) {
-    setSettings((current) => ({ ...current, ...changes }));
+    setDraft({
+      locale,
+      languageChosen: languageChosen || changes.language !== undefined,
+      name,
+      settings: { ...settings, ...changes },
+    });
     setError(null);
   }
 
@@ -95,7 +116,7 @@ export function CreateRoomForm({
                   name="name"
                   value={name}
                   onChange={(value) => {
-                    setName(value);
+                    setDraft({ ...draft, locale, name: value, settings });
                     setError(null);
                   }}
                   autoComplete="nickname"
