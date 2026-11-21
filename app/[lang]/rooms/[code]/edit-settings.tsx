@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import * as z from "zod";
 import { RoomSettingsFields } from "@/app/components/room-settings-fields";
+import { useSessionDraft } from "@/app/components/use-session-draft";
 import type { Locale } from "@/lib/i18n/config";
 import type { CreateRoomDictionary, RoomDictionary } from "@/lib/i18n/dictionaries/fr";
 import { editableSettingsSchema, type EditableSettings } from "@/lib/rooms/settings";
@@ -11,39 +13,52 @@ import { updateRoomSettingsAction, type UpdateSettingsActionResult } from "../ac
 
 type UpdateError = Extract<UpdateSettingsActionResult, { ok: false }>["error"];
 
+const draftSchema = z.object({ open: z.boolean(), settings: editableSettingsSchema });
+
 const primary =
   "h-11 cursor-pointer bg-primary px-6 font-medium text-on-primary transition-[filter] hover:brightness-110 disabled:cursor-wait disabled:opacity-70 rounded-leaf";
 const secondary =
   "flex h-11 cursor-pointer items-center justify-center border border-line px-6 font-medium transition-colors hover:border-primary-text rounded-leaf";
 
 export function EditSettings({
+  code,
   dict,
   fieldsDict,
   locale,
   settings: current,
 }: {
+  code: string;
   dict: RoomDictionary;
   fieldsDict: CreateRoomDictionary;
   locale: Locale;
   settings: EditableSettings;
 }) {
   const router = useRouter();
-  const [settings, setSettings] = useState(current);
+  // Saved only while the dialog is open, so a language switch reopens it as it was.
+  const [draft, setDraft, clearDraft] = useSessionDraft(`edit-settings:${code}`, draftSchema, {
+    open: false,
+    settings: current,
+  });
+  const { open: isOpen, settings } = draft;
   const [error, setError] = useState<UpdateError | null>(null);
   const [pending, startTransition] = useTransition();
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const t = dict.editSettingsDialog;
 
+  useEffect(() => {
+    const element = dialog.current;
+    if (isOpen && element && !element.open) element.showModal();
+  }, [isOpen]);
+
   function open() {
     // Starts from what the room has now, not from an earlier draft.
-    setSettings(current);
+    setDraft({ open: true, settings: current });
     setError(null);
-    dialog.current?.showModal();
   }
 
   function update(changes: Partial<EditableSettings>) {
-    setSettings((draft) => ({ ...draft, ...changes }));
+    setDraft({ open: true, settings: { ...settings, ...changes } });
     setError(null);
   }
 
@@ -74,6 +89,7 @@ export function EditSettings({
       <dialog
         ref={dialog}
         aria-labelledby={titleId}
+        onClose={clearDraft}
         className="fixed top-1/2 left-1/2 m-0 max-h-[calc(100dvh-2rem)] w-[min(48rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto border border-line bg-background p-0 text-left text-foreground rounded-leaf backdrop:bg-black/50"
       >
         <form onSubmit={handleSubmit} noValidate>

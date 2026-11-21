@@ -36,7 +36,7 @@ export function useSessionDraft<T>(
   key: string,
   schema: z.ZodType<T>,
   initial: T,
-): [T, (next: T) => void] {
+): [T, (next: T) => void, () => void] {
   const stored = useSyncExternalStore(noSubscribe, () => readDraft(key, schema), () => null);
   const [edited, setEdited] = useState<T | null>(null);
 
@@ -47,5 +47,12 @@ export function useSessionDraft<T>(
     } catch {}
   }, [key, edited]);
 
-  return [edited ?? stored ?? initial, setEdited];
+  function clear() {
+    try {
+      sessionStorage.removeItem(key);
+    } catch {}
+    setEdited(null);
+  }
+
+  return [edited ?? stored ?? initial, setEdited, clear];
 }
